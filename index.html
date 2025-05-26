@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale-1.0">
+    <title>Jojko's Game Portal</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700;900&family=Orbitron:wght@400;700;900&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+            color: #e0e0e0;
+            overflow-x: hidden; /* Prevent horizontal scroll */
+        }
+        .orbitron-font {
+            font-family: 'Orbitron', sans-serif;
+        }
+        .text-glow {
+            text-shadow: 0 0 5px #00c6ff, 0 0 10px #00c6ff, 0 0 15px #00c6ff, 0 0 20px #0077b6, 0 0 30px #0077b6, 0 0 40px #0077b6, 0 0 50px #0077b6;
+        }
+        .card-glow {
+            box-shadow: 0 0 15px rgba(0, 198, 255, 0.3), 0 0 30px rgba(0, 119, 182, 0.2);
+            transition: transform 0.3s ease-in-out, box-shadow 0.3s ease-in-out;
+        }
+        .card-glow:hover {
+            transform: translateY(-10px) scale(1.03);
+            box-shadow: 0 0 25px rgba(0, 198, 255, 0.5), 0 0 50px rgba(0, 119, 182, 0.4);
+        }
+        .coffee-link {
+            position: fixed;
+            bottom: 20px;
+            left: 20px;
+            padding: 10px 15px;
+            background-color: #FFDD00; /* Coffee color */
+            color: #1a1a2e;
+            border-radius: 8px;
+            text-decoration: none;
+            font-weight: bold;
+            transition: transform 0.3s ease, background-color 0.3s ease;
+            z-index: 1000;
+        }
+        .coffee-link:hover {
+            background-color: #FFE866;
+            transform: scale(1.1);
+        }
+        /* Animation for title */
+        @keyframes fadeInDown {
+            0% {
+                opacity: 0;
+                transform: translateY(-30px);
+            }
+            100% {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        .animate-fadeInDown {
+            animation: fadeInDown 1s ease-out forwards;
+        }
+
+        /* Animation for cards */
+        @keyframes fadeInUp {
+            0% {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+            100% {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        .animate-fadeInUp {
+            animation: fadeInUp 1s ease-out forwards;
+            opacity: 0; /* Start hidden */
+        }
+
+        /* Staggered animation for cards */
+        .game-card:nth-child(1) { animation-delay: 0.2s; }
+        .game-card:nth-child(2) { animation-delay: 0.4s; }
+        .game-card:nth-child(3) { animation-delay: 0.6s; }
+        .game-card:nth-child(4) { animation-delay: 0.8s; } /* Add more if needed */
+
+
+        /* Subtle background particle-like effect */
+        .particles {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none; /* Allow clicks through */
+            z-index: -1;
+        }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col items-center justify-center p-4 sm:p-6">
+
+    <div class="particles" id="particles-js-placeholder">
+        </div>
+
+    <header class="text-center mb-10 sm:mb-16 animate-fadeInDown">
+        <h1 class="orbitron-font text-5xl sm:text-6xl md:text-7xl font-bold text-glow">JOJKO'S GAMES</h1>
+        <p class="text-lg sm:text-xl text-sky-300 mt-3">Your portal to awesome gaming adventures!</p>
+    </header>
+
+    <main class="w-full max-w-4xl">
+        <h2 class="orbitron-font text-3xl sm:text-4xl font-semibold text-center mb-8 text-sky-400 animate-fadeInUp" style="animation-delay: 0.1s;">Choose Your Destiny</h2>
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 sm:gap-8">
+            <a href="#" class="game-card block bg-slate-800/70 backdrop-blur-sm p-6 rounded-xl card-glow animate-fadeInUp">
+                <h3 class="orbitron-font text-2xl font-bold text-sky-300 mb-2">Game Title 1</h3>
+                <p class="text-sm text-slate-400 mb-4">A short, exciting description of your first game. What makes it unique?</p>
+                <span class="inline-block bg-sky-500 text-white text-sm font-semibold px-4 py-2 rounded-md hover:bg-sky-400 transition-colors duration-300">Play Now &rarr;</span>
+            </a>
+
+            <a href="#" class="game-card block bg-slate-800/70 backdrop-blur-sm p-6 rounded-xl card-glow animate-fadeInUp">
+                <h3 class="orbitron-font text-2xl font-bold text-sky-300 mb-2">Project Nebula</h3>
+                <p class="text-sm text-slate-400 mb-4">Explore vast galaxies in this epic space adventure. Coming soon!</p>
+                <span class="inline-block bg-sky-500 text-white text-sm font-semibold px-4 py-2 rounded-md hover:bg-sky-400 transition-colors duration-300">Learn More &rarr;</span>
+            </a>
+
+            <a href="#" class="game-card block bg-slate-800/70 backdrop-blur-sm p-6 rounded-xl card-glow animate-fadeInUp">
+                <h3 class="orbitron-font text-2xl font-bold text-sky-300 mb-2">Pixel Warriors</h3>
+                <p class="text-sm text-slate-400 mb-4">Retro-style brawler with a modern twist. Get ready to rumble!</p>
+                <span class="inline-block bg-sky-500 text-white text-sm font-semibold px-4 py-2 rounded-md hover:bg-sky-400 transition-colors duration-300">Enter Arena &rarr;</span>
+            </a>
+            
+            <!-- Example:
+            <a href="#" class="game-card block bg-slate-800/70 backdrop-blur-sm p-6 rounded-xl card-glow animate-fadeInUp">
+                <h3 class="orbitron-font text-2xl font-bold text-sky-300 mb-2">Another Game</h3>
+                <p class="text-sm text-slate-400 mb-4">Description for another awesome game.</p>
+                <span class="inline-block bg-sky-500 text-white text-sm font-semibold px-4 py-2 rounded-md hover:bg-sky-400 transition-colors duration-300">Check it Out &rarr;</span>
+            </a>
+            -->
+        </div>
+    </main>
+
+    <a href="https://buymeacoffee.com/jojkos" target="_blank" rel="noopener noreferrer" class="coffee-link">
+        ☕ Buy Me a Coffee
+    </a>
+
+    <script>
+        // Fallback for particles if particles.js is not loaded or for a simpler effect.
+        // This creates a very basic starfield effect with CSS.
+        document.addEventListener('DOMContentLoaded', () => {
+            const particlesContainer = document.getElementById('particles-js-placeholder');
+            if (particlesContainer) {
+                const numStars = 100; // Adjust for more/less stars
+                for (let i = 0; i < numStars; i++) {
+                    let star = document.createElement('div');
+                    star.style.position = 'absolute';
+                    star.style.width = `${Math.random() * 2 + 1}px`; // Star size
+                    star.style.height = star.style.width;
+                    star.style.backgroundColor = 'rgba(224, 224, 224, 0.5)'; // Star color and opacity
+                    star.style.borderRadius = '50%';
+                    star.style.left = `${Math.random() * 100}%`;
+                    star.style.top = `${Math.random() * 100}%`;
+                    // Simple animation
+                    star.style.animation = `twinkle ${Math.random() * 5 + 3}s linear infinite alternate`;
+                    particlesContainer.appendChild(star);
+                }
+            }
+        });
+
+        // Keyframes for twinkle animation (can be added to <style> tag or here)
+        const styleSheet = document.createElement("style");
+        styleSheet.type = "text/css";
+        styleSheet.innerText = `
+            @keyframes twinkle {
+                0% { opacity: 0.3; transform: scale(0.8); }
+                100% { opacity: 0.8; transform: scale(1.2); }
+            }
+        `;
+        document.head.appendChild(styleSheet);
+    </script>
+</body>
+</html>
