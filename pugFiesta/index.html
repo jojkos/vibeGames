@@ -98,17 +98,49 @@
         #gameOverScreen p { font-size: 1.2em; color: #FFD700; margin-bottom: 30px; }
         #gameOverButtonsContainer { display: flex; justify-content: center; flex-wrap: wrap; }
 
-        #controlsContainer { display: none; width: 100%; position: absolute; bottom: 0; left: 0; padding: 15px; box-sizing: border-box; justify-content: space-between; align-items: flex-end; pointer-events: none; z-index: 5; }
-        .d-pad { display: grid; grid-template-columns: repeat(3, 1fr); grid-template-rows: repeat(3, 1fr); width: 150px; height: 150px; gap: 5px; pointer-events: auto; }
-        .control-button { background-color: rgba(80, 80, 80, 0.6); border: 2px solid rgba(255, 255, 255, 0.5); color: white; font-family: 'Press Start 2P', cursive; font-size: 1.3em; display: flex; justify-content: center; align-items: center; cursor: pointer; border-radius: 10px; transition: background-color 0.1s; pointer-events: auto; }
-        .control-button:active { background-color: rgba(120, 120, 120, 0.8); }
+        #controlsContainer { display: none; width: 100%; position: absolute; bottom: 0; left: 0; padding: 20px; box-sizing: border-box; justify-content: space-between; align-items: flex-end; pointer-events: none; z-index: 5; }
         
-        #btnUpLeft { grid-area: 1 / 1 / 2 / 2; } #btnUp { grid-area: 1 / 2 / 2 / 3; } #btnUpRight { grid-area: 1 / 3 / 2 / 4; }
-        #btnLeft { grid-area: 2 / 1 / 3 / 2; } #btnRight { grid-area: 2 / 3 / 3 / 4; }
-        #btnDownLeft { grid-area: 3 / 1 / 4 / 2; } #btnDown { grid-area: 3 / 2 / 4 / 3; } #btnDownRight { grid-area: 3 / 3 / 4 / 4; }
-        
+        /* Joystick Styles */
+        #joystickBase {
+            width: 120px;
+            height: 120px;
+            background-color: rgba(80, 80, 80, 0.5);
+            border-radius: 50%;
+            position: relative;
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            pointer-events: auto; /* Enable touch on the base */
+        }
+        #joystickKnob {
+            width: 60px;
+            height: 60px;
+            background-color: rgba(150, 150, 150, 0.8);
+            border-radius: 50%;
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            border: 2px solid rgba(255, 255, 255, 0.6);
+        }
+
         #actionButtons { display: flex; flex-direction: column; align-items: center; pointer-events: auto; }
-        #btnDash { width: 90px; height: 90px; font-size: 0.9em; padding: 5px; text-align: center; }
+        #btnDash { 
+            width: 80px; 
+            height: 80px; 
+            font-size: 0.9em; 
+            padding: 5px; 
+            text-align: center; 
+            background-color: rgba(80, 80, 80, 0.6); 
+            border: 2px solid rgba(255, 255, 255, 0.5); 
+            color: white; 
+            font-family: 'Press Start 2P', cursive; 
+            display: flex; 
+            justify-content: center; 
+            align-items: center; 
+            cursor: pointer; 
+            border-radius: 10px; 
+            transition: background-color 0.1s;
+        }
+        #btnDash:active { background-color: rgba(120, 120, 120, 0.8); }
         
         #buyMeACoffeeButtonContainer { position: fixed; left: 15px; bottom: 15px; z-index: 210; display: none; }
         #buyMeACoffeeButtonContainer img { width: 180px; height: auto; border-radius: 8px; box-shadow: 2px 2px 5px rgba(0,0,0,0.5); }
@@ -147,18 +179,11 @@
     </div>
 
     <div id="controlsContainer">
-        <div class="d-pad">
-            <div class="control-button" id="btnUpLeft">↖</div>
-            <div class="control-button" id="btnUp">▲</div>
-            <div class="control-button" id="btnUpRight">↗</div>
-            <div class="control-button" id="btnLeft">◀</div>
-            <div></div> <div class="control-button" id="btnRight">►</div>
-            <div class="control-button" id="btnDownLeft">↙</div>
-            <div class="control-button" id="btnDown">▼</div>
-            <div class="control-button" id="btnDownRight">↘</div>
+        <div id="joystickBase">
+            <div id="joystickKnob"></div>
         </div>
         <div id="actionButtons">
-            <div class="control-button" id="btnDash">DASH</div>
+            <div id="btnDash">DASH</div>
         </div>
     </div>
 
@@ -185,6 +210,11 @@
         const leaderboardListEl = document.getElementById('leaderboardList');
         const leaderboardLoadingTextEl = document.getElementById('leaderboardLoadingText');
         const gameOverScoreEl = document.getElementById('gameOverScore');
+
+        // Joystick elements
+        const joystickBase = document.getElementById('joystickBase');
+        const joystickKnob = document.getElementById('joystickKnob');
+        const btnDash = document.getElementById('btnDash'); 
 
         let gameState = 'menu'; 
         let countdownValue = 3;
@@ -252,7 +282,7 @@
         let femaleDogSpawnTimer=0, taggedDogInfo=null; 
         let successMessages=[]; 
         let heartAnimations = []; 
-        let backgroundFlowers = []; // Array to store flower objects
+        let backgroundFlowers = []; 
 
         const singleTagTexts=["štěká, ale nekouše","Haf haf, a je po ptákách!","utrhnem se ze řetězu","o jé!","má naštěkáno do boudy!","psí děvka","silnější pes mrdá","beng beng beng, jak rej koranteng"];
         const multiTagTexts={2:"trojka!",3:"skuby duby du!",4:"Mega Combo!",5:"Pugtastic!"};
@@ -264,60 +294,93 @@
         function createFlower() {
             const petalColors = ['#FFEB3B', '#FFC107', '#FFF176', '#FF80AB', '#F8BBD0', '#E1BEE7', '#81D4FA', '#B3E5FC'];
             const x = Math.random() * canvas.width;
-            const y = Math.random() * (canvas.height * 0.8) + (canvas.height * 0.2); // Avoid top 20% for stems to look better
-            const stemHeight = Math.random() * 30 + 20; // 20-50px
-            const centerRadius = Math.random() * 2 + 3; // 3-5px
-            const petalRadius = Math.random() * 3 + 4; // 4-7px
-            const numPetals = Math.floor(Math.random() * 3) + 5; // 5-7 petals
+            const y = Math.random() * (canvas.height * 0.8) + (canvas.height * 0.2); 
+            const stemHeight = Math.random() * 30 + 20; 
+            const centerRadius = Math.random() * 2 + 3; 
+            const petalRadius = Math.random() * 3 + 4; 
+            const numPetals = Math.floor(Math.random() * 3) + 5; 
             const petalColor = petalColors[Math.floor(Math.random() * petalColors.length)];
-
             return { x, y, stemHeight, centerRadius, petalRadius, numPetals, petalColor, stemColor: '#4CAF50' };
         }
 
         document.addEventListener('keydown',(e)=>{keys[e.key.toLowerCase()]=true;initAudioSystemOnce();});
         document.addEventListener('keyup',(e)=>{keys[e.key.toLowerCase()]=false;});
         
-        function handleControlPress(keyOrKeys) {
-            return function(e) {
-                e.preventDefault(); 
-                if (Array.isArray(keyOrKeys)) {
-                    keyOrKeys.forEach(k => keys[k] = true);
-                } else {
-                    keys[keyOrKeys] = true;
-                }
-                initAudioSystemOnce(); 
-            }
-        }
-        function handleControlRelease(keyOrKeys) {
-            return function(e) {
-                e.preventDefault();
-                if (Array.isArray(keyOrKeys)) {
-                    keyOrKeys.forEach(k => keys[k] = false);
-                } else {
-                    keys[keyOrKeys] = false;
-                }
-            }
-        }
+        // --- Joystick Logic ---
+        let joystickActive = false;
+        let joystickBaseRectState; // To store rect on touchstart
+        let joystickRadiusState;
+        let knobRadiusState;
+        let maxKnobDisplacementState;
 
-        function setupButtonListeners(buttonElement, keyOrKeys) { 
-            if (buttonElement) {
-                buttonElement.addEventListener('touchstart', handleControlPress(keyOrKeys), { passive: false });
-                buttonElement.addEventListener('touchend', handleControlRelease(keyOrKeys), { passive: false });
-                buttonElement.addEventListener('mousedown', handleControlPress(keyOrKeys), { passive: false });
-                buttonElement.addEventListener('mouseup', handleControlRelease(keyOrKeys), { passive: false });
-                buttonElement.addEventListener('mouseleave', handleControlRelease(keyOrKeys), { passive: false });
-            }
-        }
+        joystickBase.addEventListener('touchstart', (e) => {
+            e.preventDefault();
+            initAudioSystemOnce();
+            if (e.touches.length === 1) {
+                joystickBaseRectState = joystickBase.getBoundingClientRect(); // Get fresh rect
+                joystickRadiusState = joystickBaseRectState.width / 2;
+                knobRadiusState = joystickKnob.offsetWidth / 2 || 30; // Use offsetWidth or fallback
+                maxKnobDisplacementState = joystickRadiusState - knobRadiusState;
 
-        setupButtonListeners(document.getElementById('btnUp'), 'w');
-        setupButtonListeners(document.getElementById('btnDown'), 's');
-        setupButtonListeners(document.getElementById('btnLeft'), 'a');
-        setupButtonListeners(document.getElementById('btnRight'), 'd');
-        setupButtonListeners(document.getElementById('btnDash'), ' ');
-        setupButtonListeners(document.getElementById('btnUpLeft'), ['w', 'a']);
-        setupButtonListeners(document.getElementById('btnUpRight'), ['w', 'd']);
-        setupButtonListeners(document.getElementById('btnDownLeft'), ['s', 'a']);
-        setupButtonListeners(document.getElementById('btnDownRight'), ['s', 'd']);
+                if (joystickRadiusState <= 0) { 
+                    console.warn("Joystick base has no dimensions on touchstart.");
+                    return; 
+                }
+                joystickActive = true;
+            }
+        }, { passive: false });
+
+        document.addEventListener('touchmove', (e) => {
+            if (!joystickActive || gameState !== 'playing' || !joystickBaseRectState) return;
+            e.preventDefault();
+            if (e.touches.length === 1) {
+                const touch = e.touches[0];
+                const baseCenterX = joystickBaseRectState.left + joystickRadiusState;
+                const baseCenterY = joystickBaseRectState.top + joystickRadiusState;
+
+                let deltaX = touch.clientX - baseCenterX;
+                let deltaY = touch.clientY - baseCenterY;
+                
+                const distance = Math.sqrt(deltaX * deltaX + deltaY * deltaY);
+                const angle = Math.atan2(deltaY, deltaX);
+
+                if (distance > maxKnobDisplacementState) {
+                    deltaX = Math.cos(angle) * maxKnobDisplacementState;
+                    deltaY = Math.sin(angle) * maxKnobDisplacementState;
+                }
+
+                joystickKnob.style.transform = `translate(calc(-50% + ${deltaX}px), calc(-50% + ${deltaY}px))`;
+
+                keys['w'] = false; keys['a'] = false; keys['s'] = false; keys['d'] = false;
+                const angleDeg = angle * 180 / Math.PI;
+
+                if (distance > knobRadiusState * 0.3) { // Smaller deadzone
+                    if (angleDeg >= -22.5 && angleDeg < 22.5) keys['d'] = true; 
+                    else if (angleDeg >= 22.5 && angleDeg < 67.5) { keys['s'] = true; keys['d'] = true; } 
+                    else if (angleDeg >= 67.5 && angleDeg < 112.5) keys['s'] = true; 
+                    else if (angleDeg >= 112.5 && angleDeg < 157.5) { keys['s'] = true; keys['a'] = true; } 
+                    else if (angleDeg >= 157.5 || angleDeg < -157.5) keys['a'] = true; 
+                    else if (angleDeg >= -157.5 && angleDeg < -112.5) { keys['w'] = true; keys['a'] = true; } 
+                    else if (angleDeg >= -112.5 && angleDeg < -67.5) keys['w'] = true; 
+                    else if (angleDeg >= -67.5 && angleDeg < -22.5) { keys['w'] = true; keys['d'] = true; } 
+                }
+            }
+        }, { passive: false });
+
+        document.addEventListener('touchend', (e) => {
+            if (joystickActive) {
+                joystickActive = false;
+                joystickKnob.style.transform = 'translate(-50%, -50%)'; 
+                keys['w'] = false; keys['a'] = false; keys['s'] = false; keys['d'] = false; 
+            }
+        });
+
+        if (btnDash) {
+            btnDash.addEventListener('touchstart', (e) => { e.preventDefault(); keys[' '] = true; initAudioSystemOnce(); }, { passive: false });
+            btnDash.addEventListener('touchend', (e) => { e.preventDefault(); keys[' '] = false; }, { passive: false });
+            btnDash.addEventListener('mousedown', (e) => { e.preventDefault(); keys[' '] = true; initAudioSystemOnce(); }, { passive: false });
+            btnDash.addEventListener('mouseup', (e) => { e.preventDefault(); keys[' '] = false; }, { passive: false });
+        }
         
         function showScreen(screenToShow){
             menuScreen.style.display='none';leaderboardScreen.style.display='none';gameOverScreen.style.display='none';
@@ -431,7 +494,7 @@
                 Tone.Transport.start();backgroundMusicLoop.start(0);musicStarted=true;
                 console.log("Music started for game.");
             }
-            controlsContainer.style.display = 'flex'; // Always show controls when game starts
+            controlsContainer.style.display = 'flex'; 
         }
         function drawGameTimer(){ctx.font=`${canvas.width/30}px "Press Start 2P"`;ctx.fillStyle="#FFFFFF";ctx.textAlign="right";ctx.fillText(`Čas: ${gameTimerValue>=0?gameTimerValue:0}`,canvas.width - (canvas.width * 0.025), canvas.height * 0.06);} 
         
@@ -448,156 +511,29 @@
             if(musicStarted&&backgroundMusicLoop){backgroundMusicLoop.stop();Tone.Transport.stop();musicStarted=false;console.log("Music stopped for game over.");}
         }
 
-        function updatePlayer(){
-            if(!player)return;
-            if(player.isMissLungeAnimating){
-                player.missLungeTimer--;
-                if(player.missLungeTimer <= 0) player.isMissLungeAnimating = false;
-                return; 
-            }
-            if(player.isCurrentlyTagging){player.tagLockTimer--;const hp=(TAG_LOCK_DURATION-player.tagLockTimer)/TAG_LOCK_DURATION;const bY=Math.sin(hp*Math.PI)*(-player.height*0.15);if(taggedDogInfo){player.x=taggedDogInfo.originalX+(taggedDogInfo.dogData.width-player.width)/2;player.y=taggedDogInfo.originalY-player.height*0.3+bY;}if(player.tagLockTimer<=0)player.isCurrentlyTagging=false;player.dx=0;player.dy=0;player.trail=[];return;}
-            player.dx=0;player.dy=0;
-            if(!player.isDashing){
-                if(keys['w'])player.dy=-player.speed;if(keys['s'])player.dy=player.speed;
-                if(keys['a'])player.dx=-player.speed;if(keys['d'])player.dx=player.speed;
-                if(player.dx!==0&&player.dy!==0){const f=1/Math.sqrt(2);player.dx*=f;player.dy*=f;}
-                if(keys[' ']&&!player.isDashing&&!taggedDogInfo&&!player.isCurrentlyTagging&&!player.isMissLungeAnimating){
-                    player.isDashing=true;player.dashTimer=DASH_DURATION;
-                    let m=Math.sqrt(player.dx*player.dx+player.dy*player.dy);
-                    if(m>0)player.currentDashSpeed=player.speed*DASH_SPEED_MULTIPLIER;
-                    else{player.dx=player.speed;player.currentDashSpeed=player.speed*DASH_SPEED_MULTIPLIER;}
-                } else if(keys[' ']&&(player.isDashing||taggedDogInfo||player.isCurrentlyTagging||player.isMissLungeAnimating)){playFailSound();}
-                if(player.trail.length>0)player.trail.pop();
-            } else {
-                player.dashTimer--;
-                player.x+=player.dx*DASH_SPEED_MULTIPLIER;player.y+=player.dy*DASH_SPEED_MULTIPLIER;
-                player.trail.unshift({x:player.x,y:player.y,width:player.width,height:player.height});
-                if(player.trail.length>player.maxTrailLength)player.trail.pop();
-                if(player.dashTimer<=0){
-                    player.isDashing=false;player.currentDashSpeed=0;
-                    if(!player.isCurrentlyTagging && !taggedDogInfo) { 
-                        player.isMissLungeAnimating = true;
-                        player.missLungeTimer = MISS_LUNGE_DURATION;
-                        playFailSound(); 
-                    }
-                }
-            }
-            if(!player.isDashing&&!player.isMissLungeAnimating){player.x+=player.dx;player.y+=player.dy;}
-            player.x=Math.max(0,Math.min(player.x,canvas.width-player.width));player.y=Math.max(0,Math.min(player.y,canvas.height-player.height));
-        }
+        function updatePlayer(){if(!player)return;if(player.isMissLungeAnimating){player.missLungeTimer--;if(player.missLungeTimer <= 0) player.isMissLungeAnimating = false;return; }if(player.isCurrentlyTagging){player.tagLockTimer--;const hp=(TAG_LOCK_DURATION-player.tagLockTimer)/TAG_LOCK_DURATION;const bY=Math.sin(hp*Math.PI)*(-player.height*0.15);if(taggedDogInfo){player.x=taggedDogInfo.originalX+(taggedDogInfo.dogData.width-player.width)/2;player.y=taggedDogInfo.originalY-player.height*0.3+bY;}if(player.tagLockTimer<=0)player.isCurrentlyTagging=false;player.dx=0;player.dy=0;player.trail=[];return;}player.dx=0;player.dy=0;if(!player.isDashing){if(keys['w'])player.dy=-player.speed;if(keys['s'])player.dy=player.speed;if(keys['a'])player.dx=-player.speed;if(keys['d'])player.dx=player.speed;if(player.dx!==0&&player.dy!==0){const f=1/Math.sqrt(2);player.dx*=f;player.dy*=f;}if(keys[' ']&&!player.isDashing&&!taggedDogInfo&&!player.isCurrentlyTagging&&!player.isMissLungeAnimating){player.isDashing=true;player.dashTimer=DASH_DURATION;let m=Math.sqrt(player.dx*player.dx+player.dy*player.dy);if(m>0)player.currentDashSpeed=player.speed*DASH_SPEED_MULTIPLIER;else{player.dx=player.speed;player.currentDashSpeed=player.speed*DASH_SPEED_MULTIPLIER;}}else if(keys[' ']&&(player.isDashing||taggedDogInfo||player.isCurrentlyTagging||player.isMissLungeAnimating)){playFailSound();}if(player.trail.length>0)player.trail.pop();}else{player.dashTimer--;player.x+=player.dx*DASH_SPEED_MULTIPLIER;player.y+=player.dy*DASH_SPEED_MULTIPLIER;player.trail.unshift({x:player.x,y:player.y,width:player.width,height:player.height});if(player.trail.length>player.maxTrailLength)player.trail.pop();if(player.dashTimer<=0){player.isDashing=false;player.currentDashSpeed=0;if(!player.isCurrentlyTagging && !taggedDogInfo) { player.isMissLungeAnimating = true;player.missLungeTimer = MISS_LUNGE_DURATION;playFailSound(); }}}if(!player.isDashing&&!player.isMissLungeAnimating){player.x+=player.dx;player.y+=player.dy;}player.x=Math.max(0,Math.min(player.x,canvas.width-player.width));player.y=Math.max(0,Math.min(player.y,canvas.height-player.height));}
         function updateFemaleDog(dog){if(!player)return;const dX=player.x+player.width/2-(dog.x+dog.width/2);const dY=player.y+player.height/2-(dog.y+dog.height/2);const dist=Math.sqrt(dX*dX+dY*dY);if(dist<fleeRadius&&!player.isCurrentlyTagging){const angle=Math.atan2(dY,dX);dog.dx=-Math.cos(angle)*dog.speed;dog.dy=-Math.sin(angle)*dog.speed;}else{dog.moveTimer--;if(dog.moveTimer<=0){dog.dx=(Math.random()-0.5)*dog.speed*0.7;dog.dy=(Math.random()-0.5)*dog.speed*0.7;dog.moveTimer=Math.random()*120+60;}}dog.x+=dog.dx;dog.y+=dog.dy;if(dog.x<0){dog.x=0;dog.dx*=-1;}if(dog.x+dog.width>canvas.width){dog.x=canvas.width-dog.width;dog.dx*=-1;}if(dog.y<0){dog.y=0;dog.dy*=-1;}if(dog.y+dog.height>canvas.height){dog.y=canvas.height-dog.height;dog.dy*=-1;}}
         function updateTagAnimationAndScore(){if(taggedDogInfo){taggedDogInfo.animTimer--;if(taggedDogInfo.animTimer<-10)taggedDogInfo=null;}}
         
         function updateSuccessMessages(){for(let i=successMessages.length-1;i>=0;i--){const msg=successMessages[i];msg.timer--;msg.alpha=msg.timer/SUCCESS_TEXT_DURATION;msg.y-=0.5;msg.scale=1+(SUCCESS_TEXT_DURATION-msg.timer)/SUCCESS_TEXT_DURATION*0.3;if(msg.particles){for(let j=msg.particles.length-1;j>=0;j--){const p=msg.particles[j];p.x+=p.speedX;p.y+=p.speedY;p.alpha=p.duration/PARTICLE_DURATION;p.duration--;if(p.duration<=0)msg.particles.splice(j,1);}}if(msg.timer<=0)successMessages.splice(i,1);}}
         
-        function updateHeartAnimations() {
-            for (let i = heartAnimations.length - 1; i >= 0; i--) {
-                const heart = heartAnimations[i];
-                heart.timer--;
-                heart.y -= heart.riseSpeed;
-                heart.alpha = heart.timer / HEART_ANIM_DURATION;
-                if (heart.phase === 'grow' && heart.currentScale < heart.maxScale) {
-                    heart.currentScale += 0.05; 
-                    if (heart.currentScale >= heart.maxScale) {
-                        heart.phase = 'float';
-                    }
-                }
-                if (heart.timer <= 0 || heart.alpha <= 0) {
-                    heartAnimations.splice(i, 1);
-                }
-            }
-        }
+        function updateHeartAnimations() {for (let i = heartAnimations.length - 1; i >= 0; i--) {const heart = heartAnimations[i];heart.timer--;heart.y -= heart.riseSpeed;heart.alpha = heart.timer / HEART_ANIM_DURATION;if (heart.phase === 'grow' && heart.currentScale < heart.maxScale) {heart.currentScale += 0.05; if (heart.currentScale >= heart.maxScale) {heart.phase = 'float';}}if (heart.timer <= 0 || heart.alpha <= 0) {heartAnimations.splice(i, 1);}}}
 
         function checkCollisions(){if(!player||player.isCurrentlyTagging||taggedDogInfo||player.isMissLungeAnimating)return;let newlyTaggedDogs=[];if(player.isDashing){for(let i=femaleDogs.length-1;i>=0;i--){const dog=femaleDogs[i];if(player.x<dog.x+dog.width&&player.x+player.width>dog.x&&player.y<dog.y+dog.height&&player.y+player.height>dog.y){newlyTaggedDogs.push({dog:dog,index:i,originalX:dog.x,originalY:dog.y,originalWidth:dog.width,originalHeight:dog.height});}}}if(newlyTaggedDogs.length>0){playTagSound();player.isDashing=false;player.dashTimer=0;player.trail=[];let successText="";let particlesForMessage=[];if(newlyTaggedDogs.length===1){const tagged=newlyTaggedDogs[0];score++;femaleDogSpawnTimer=FEMALE_DOG_SPAWN_COOLDOWN;player.isCurrentlyTagging=true;player.tagLockTimer=TAG_LOCK_DURATION;taggedDogInfo={dogData:{...tagged.dog},animTimer:TAG_ANIMATION_TOTAL_DURATION,originalX:tagged.originalX,originalY:tagged.originalY,scoreAwarded:true};femaleDogs.splice(tagged.index,1);successText=singleTagTexts[Math.floor(Math.random()*singleTagTexts.length)];heartAnimations.push({x:tagged.originalX+tagged.originalWidth/2,y:tagged.originalY-10,currentScale:0.1,maxScale:1.2,alpha:1,timer:HEART_ANIM_DURATION,riseSpeed:0.7,phase:'grow'});}else{score+=newlyTaggedDogs.length;femaleDogSpawnTimer=FEMALE_DOG_SPAWN_COOLDOWN;if(newlyTaggedDogs.length>=5)successText=multiTagTexts[5];else successText=multiTagTexts[newlyTaggedDogs.length]||`Combo x${newlyTaggedDogs.length}!`;for(let k=0;k<newlyTaggedDogs.length*5;k++){particlesForMessage.push(createParticle(player.x+player.width/2,player.y+player.height/2));}newlyTaggedDogs.forEach(tagged => {heartAnimations.push({x:tagged.originalX+tagged.originalWidth/2,y:tagged.originalY-10,currentScale:0.1,maxScale:1.0,alpha:1,timer:HEART_ANIM_DURATION,riseSpeed:0.6,phase:'grow'});});newlyTaggedDogs.sort((a,b)=>b.index-a.index);newlyTaggedDogs.forEach(tagged=>femaleDogs.splice(tagged.index,1));}if(successText){successMessages.push({text:successText,x:player.x+player.width/2,y:player.y-10,alpha:1,scale:1,timer:SUCCESS_TEXT_DURATION,particles:particlesForMessage});speakText(successText);}}}
         function spawnFemaleDogs(){if(femaleDogSpawnTimer>0){femaleDogSpawnTimer--;return;}if(femaleDogs.length<MAX_FEMALE_DOGS&&!taggedDogInfo&&!player.isCurrentlyTagging&&!player.isMissLungeAnimating){femaleDogs.push(createFemaleDog());}}
 
         function drawPlayer(){if(!player)return;if(player.trail.length>0){for(let i=0;i<player.trail.length;i++){const t=player.trail[i];const alpha=0.4*(1-(i+1)/(player.trail.length+1));ctx.globalAlpha=alpha;if(playerImg.complete&&playerImg.naturalWidth!==0)ctx.drawImage(playerImg,t.x,t.y,t.width,t.height);ctx.globalAlpha=1.0;}}
-            if(player.isMissLungeAnimating){ 
-                const lungeProgress = (MISS_LUNGE_DURATION - player.missLungeTimer) / MISS_LUNGE_DURATION;
-                const lungeYOffset = Math.sin(lungeProgress * Math.PI) * - (player.height * 0.2); 
-                if(playerImg.complete&&playerImg.naturalWidth!==0)ctx.drawImage(playerImg,player.x,player.y + lungeYOffset,player.width,player.height);
-                else{ctx.fillStyle='saddlebrown';ctx.fillRect(player.x,player.y + lungeYOffset,player.width,player.height);}
-            } else if(!player.isCurrentlyTagging){
-                if(playerImg.complete&&playerImg.naturalWidth!==0)ctx.drawImage(playerImg,player.x,player.y,player.width,player.height);
-                else{ctx.fillStyle='saddlebrown';ctx.fillRect(player.x,player.y,player.width,player.height);}
-            }
-        }
+            if(player.isMissLungeAnimating){ const lungeProgress = (MISS_LUNGE_DURATION - player.missLungeTimer) / MISS_LUNGE_DURATION;const lungeYOffset = Math.sin(lungeProgress * Math.PI) * - (player.height * 0.2); if(playerImg.complete&&playerImg.naturalWidth!==0)ctx.drawImage(playerImg,player.x,player.y + lungeYOffset,player.width,player.height);else{ctx.fillStyle='saddlebrown';ctx.fillRect(player.x,player.y + lungeYOffset,player.width,player.height);}} else if(!player.isCurrentlyTagging){if(playerImg.complete&&playerImg.naturalWidth!==0)ctx.drawImage(playerImg,player.x,player.y,player.width,player.height);else{ctx.fillStyle='saddlebrown';ctx.fillRect(player.x,player.y,player.width,player.height);}}}
         function drawFemaleDog(dog){if(femaleDogImg.complete&&femaleDogImg.naturalWidth!==0)ctx.drawImage(femaleDogImg,dog.x,dog.y,dog.width,dog.height);else{ctx.fillStyle='lightpink';ctx.fillRect(dog.x,dog.y,dog.width,dog.height);}}
         function drawActiveTagAnimation(){if(!taggedDogInfo||taggedDogInfo.animTimer<=-10)return;const td=taggedDogInfo.dogData;const animTimer=taggedDogInfo.animTimer;if(player&&player.isCurrentlyTagging){const hopProgress=(TAG_LOCK_DURATION-player.tagLockTimer)/TAG_LOCK_DURATION;const dogBounceY=Math.sin(hopProgress*Math.PI)*(td.height*0.1);if(femaleDogImg.complete&&femaleDogImg.naturalWidth!==0)ctx.drawImage(femaleDogImg,td.x,td.y+dogBounceY,td.width,td.height);else{ctx.fillStyle='lightpink';ctx.fillRect(td.x,td.y+dogBounceY,td.width,td.height);}if(playerImg.complete&&playerImg.naturalWidth!==0)ctx.drawImage(playerImg,player.x,player.y,player.width,player.height);else{ctx.fillStyle='saddlebrown';ctx.fillRect(player.x,player.y,player.width,player.height);}}else{const fadeDuration=TAG_ANIMATION_TOTAL_DURATION-TAG_LOCK_DURATION;const currentFadeTime=animTimer;const fadeProgress=Math.max(0,Math.min(1,currentFadeTime/fadeDuration));ctx.globalAlpha=fadeProgress;const scale=fadeProgress*0.8+0.2;const drawX=td.x+(td.width*(1-scale))/2;const drawY=td.y+(td.height*(1-scale))/2;if(femaleDogImg.complete&&femaleDogImg.naturalWidth!==0)ctx.drawImage(femaleDogImg,drawX,drawY,td.width*scale,td.height*scale);else{ctx.fillStyle='lightpink';ctx.fillRect(drawX,drawY,td.width*scale,td.height*scale);}ctx.globalAlpha=1.0;}}
         function drawSuccessMessages(){successMessages.forEach(msg=>{if(msg.particles){msg.particles.forEach(p=>{ctx.globalAlpha=p.alpha;ctx.fillStyle=p.color;ctx.beginPath();ctx.arc(p.x,p.y,p.size,0,Math.PI*2);ctx.fill();});ctx.globalAlpha=1;}ctx.save();ctx.globalAlpha=msg.alpha;ctx.fillStyle='#FFD700';ctx.strokeStyle='#000000';ctx.lineWidth=2;const fontSize=Math.max(12,Math.min(24,canvas.width/35))*msg.scale;ctx.font=`${fontSize}px "Press Start 2P"`;ctx.textAlign='center';ctx.strokeText(msg.text,msg.x,msg.y);ctx.fillText(msg.text,msg.x,msg.y);ctx.restore();});}
         
-        function drawHeart(x, y, size, alpha) {
-            ctx.save();
-            ctx.globalAlpha = alpha;
-            ctx.fillStyle = 'red';
-            ctx.strokeStyle = 'darkred';
-            ctx.lineWidth = 2;
-            ctx.beginPath();
-            const topCurveHeight = size * 0.3;
-            ctx.moveTo(x, y + topCurveHeight);
-            ctx.bezierCurveTo(x, y, x - size / 2, y, x - size / 2, y + topCurveHeight);
-            ctx.bezierCurveTo(x - size / 2, y + (size + topCurveHeight) / 2, x, y + (size + topCurveHeight) / 2 + topCurveHeight /2 , x, y + size);
-            ctx.bezierCurveTo(x, y + (size + topCurveHeight) / 2 + topCurveHeight /2, x + size / 2, y + (size + topCurveHeight) / 2, x + size / 2, y + topCurveHeight);
-            ctx.bezierCurveTo(x + size / 2, y, x, y, x, y + topCurveHeight);
-            ctx.closePath();
-            ctx.fill();
-            ctx.stroke();
-            ctx.restore();
-        }
-
-        function drawHeartAnimations() {
-            heartAnimations.forEach(heart => {
-                drawHeart(heart.x - (10 * heart.currentScale) / 2, heart.y - (10 * heart.currentScale) /2 , 10 * heart.currentScale, heart.alpha);
-            });
-        }
-        
-        function drawFlowers() {
-            backgroundFlowers.forEach(flower => {
-                // Draw stem
-                ctx.strokeStyle = flower.stemColor;
-                ctx.lineWidth = Math.max(1, canvas.width / 200); // Scaled stem width
-                ctx.beginPath();
-                ctx.moveTo(flower.x, flower.y + flower.stemHeight); // Bottom of stem
-                ctx.lineTo(flower.x, flower.y); // Top of stem (base of flower head)
-                ctx.stroke();
-
-                // Draw petals
-                ctx.fillStyle = flower.petalColor;
-                for (let i = 0; i < flower.numPetals; i++) {
-                    const angle = (i / flower.numPetals) * Math.PI * 2;
-                    const petalX = flower.x + Math.cos(angle) * (flower.centerRadius + flower.petalRadius / 2);
-                    const petalY = flower.y + Math.sin(angle) * (flower.centerRadius + flower.petalRadius / 2);
-                    ctx.beginPath();
-                    ctx.arc(petalX, petalY, flower.petalRadius, 0, Math.PI * 2);
-                    ctx.fill();
-                }
-                // Draw center
-                ctx.fillStyle = '#FFD700'; // Yellow center
-                ctx.beginPath();
-                ctx.arc(flower.x, flower.y, flower.centerRadius, 0, Math.PI * 2);
-                ctx.fill();
-            });
-        }
-
+        function drawHeart(x, y, size, alpha) {ctx.save();ctx.globalAlpha = alpha;ctx.fillStyle = 'red';ctx.strokeStyle = 'darkred';ctx.lineWidth = 2;ctx.beginPath();const topCurveHeight = size * 0.3;ctx.moveTo(x, y + topCurveHeight);ctx.bezierCurveTo(x, y, x - size / 2, y, x - size / 2, y + topCurveHeight);ctx.bezierCurveTo(x - size / 2, y + (size + topCurveHeight) / 2, x, y + (size + topCurveHeight) / 2 + topCurveHeight /2 , x, y + size);ctx.bezierCurveTo(x, y + (size + topCurveHeight) / 2 + topCurveHeight /2, x + size / 2, y + (size + topCurveHeight) / 2, x + size / 2, y + topCurveHeight);ctx.bezierCurveTo(x + size / 2, y, x, y, x, y + topCurveHeight);ctx.closePath();ctx.fill();ctx.stroke();ctx.restore();}
+        function drawHeartAnimations() {heartAnimations.forEach(heart => {drawHeart(heart.x - (10 * heart.currentScale) / 2, heart.y - (10 * heart.currentScale) /2 , 10 * heart.currentScale, heart.alpha);});}
+        function drawFlowers() {backgroundFlowers.forEach(flower => {ctx.strokeStyle = flower.stemColor;ctx.lineWidth = Math.max(1, canvas.width / 200); ctx.beginPath();ctx.moveTo(flower.x, flower.y + flower.stemHeight); ctx.lineTo(flower.x, flower.y); ctx.stroke();ctx.fillStyle = flower.petalColor;for (let i = 0; i < flower.numPetals; i++) {const angle = (i / flower.numPetals) * Math.PI * 2;const petalX = flower.x + Math.cos(angle) * (flower.centerRadius + flower.petalRadius / 2);const petalY = flower.y + Math.sin(angle) * (flower.centerRadius + flower.petalRadius / 2);ctx.beginPath();ctx.arc(petalX, petalY, flower.petalRadius, 0, Math.PI * 2);ctx.fill();}ctx.fillStyle = '#FFD700'; ctx.beginPath();ctx.arc(flower.x, flower.y, flower.centerRadius, 0, Math.PI * 2);ctx.fill();});}
         function drawScoreOnCanvas(){ctx.fillStyle='#FFFFFF';const baseFontSize=24;const scaledFontSize=Math.max(12,Math.min(baseFontSize,canvas.width/30));ctx.font=`${scaledFontSize}px "Press Start 2P"`;ctx.textAlign='left';ctx.fillText('Skóre: '+score,canvas.width*0.02,canvas.height*0.05);}
         
-        function initGameLogic(){
-            resizeCanvas();
-            const scaleFactor=canvas.width/800;
-            currentSpriteScale=SPRITE_SCALE_BASE*Math.max(0.7,Math.min(1.5,scaleFactor*1.1));
-            playerSpeed=PLAYER_SPEED_BASE*Math.max(0.7,Math.min(1.5,scaleFactor));
-            femaleDogSpeed=FEMALE_DOG_SPEED_BASE*Math.max(0.7,Math.min(1.5,scaleFactor));
-            fleeRadius=FLEE_RADIUS_BASE*Math.max(0.7,Math.min(1.5,scaleFactor));
-            player=createPlayer();
-            femaleDogs=[];
-            backgroundFlowers = []; // Initialize flowers
-            const numFlowers = 20 + Math.floor(Math.random() * 10); // 20-29 flowers
-            for (let i = 0; i < numFlowers; i++) {
-                backgroundFlowers.push(createFlower());
-            }
-            for(let i=0;i<Math.floor(MAX_FEMALE_DOGS/2)+1;i++){femaleDogs.push(createFemaleDog());}
-            score=0;keys={};femaleDogSpawnTimer=0;taggedDogInfo=null;successMessages=[]; heartAnimations = [];
-        }
+        function initGameLogic(){resizeCanvas();const scaleFactor=canvas.width/800;currentSpriteScale=SPRITE_SCALE_BASE*Math.max(0.7,Math.min(1.5,scaleFactor*1.1));playerSpeed=PLAYER_SPEED_BASE*Math.max(0.7,Math.min(1.5,scaleFactor));femaleDogSpeed=FEMALE_DOG_SPEED_BASE*Math.max(0.7,Math.min(1.5,scaleFactor));fleeRadius=FLEE_RADIUS_BASE*Math.max(0.7,Math.min(1.5,scaleFactor));player=createPlayer();femaleDogs=[];backgroundFlowers = []; const numFlowers = 20 + Math.floor(Math.random() * 10); for (let i = 0; i < numFlowers; i++) {backgroundFlowers.push(createFlower());}for(let i=0;i<Math.floor(MAX_FEMALE_DOGS/2)+1;i++){femaleDogs.push(createFemaleDog());}score=0;keys={};femaleDogSpawnTimer=0;taggedDogInfo=null;successMessages=[]; heartAnimations = [];}
 
         let animationFrameId;
         function gameLoop(){
@@ -609,7 +545,7 @@
                 updateTagAnimationAndScore();updateSuccessMessages(); updateHeartAnimations();
                 checkCollisions();spawnFemaleDogs();
                 ctx.clearRect(0,0,canvas.width,canvas.height); 
-                drawFlowers(); // Draw flowers first
+                drawFlowers(); 
                 femaleDogs.forEach(drawFemaleDog);drawPlayer(); 
                 drawActiveTagAnimation();drawSuccessMessages(); drawHeartAnimations();
                 drawScoreOnCanvas();drawGameTimer();
