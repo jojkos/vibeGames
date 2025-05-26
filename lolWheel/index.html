@@ -1,0 +1,386 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LoL Wheel of Champions</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #1a202c; /* Tailwind gray-900 */
+            color: #e2e8f0; /* Tailwind gray-200 */
+            transition: background-image 0.7s ease-in-out;
+            background-size: cover;
+            background-position: center;
+            background-repeat: no-repeat;
+        }
+        canvas {
+            display: block;
+            margin: 0 auto;
+            border-radius: 50%;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.3), 0 0 0 10px #2d3748; /* Tailwind gray-800 for border */
+        }
+        #pointer {
+            width: 0;
+            height: 0;
+            border-left: 20px solid transparent;
+            border-right: 20px solid transparent;
+            border-top: 35px solid #f59e0b; /* Tailwind amber-500 */
+            position: absolute;
+            top: -10px; /* Adjust to sit nicely on top of the canvas border */
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 10;
+        }
+        #spinButton {
+            position: absolute;
+            left: 50%;
+            top: 50%;
+            transform: translate(-50%, -50%);
+            z-index: 15; 
+        }
+        #currentSelectionDisplay {
+            position: absolute;
+            top: calc(50% + 60px); /* Position below the spin button */
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 16; /* Above canvas, potentially above button if overlap occurs */
+            min-width: 200px; /* Ensure it has some width */
+            padding: 5px 10px;
+            background-color: rgba(0,0,0,0.5); /* Semi-transparent background for readability */
+            border-radius: 0.375rem; /* Tailwind rounded-md */
+            text-shadow: 1px 1px 2px rgba(0,0,0,0.8);
+        }
+        #selectedChampionName {
+            text-shadow: 2px 2px 8px rgba(0,0,0,0.7);
+        }
+        .modal {
+            display: none; 
+            position: fixed;
+            z-index: 100;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            overflow: auto;
+            background-color: rgba(0,0,0,0.6);
+            align-items: center;
+            justify-content: center;
+        }
+        .modal-content {
+            background-color: #2d3748; 
+            margin: auto;
+            padding: 20px;
+            border: 1px solid #4a5568; 
+            width: 80%;
+            max-width: 500px;
+            border-radius: 0.5rem;
+            text-align: center;
+        }
+        .modal-close-button {
+            background-color: #718096; 
+            color: white;
+            padding: 10px 15px;
+            border-radius: 0.375rem;
+            cursor: pointer;
+            margin-top: 15px;
+        }
+    </style>
+</head>
+<body class="flex flex-col items-center justify-center min-h-screen p-4 overflow-hidden">
+
+    <div id="game-container" class="relative w-full max-w-[600px] sm:max-w-[700px] md:max-w-[800px] aspect-square flex items-center justify-center">
+        <canvas id="wheelCanvas"></canvas>
+        <div id="pointer"></div>
+        <button id="spinButton" class="bg-purple-600 hover:bg-purple-700 text-white font-bold py-4 px-10 rounded-lg shadow-md transition duration-150 ease-in-out text-2xl focus:outline-none focus:ring-2 focus:ring-purple-400">
+            Spin!
+        </button>
+        <div id="currentSelectionDisplay" class="text-center text-lg sm:text-xl font-semibold text-white opacity-0 transition-opacity duration-300">
+            Ready to Spin!
+        </div>
+    </div>
+
+    <div id="result" class="mt-8 text-center h-24"> 
+        <h2 id="selectedChampionName" class="text-4xl sm:text-5xl md:text-6xl font-bold transition-opacity duration-500 opacity-0"></h2>
+    </div>
+
+    <div id="messageModal" class="modal">
+        <div class="modal-content">
+            <p id="modalMessageText"></p>
+            <button id="modalCloseButton" class="modal-close-button">OK</button>
+        </div>
+    </div>
+
+    <script>
+        const champions = [
+            // Champion list remains the same
+            { name: "Aatrox", key: "Aatrox" }, { name: "Ahri", key: "Ahri" }, { name: "Akali", key: "Akali" },
+            { name: "Akshan", key: "Akshan" }, { name: "Alistar", key: "Alistar" }, { name: "Amumu", key: "Amumu" },
+            { name: "Anivia", key: "Anivia" }, { name: "Annie", key: "Annie" }, { name: "Aphelios", key: "Aphelios" },
+            { name: "Ashe", key: "Ashe" }, { name: "Aurelion Sol", key: "AurelionSol" }, { name: "Aurora", key: "Aurora" },
+            { name: "Azir", key: "Azir" }, { name: "Bard", key: "Bard" }, { name: "Bel’Veth", key: "Belveth" },
+            { name: "Blitzcrank", key: "Blitzcrank" }, { name: "Brand", key: "Brand" }, { name: "Braum", key: "Braum" },
+            { name: "Briar", key: "Briar" }, { name: "Caitlyn", key: "Caitlyn" }, { name: "Camille", key: "Camille" },
+            { name: "Cassiopeia", key: "Cassiopeia" }, { name: "Cho’Gath", key: "Chogath" }, { name: "Corki", key: "Corki" },
+            { name: "Darius", key: "Darius" }, { name: "Diana", key: "Diana" }, { name: "Dr. Mundo", key: "DrMundo" },
+            { name: "Draven", key: "Draven" }, { name: "Ekko", key: "Ekko" }, { name: "Elise", key: "Elise" },
+            { name: "Evelynn", key: "Evelynn" }, { name: "Ezreal", key: "Ezreal" }, { name: "Fiddlesticks", key: "FiddleSticks" },
+            { name: "Fiora", key: "Fiora" }, { name: "Fizz", key: "Fizz" }, { name: "Galio", key: "Galio" },
+            { name: "Gangplank", key: "Gangplank" }, { name: "Garen", key: "Garen" }, { name: "Gnar", key: "Gnar" },
+            { name: "Gragas", key: "Gragas" }, { name: "Graves", key: "Graves" }, { name: "Gwen", key: "Gwen" },
+            { name: "Hecarim", key: "Hecarim" }, { name: "Heimerdinger", key: "Heimerdinger" }, { name: "Hwei", key: "Hwei" },
+            { name: "Illaoi", key: "Illaoi" }, { name: "Irelia", key: "Irelia" }, { name: "Ivern", key: "Ivern" },
+            { name: "Janna", key: "Janna" }, { name: "Jarvan IV", key: "JarvanIV" }, { name: "Jax", key: "Jax" },
+            { name: "Jayce", key: "Jayce" }, { name: "Jhin", key: "Jhin" }, { name: "Jinx", key: "Jinx" },
+            { name: "K’Sante", key: "KSante" }, { name: "Kai’Sa", key: "KaiSa" }, { name: "Kalista", key: "Kalista" },
+            { name: "Karma", key: "Karma" }, { name: "Karthus", key: "Karthus" }, { name: "Kassadin", key: "Kassadin" },
+            { name: "Katarina", key: "Katarina" }, { name: "Kayle", key: "Kayle" }, { name: "Kayn", key: "Kayn" },
+            { name: "Kennen", key: "Kennen" }, { name: "Kha’Zix", key: "Khazix" }, { name: "Kindred", key: "Kindred" },
+            { name: "Kled", key: "Kled" }, { name: "Kog’Maw", key: "KogMaw" }, { name: "LeBlanc", key: "LeBlanc" },
+            { name: "Lee Sin", key: "LeeSin" }, { name: "Leona", key: "Leona" }, { name: "Lillia", key: "Lillia" },
+            { name: "Lissandra", key: "Lissandra" }, { name: "Lucian", key: "Lucian" }, { name: "Lulu", key: "Lulu" },
+            { name: "Lux", key: "Lux" }, { name: "Malphite", key: "Malphite" }, { name: "Malzahar", key: "Malzahar" },
+            { name: "Maokai", key: "Maokai" }, { name: "Master Yi", key: "MasterYi" }, { name: "Milio", key: "Milio" },
+            { name: "Miss Fortune", key: "MissFortune" }, { name: "Mordekaiser", key: "Mordekaiser" }, { name: "Morgana", key: "Morgana" },
+            { name: "Naafiri", key: "Naafiri" }, { name: "Nami", key: "Nami" }, { name: "Nasus", key: "Nasus" },
+            { name: "Nautilus", key: "Nautilus" }, { name: "Neeko", key: "Neeko" }, { name: "Nidalee", key: "Nidalee" },
+            { name: "Nilah", key: "Nilah" }, { name: "Nocturne", key: "Nocturne" }, { name: "Nunu & Willump", key: "Nunu" },
+            { name: "Olaf", key: "Olaf" }, { name: "Orianna", key: "Orianna" }, { name: "Ornn", key: "Ornn" },
+            { name: "Pantheon", key: "Pantheon" }, { name: "Poppy", key: "Poppy" }, { name: "Pyke", key: "Pyke" },
+            { name: "Qiyana", key: "Qiyana" }, { name: "Quinn", key: "Quinn" }, { name: "Rakan", key: "Rakan" },
+            { name: "Rammus", key: "Rammus" }, { name: "Rek’Sai", key: "Reksai" }, { name: "Rell", key: "Rell" },
+            { name: "Renata Glasc", key: "RenataGlasc" }, { name: "Renekton", key: "Renekton" }, { name: "Rengar", key: "Rengar" },
+            { name: "Riven", key: "Riven" }, { name: "Rumble", key: "Rumble" }, { name: "Ryze", key: "Ryze" },
+            { name: "Samira", key: "Samira" }, { name: "Sejuani", key: "Sejuani" }, { name: "Senna", key: "Senna" },
+            { name: "Seraphine", key: "Seraphine" }, { name: "Sett", key: "Sett" }, { name: "Shaco", key: "Shaco" },
+            { name: "Shen", key: "Shen" }, { name: "Shyvana", key: "Shyvana" }, { name: "Singed", key: "Singed" },
+            { name: "Sion", key: "Sion" }, { name: "Sivir", key: "Sivir" }, { name: "Skarner", key: "Skarner" },
+            { name: "Smolder", key: "Smolder" }, { name: "Sona", key: "Sona" }, { name: "Soraka", key: "Soraka" },
+            { name: "Swain", key: "Swain" }, { name: "Sylas", key: "Sylas" }, { name: "Syndra", key: "Syndra" },
+            { name: "Tahm Kench", key: "TahmKench" }, { name: "Taliyah", key: "Taliyah" }, { name: "Talon", key: "Talon" },
+            { name: "Taric", key: "Taric" }, { name: "Teemo", key: "Teemo" }, { name: "Thresh", key: "Thresh" },
+            { name: "Tristana", key: "Tristana" }, { name: "Trundle", key: "Trundle" }, { name: "Tryndamere", key: "Tryndamere" },
+            { name: "Twisted Fate", key: "TwistedFate" }, { name: "Twitch", key: "Twitch" }, { name: "Udyr", key: "Udyr" },
+            { name: "Urgot", key: "Urgot" }, { name: "Varus", key: "Varus" }, { name: "Vayne", key: "Vayne" },
+            { name: "Veigar", key: "Veigar" }, { name: "Vel’Koz", key: "Velkoz" }, { name: "Vex", key: "Vex" },
+            { name: "Vi", key: "Vi" }, { name: "Viego", key: "Viego" }, { name: "Viktor", key: "Viktor" },
+            { name: "Vladimir", key: "Vladimir" }, { name: "Volibear", key: "Volibear" }, { name: "Warwick", key: "Warwick" },
+            { name: "Wukong", key: "MonkeyKing" }, { name: "Xayah", key: "Xayah" }, { name: "Xerath", key: "Xerath" },
+            { name: "Xin Zhao", key: "XinZhao" }, { name: "Yasuo", key: "Yasuo" }, { name: "Yone", key: "Yone" },
+            { name: "Yorick", key: "Yorick" }, { name: "Yuumi", key: "Yuumi" }, { name: "Zac", key: "Zac" },
+            { name: "Zed", key: "Zed" }, { name: "Zeri", key: "Zeri" }, { name: "Ziggs", key: "Ziggs" },
+            { name: "Zilean", key: "Zilean" }, { name: "Zoe", key: "Zoe" }, { name: "Zyra", key: "Zyra" }
+        ];
+
+        const canvas = document.getElementById('wheelCanvas');
+        const ctx = canvas.getContext('2d');
+        const spinButton = document.getElementById('spinButton');
+        const selectedChampionNameDisplay = document.getElementById('selectedChampionName');
+        const currentSelectionDisplay = document.getElementById('currentSelectionDisplay'); // New element
+        
+        const modal = document.getElementById('messageModal');
+        const modalMessageText = document.getElementById('modalMessageText');
+        const modalCloseButton = document.getElementById('modalCloseButton');
+
+        let currentAngle = 0;
+        let isSpinning = false;
+        const numChampions = champions.length;
+        const arcSize = (2 * Math.PI) / numChampions;
+        
+        const segmentColors = ["#6b46c1", "#b794f4", "#553c9a", "#9f7aea"]; 
+        const pointerFixedAngle = 3 * Math.PI / 2; 
+
+        let canvasSize = 600; 
+        let radius = canvasSize / 2 - 15; 
+        let centerX = canvasSize / 2;
+        let centerY = canvasSize / 2;
+
+        function resizeCanvas() {
+            const container = document.getElementById('game-container');
+            let containerWidth = container.offsetWidth;
+            if (containerWidth === 0) { 
+                 containerWidth = Math.min(window.innerWidth, 800) * 0.9; 
+            }
+            canvasSize = Math.min(800, containerWidth * 0.95); 
+            if (canvasSize < 200) canvasSize = 200;
+            
+            canvas.width = canvasSize;
+            canvas.height = canvasSize;
+            
+            radius = canvasSize / 2 - (canvasSize * 0.025); 
+            centerX = canvasSize / 2;
+            centerY = canvasSize / 2;
+            drawWheel();
+            updateCurrentSelectionDisplay(false); // Update display on resize if not spinning
+        }
+
+        function drawWheel() {
+            ctx.clearRect(0, 0, canvasSize, canvasSize);
+            ctx.font = `${Math.max(6, Math.floor(radius / 25))}px Inter, sans-serif`; 
+            ctx.textBaseline = 'middle';
+
+            for (let i = 0; i < numChampions; i++) {
+                const angle = currentAngle + i * arcSize;
+                ctx.fillStyle = segmentColors[i % segmentColors.length];
+
+                ctx.beginPath();
+                ctx.arc(centerX, centerY, radius, angle, angle + arcSize, false);
+                ctx.arc(centerX, centerY, radius * 0.25, angle + arcSize, angle, true); 
+                ctx.closePath();
+                ctx.fill();
+
+                ctx.save();
+                ctx.fillStyle = "#FFFFFF"; 
+                ctx.translate(centerX, centerY);
+                const textAngle = angle + arcSize / 2;
+                ctx.rotate(textAngle);
+                
+                const championName = champions[i].name;
+                const textRadius = radius * 0.65; 
+                
+                let nameToDraw = championName;
+                if (radius < 150 && championName.length > 5) { 
+                    nameToDraw = championName.substring(0,4) + ".";
+                } else if (numChampions > 100 && championName.length > 7) { 
+                     nameToDraw = championName.substring(0,6)+"...";
+                }
+                
+                ctx.textAlign = 'center'; 
+                const effectiveTextRadius = (nameToDraw.length > 6 && radius > 150) ? textRadius * 1.15 : textRadius;
+                ctx.fillText(nameToDraw, effectiveTextRadius, 0);
+                ctx.restore();
+            }
+        }
+        
+        function showModal(message) {
+            modalMessageText.textContent = message;
+            modal.style.display = 'flex';
+        }
+
+        modalCloseButton.onclick = function() {
+            modal.style.display = 'none';
+        }
+        window.onclick = function(event) {
+            if (event.target == modal) {
+                modal.style.display = 'none';
+            }
+        }
+
+        function updateCurrentSelectionDisplay(spinning = isSpinning) {
+            // This function updates the text below the spin button
+            const normalizedAngle = (currentAngle % (2 * Math.PI) + 2 * Math.PI) % (2 * Math.PI);
+            const effectivePointer = (pointerFixedAngle - normalizedAngle + 2 * Math.PI) % (2 * Math.PI);
+            const currentIndex = Math.floor(effectivePointer / arcSize);
+            const currentChamp = champions[currentIndex];
+
+            if (currentChamp) {
+                currentSelectionDisplay.textContent = currentChamp.name;
+                currentSelectionDisplay.style.opacity = '1';
+            } else {
+                currentSelectionDisplay.textContent = spinning ? 'Spinning...' : 'Ready';
+                currentSelectionDisplay.style.opacity = spinning ? '1' : '0.7';
+            }
+        }
+
+
+        function spin() {
+            if (isSpinning) return;
+            isSpinning = true;
+            spinButton.disabled = true;
+            spinButton.classList.add('opacity-50', 'cursor-not-allowed'); 
+            spinButton.classList.remove('hover:bg-purple-700');
+
+            selectedChampionNameDisplay.style.opacity = '0';
+            currentSelectionDisplay.textContent = 'Spinning...'; // Initial text for spinning
+            currentSelectionDisplay.style.opacity = '1';
+
+
+            const spinDuration = 7000; 
+            const randomExtraSpins = Math.floor(Math.random() * 5) + 8; 
+            const targetRandomAngle = Math.random() * 2 * Math.PI; 
+
+            const currentEffectiveAngle = (currentAngle % (2 * Math.PI) + 2*Math.PI) % (2*Math.PI);
+            let totalRotation = (randomExtraSpins * 2 * Math.PI) - currentEffectiveAngle + targetRandomAngle;
+            
+            if (totalRotation < 0) totalRotation += (Math.ceil(Math.abs(totalRotation)/(2*Math.PI)) * 2 * Math.PI);
+
+            let startTime = null;
+            const startAngle = currentAngle;
+
+            function animateSpin(timestamp) {
+                if (!startTime) startTime = timestamp;
+                const elapsedTime = timestamp - startTime;
+                const progress = Math.min(elapsedTime / spinDuration, 1);
+                
+                const easedProgress = Math.pow(progress - 1, 5) + 1; 
+
+                currentAngle = startAngle + totalRotation * easedProgress;
+                drawWheel();
+                updateCurrentSelectionDisplay(true); // Update hovered champ name during spin
+
+                if (progress < 1) {
+                    requestAnimationFrame(animateSpin);
+                } else {
+                    currentAngle %= (2 * Math.PI); 
+                    finishSpin();
+                }
+            }
+            requestAnimationFrame(animateSpin);
+        }
+
+        function finishSpin() {
+            isSpinning = false;
+            spinButton.disabled = false;
+            spinButton.classList.remove('opacity-50', 'cursor-not-allowed');
+            spinButton.classList.add('hover:bg-purple-700');
+
+            const normalizedCurrentAngle = (currentAngle % (2 * Math.PI) + 2 * Math.PI) % (2 * Math.PI);
+            const effectivePointerPosition = (pointerFixedAngle - normalizedCurrentAngle + 2 * Math.PI) % (2 * Math.PI);
+            const winningIndex = Math.floor(effectivePointerPosition / arcSize);
+            
+            const winner = champions[winningIndex];
+
+            if (winner) {
+                // Update the display under the spin button with the final winner
+                currentSelectionDisplay.textContent = winner.name.toUpperCase();
+                currentSelectionDisplay.style.opacity = '1';
+
+                // Update the large display at the bottom of the page
+                selectedChampionNameDisplay.textContent = winner.name.toUpperCase();
+                selectedChampionNameDisplay.style.opacity = '1';
+
+                const imageUrl = `https://ddragon.leagueoflegends.com/cdn/img/champion/splash/${winner.key}_0.jpg`;
+                const img = new Image();
+                img.onload = () => {
+                    document.body.style.backgroundImage = `url(${imageUrl})`;
+                    document.body.style.backgroundColor = 'transparent'; 
+                };
+                img.onerror = () => {
+                    console.error(`Failed to load image for ${winner.name}`);
+                    document.body.style.backgroundImage = ''; 
+                    document.body.style.backgroundColor = '#1a202c'; 
+                    showModal(`Could not load image for ${winner.name}. Using default background.`);
+                };
+                img.src = imageUrl;
+            } else {
+                console.error("Could not determine winner. Winning index:", winningIndex, "Current Angle:", currentAngle, "Effective Pointer:", effectivePointerPosition);
+                selectedChampionNameDisplay.textContent = "Error!";
+                selectedChampionNameDisplay.style.opacity = '1';
+                currentSelectionDisplay.textContent = "Error!";
+                currentSelectionDisplay.style.opacity = '1';
+                showModal("An error occurred while determining the winner.");
+            }
+        }
+
+        spinButton.addEventListener('click', spin);
+        
+        window.addEventListener('load', () => {
+            resizeCanvas(); // This will call drawWheel and updateCurrentSelectionDisplay
+            document.body.style.backgroundColor = '#1a202c'; 
+        });
+        window.addEventListener('resize', resizeCanvas);
+
+    </script>
+</body>
+</html>
