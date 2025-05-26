@@ -1,0 +1,422 @@
+<!DOCTYPE html>
+<html lang="cs">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pokémon Hunt</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/tone/14.8.49/Tone.min.js"></script>
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            overflow: hidden;
+            background-color: #f0f0f0;
+        }
+        #game-container {
+            /* Použití skutečného obrázku oblohy s mraky z Unsplash */
+            background-image: url('https://images.unsplash.com/photo-1534088568595-a066f410bcda?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1200&q=80');
+            background-size: cover;
+            background-position: center;
+            cursor: crosshair;
+            position: relative;
+            width: 100vw;
+            height: 100vh;
+            border-radius: 0;
+        }
+        #pokemon-layer {
+            position: absolute;
+            inset: 0;
+            z-index: 1; /* Vrstva pro Pokémony */
+        }
+        .pokemon {
+            position: absolute;
+            width: 90px; /* Mírně větší Pokémoni */
+            height: 90px;
+            background-size: contain;
+            background-repeat: no-repeat;
+            background-position: center;
+            transition: transform 0.1s ease-out;
+            user-select: none;
+            z-index: 5; /* Pokémoni jsou nad vrstvou pokemon-layer */
+        }
+        .pokemon:hover {
+            transform: scale(1.1);
+        }
+        .screen-overlay {
+            position: absolute;
+            inset: 0;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            background-color: rgba(0, 0, 0, 0.75);
+            z-index: 30; /* Nejvyšší vrstva pro překryvy */
+            padding: 20px;
+            text-align: center;
+        }
+        #hud {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            padding: 16px; /* Větší padding */
+            display: flex;
+            justify-content: space-between;
+            font-size: 1.5rem; /* Větší text */
+            font-weight: bold;
+            z-index: 25; /* HUD je nad Pokémony a hit markery */
+            color: white;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.7);
+        }
+        .hud-element {
+            background-color: rgba(0, 0, 0, 0.6);
+            padding: 10px 20px;
+            border-radius: 10px;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.3);
+        }
+        button {
+            transition: background-color 0.3s ease, transform 0.1s ease, box-shadow 0.3s ease;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+        button:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 6px 12px rgba(0,0,0,0.2);
+        }
+        button:active {
+            transform: translateY(-1px);
+            box-shadow: 0 2px 4px rgba(0,0,0,0.15);
+        }
+        .hit-marker {
+            position: absolute;
+            width: 25px; /* Větší hit marker */
+            height: 25px;
+            background-color: rgba(255, 255, 0, 0.8); /* Jasnější žlutá */
+            border: 2px solid white;
+            border-radius: 50%;
+            transform: translate(-50%, -50%) scale(0);
+            animation: hitMarkerAnim 0.25s ease-out forwards;
+            pointer-events: none;
+            z-index: 15; /* Hit marker je nad Pokémony, ale pod HUD */
+        }
+        @keyframes hitMarkerAnim {
+            0% { transform: translate(-50%, -50%) scale(0); opacity: 1; }
+            50% { transform: translate(-50%, -50%) scale(1.3); opacity: 0.7; }
+            100% { transform: translate(-50%, -50%) scale(1.1); opacity: 0; }
+        }
+        #buy-me-a-coffee-link {
+            position: absolute;
+            bottom: 10px;
+            left: 10px;
+            z-index: 35; /* Nad ostatními prvky, ale pod případnými modálními okny */
+            background-color: #FFDD00; /* Barva Buy Me a Coffee */
+            color: #000000;
+            padding: 8px 12px;
+            border-radius: 8px;
+            text-decoration: none;
+            font-size: 0.9rem;
+            font-weight: bold;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+            transition: transform 0.2s ease, background-color 0.2s ease;
+        }
+        #buy-me-a-coffee-link:hover {
+            transform: scale(1.05);
+            background-color: #FFE64D;
+        }
+    </style>
+</head>
+<body class="bg-gray-100 flex items-center justify-center h-screen m-0">
+
+    <div id="game-container">
+        <div id="hud">
+            <div class="hud-element">Skóre: <span id="score">0</span></div>
+            <div class="hud-element">Čas: <span id="timer">60</span>s</div>
+        </div>
+
+        <div id="pokemon-layer">
+            </div>
+
+        <div id="start-screen" class="screen-overlay">
+            <h1 class="text-5xl sm:text-6xl text-yellow-400 mb-6 font-extrabold tracking-tight">Pokémon Hunt</h1>
+            <p class="text-xl text-white mb-8 max-w-md">Klikni na co nejvíce Pokémonů, než vyprší čas! Pokus se získat co nejvyšší skóre.</p>
+            <button id="start-button" class="px-10 py-5 bg-yellow-500 text-gray-900 text-2xl font-semibold rounded-xl hover:bg-yellow-600 shadow-lg">
+                Start Hru
+            </button>
+        </div>
+
+        <div id="game-over-screen" class="screen-overlay hidden">
+            <h1 class="text-5xl sm:text-6xl text-red-500 mb-6 font-extrabold">Konec Hry!</h1>
+            <p class="text-3xl text-white mb-4">Tvé konečné skóre:</p>
+            <p id="final-score" class="text-6xl text-yellow-400 font-bold mb-8">0</p>
+            <button id="restart-button" class="px-10 py-5 bg-green-500 text-white text-2xl font-semibold rounded-xl hover:bg-green-600 shadow-lg">
+                Hrát Znovu
+            </button>
+        </div>
+
+        <a href="https://buymeacoffee.com/jojkos" target="_blank" id="buy-me-a-coffee-link">
+            Kup mi kafe ☕
+        </a>
+    </div>
+
+    <script>
+        // Herní elementy
+        const gameContainer = document.getElementById('game-container');
+        const pokemonLayer = document.getElementById('pokemon-layer');
+        const scoreDisplay = document.getElementById('score');
+        const timerDisplay = document.getElementById('timer');
+        const startScreen = document.getElementById('start-screen');
+        const gameOverScreen = document.getElementById('game-over-screen');
+        const startButton = document.getElementById('start-button');
+        const restartButton = document.getElementById('restart-button');
+        const finalScoreDisplay = document.getElementById('final-score');
+        const hud = document.getElementById('hud');
+
+        // Herní proměnné
+        let score = 0;
+        let timeLeft = 60;
+        let spawnIntervalId;
+        let timerIntervalId;
+        let gameActive = false;
+        let voices = []; // Pro uložení dostupných hlasů pro TTS
+
+        // Zvukové syntezátory (Tone.js)
+        let shootSynth, hitSynth;
+
+        // Funkce pro TTS
+        function speakPokemonName(name) {
+            if ('speechSynthesis' in window) {
+                // Zruší předchozí řeč, pokud nějaká probíhá, aby se zvuky nepřekrývaly
+                window.speechSynthesis.cancel(); 
+                const utterance = new SpeechSynthesisUtterance(name);
+                
+                // Pokus o nalezení anglického hlasu
+                let englishVoice = voices.find(voice => voice.lang === 'en-US');
+                if (!englishVoice) {
+                    englishVoice = voices.find(voice => voice.lang.startsWith('en-'));
+                }
+
+                if (englishVoice) {
+                    utterance.voice = englishVoice;
+                } else {
+                    // Pokud není nalezen specifický anglický hlas, nastaví se jazyk, prohlížeč vybere výchozí
+                    utterance.lang = 'en-US'; 
+                    console.warn("English (US) voice not found, using default for en-US.");
+                }
+                // Můžete experimentovat s těmito hodnotami pro jiný efekt
+                // utterance.pitch = 1.2; 
+                // utterance.rate = 1.1;
+                window.speechSynthesis.speak(utterance);
+            } else {
+                console.warn("Speech synthesis not supported in this browser.");
+            }
+        }
+
+        // Načtení hlasů pro TTS (může být asynchronní)
+        function loadVoices() {
+            voices = window.speechSynthesis.getVoices();
+            if (voices.length === 0) {
+                // Někdy se hlasy načtou až po tomto eventu
+                window.speechSynthesis.onvoiceschanged = () => {
+                    voices = window.speechSynthesis.getVoices();
+                    console.log("Voices loaded:", voices.length);
+                };
+            } else {
+                 console.log("Voices pre-loaded:", voices.length);
+            }
+        }
+        
+        // Zavoláme loadVoices při startu, aby se pokusily načíst co nejdříve
+        if ('speechSynthesis' in window) {
+            loadVoices();
+             // Pro jistotu ještě jednou po krátké prodlevě, pokud by onvoiceschanged nebylo spolehlivé hned
+            setTimeout(loadVoices, 500);
+        }
+
+
+        // Inicializace zvuků (až po interakci uživatele)
+        async function initializeAudio() {
+            if (Tone.context.state !== 'running') {
+                await Tone.start();
+                console.log("Audio context for Tone.js started.");
+            }
+            shootSynth = new Tone.Synth({
+                oscillator: { type: 'triangle' },
+                envelope: { attack: 0.005, decay: 0.1, sustain: 0.01, release: 0.1 }
+            }).toDestination();
+
+            hitSynth = new Tone.MembraneSynth({
+                pitchDecay: 0.01,
+                octaves: 5,
+                oscillator: { type: "sine" },
+                envelope: { attack: 0.001, decay: 0.2, sustain: 0.01, release: 0.2 }
+            }).toDestination();
+            
+            // Načtení hlasů pro TTS, pokud ještě nebyly
+            if (voices.length === 0 && 'speechSynthesis' in window) {
+                loadVoices();
+            }
+        }
+        
+        // Seznam Pokémonů s jejich vlastnostmi
+        const pokemonTypes = [
+            { name: 'Pikachu', id: 25, points: 10, speed: 1.5, image: 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/25.png' },
+            { name: 'Bulbasaur', id: 1, points: 5, speed: 1, image: 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/1.png' },
+            { name: 'Charmander', id: 4, points: 15, speed: 1.8, image: 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/4.png' },
+            { name: 'Squirtle', id: 7, points: 10, speed: 1.2, image: 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/7.png' },
+            { name: 'Pidgey', id: 16, points: 3, speed: 2.5, image: 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/16.png' },
+            { name: 'Rattata', id: 19, points: 2, speed: 2.8, image: 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/19.png' },
+            { name: 'Jigglypuff', id: 39, points: 8, speed: 0.8, image: 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/39.png' },
+            { name: 'Zubat', id: 41, points: 4, speed: 3, image: 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/41.png' }
+        ];
+
+        // Funkce pro spuštění hry
+        async function startGame() {
+            await initializeAudio(); 
+            score = 0;
+            timeLeft = 60;
+            gameActive = true;
+            updateScoreDisplay();
+            updateTimerDisplay();
+
+            startScreen.classList.add('hidden');
+            gameOverScreen.classList.add('hidden');
+            hud.classList.remove('hidden');
+            pokemonLayer.innerHTML = ''; 
+
+            timerIntervalId = setInterval(() => {
+                timeLeft--;
+                updateTimerDisplay();
+                if (timeLeft <= 0) {
+                    endGame();
+                }
+            }, 1000);
+
+            spawnIntervalId = setInterval(spawnPokemon, 1200); 
+        }
+
+        function endGame() {
+            gameActive = false;
+            clearInterval(timerIntervalId);
+            clearInterval(spawnIntervalId);
+            if ('speechSynthesis' in window) { // Zastaví jakoukoliv probíhající řeč na konci hry
+                window.speechSynthesis.cancel();
+            }
+            
+            finalScoreDisplay.textContent = score;
+            gameOverScreen.classList.remove('hidden');
+            hud.classList.add('hidden');
+            setTimeout(() => {
+                 pokemonLayer.innerHTML = '';
+            }, 500);
+        }
+
+        function updateScoreDisplay() {
+            scoreDisplay.textContent = score;
+        }
+
+        function updateTimerDisplay() {
+            timerDisplay.textContent = timeLeft;
+        }
+
+        function spawnPokemon() {
+            if (!gameActive) return;
+
+            const randomType = pokemonTypes[Math.floor(Math.random() * pokemonTypes.length)];
+            const pokemonElement = document.createElement('div');
+            pokemonElement.classList.add('pokemon');
+            pokemonElement.style.backgroundImage = `url('${randomType.image}')`;
+            pokemonElement.dataset.name = randomType.name; // Uložíme jméno pro TTS
+
+            const imgTest = new Image();
+            imgTest.onerror = () => {
+                pokemonElement.style.backgroundImage = `url('https://placehold.co/90x90/CCCCCC/000000?text=${randomType.name.substring(0,3)}')`;
+                console.warn(`Failed to load image for ${randomType.name}, using placeholder.`);
+            };
+            imgTest.src = randomType.image; 
+
+            pokemonElement.dataset.points = randomType.points;
+
+            let startX, startY, endX, endY;
+            const side = Math.floor(Math.random() * 4);
+            const gameWidth = gameContainer.clientWidth;
+            const gameHeight = gameContainer.clientHeight;
+            const pokeSize = 90; 
+
+            switch (side) {
+                case 0: startX = Math.random() * (gameWidth - pokeSize); startY = -pokeSize; endX = Math.random() * (gameWidth - pokeSize); endY = gameHeight + pokeSize; break;
+                case 1: startX = gameWidth + pokeSize; startY = Math.random() * (gameHeight - pokeSize); endX = -pokeSize; endY = Math.random() * (gameHeight - pokeSize); break;
+                case 2: startX = Math.random() * (gameWidth - pokeSize); startY = gameHeight + pokeSize; endX = Math.random() * (gameWidth - pokeSize); endY = -pokeSize; break;
+                case 3: startX = -pokeSize; startY = Math.random() * (gameHeight - pokeSize); endX = gameWidth + pokeSize; endY = Math.random() * (gameHeight - pokeSize); break;
+            }
+
+            pokemonElement.style.left = `${startX}px`;
+            pokemonElement.style.top = `${startY}px`;
+            pokemonLayer.appendChild(pokemonElement);
+
+            const baseDuration = 6000; 
+            const speedFactor = randomType.speed || 1; 
+            const duration = (Math.random() * 3000) + baseDuration / speedFactor; 
+
+            pokemonElement.animate([
+                { transform: `translate(${endX - startX}px, ${endY - startY}px) rotate(${Math.random() * 120 - 60}deg)` } 
+            ], {
+                duration: duration,
+                easing: 'linear'
+            }).onfinish = () => {
+                if (pokemonElement.parentNode) {
+                    pokemonElement.remove();
+                }
+            };
+            
+            pokemonElement.addEventListener('click', (e) => {
+                e.stopPropagation(); 
+                if (!gameActive || pokemonElement.dataset.hit) return; 
+                
+                pokemonElement.dataset.hit = "true"; 
+                score += parseInt(pokemonElement.dataset.points);
+                updateScoreDisplay();
+                
+                if (hitSynth) hitSynth.triggerAttackRelease("C3", "8n", Tone.now());
+                speakPokemonName(pokemonElement.dataset.name); // Přehraje jméno Pokémona
+
+                pokemonElement.style.transition = 'transform 0.2s ease-out, opacity 0.2s ease-out';
+                pokemonElement.style.transform = 'scale(0.3) rotate(360deg)'; 
+                pokemonElement.style.opacity = '0';
+                
+                setTimeout(() => {
+                    if (pokemonElement.parentNode) {
+                         pokemonElement.remove();
+                    }
+                }, 200);
+            });
+        }
+
+        gameContainer.addEventListener('click', (event) => {
+            if (!gameActive || event.target.classList.contains('pokemon') || event.target.closest('.hud-element') || event.target.closest('.screen-overlay button')) {
+                 return;
+            }
+
+            if (shootSynth) shootSynth.triggerAttackRelease("C5", "32n", Tone.now());
+
+            const hitMarker = document.createElement('div');
+            hitMarker.classList.add('hit-marker');
+            hitMarker.style.left = `${event.offsetX}px`;
+            hitMarker.style.top = `${event.offsetY}px`;
+            
+            gameContainer.appendChild(hitMarker); 
+
+            setTimeout(() => {
+                hitMarker.remove();
+            }, 250); 
+        });
+
+        startButton.addEventListener('click', startGame);
+        restartButton.addEventListener('click', startGame);
+
+        window.addEventListener('resize', () => {
+            // Logika pro přizpůsobení velikosti okna
+        });
+
+        hud.classList.add('hidden');
+    </script>
+</body>
+</html>
