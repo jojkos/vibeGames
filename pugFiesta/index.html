@@ -1,589 +1,1812 @@
 <!DOCTYPE html>
 <html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <head>
+    <meta charset="UTF-8" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"
+    />
     <title>Pug Banger Fiesta</title>
-    <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
+    <link
+      href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap"
+      rel="stylesheet"
+    />
     <script src="https://cdnjs.cloudflare.com/ajax/libs/tone/14.8.49/Tone.min.js"></script>
     <script type="module">
-        // Firebase App (the core Firebase SDK) is always required and must be listed first
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
-        // Add SDKs for Firebase products that you want to use
-        import { getAuth, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
-        import { getFirestore, collection, addDoc, query, orderBy, limit, getDocs, Timestamp, setLogLevel, serverTimestamp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js"; 
+      // Firebase App (the core Firebase SDK) is always required and must be listed first
+      import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+      // Add SDKs for Firebase products that you want to use
+      import {
+        getAuth,
+        signInAnonymously,
+        onAuthStateChanged,
+      } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+      import {
+        getFirestore,
+        collection,
+        addDoc,
+        query,
+        orderBy,
+        limit,
+        getDocs,
+        Timestamp,
+        setLogLevel,
+        serverTimestamp,
+      } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
-        // --- Firebase Initialization ---
-        const appId = typeof __app_id !== 'undefined' ? __app_id : 'pug-tagger-default-app'; 
-        const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : {
-             apiKey: "AIzaSyAG-fkocVppD9PUKw2Y0HU0q0mSG3B3jZo", 
-             authDomain: "brainrotclickerleaderboard.firebaseapp.com", 
-             projectId: "brainrotclickerleaderboard", 
-             storageBucket: "brainrotclickerleaderboard.appspot.com", 
-             messagingSenderId: "621809902994", 
-             appId: "1:621809902994:web:4ddc238f0be3d857978d4b" 
-        };
+      // --- Firebase Initialization ---
+      const appId =
+        typeof __app_id !== "undefined" ? __app_id : "pug-tagger-default-app";
+      const firebaseConfig =
+        typeof __firebase_config !== "undefined"
+          ? JSON.parse(__firebase_config)
+          : {
+              apiKey: "AIzaSyAG-fkocVppD9PUKw2Y0HU0q0mSG3B3jZo",
+              authDomain: "brainrotclickerleaderboard.firebaseapp.com",
+              projectId: "brainrotclickerleaderboard",
+              storageBucket: "brainrotclickerleaderboard.appspot.com",
+              messagingSenderId: "621809902994",
+              appId: "1:621809902994:web:4ddc238f0be3d857978d4b",
+            };
 
-        let fbApp;
-        let fbAuth;
-        let db;
-        let currentUserId = null; 
+      let fbApp;
+      let fbAuth;
+      let db;
+      let currentUserId = null;
 
-        try {
-            fbApp = initializeApp(firebaseConfig);
-            fbAuth = getAuth(fbApp);
-            db = getFirestore(fbApp);
-            setLogLevel('debug'); 
-            console.log("Firebase initialized. App ID:", appId);
+      try {
+        fbApp = initializeApp(firebaseConfig);
+        fbAuth = getAuth(fbApp);
+        db = getFirestore(fbApp);
+        setLogLevel("debug");
+        console.log("Firebase initialized. App ID:", appId);
 
-            onAuthStateChanged(fbAuth, (user) => {
-                if (user) {
-                    currentUserId = user.uid;
-                    console.log("User signed in anonymously:", currentUserId);
-                } else {
-                    console.log("User is signed out. Attempting anonymous sign-in.");
-                    signInAnonymously(fbAuth)
-                        .then((userCredential) => {
-                            currentUserId = userCredential.user.uid;
-                            console.log("Signed in anonymously after initial check:", currentUserId);
-                        })
-                        .catch((error) => {
-                            console.error("Error signing in anonymously:", error);
-                            currentUserId = `fallbackUser_${Date.now()}`; 
-                        });
-                }
-            });
+        onAuthStateChanged(fbAuth, (user) => {
+          if (user) {
+            currentUserId = user.uid;
+            console.log("User signed in anonymously:", currentUserId);
+          } else {
+            console.log("User is signed out. Attempting anonymous sign-in.");
+            signInAnonymously(fbAuth)
+              .then((userCredential) => {
+                currentUserId = userCredential.user.uid;
+                console.log(
+                  "Signed in anonymously after initial check:",
+                  currentUserId
+                );
+              })
+              .catch((error) => {
+                console.error("Error signing in anonymously:", error);
+                currentUserId = `fallbackUser_${Date.now()}`;
+              });
+          }
+        });
+      } catch (error) {
+        console.error("Error initializing Firebase:", error);
+        db = null;
+        fbAuth = null;
+      }
 
-        } catch (error) {
-            console.error("Error initializing Firebase:", error);
-            db = null; 
-            fbAuth = null;
-        }
-
-        window.fbApp = fbApp;
-        window.fbAuth = fbAuth;
-        window.db = db;
-        window.firebase = { 
-            collection, addDoc, query, orderBy, limit, getDocs, Timestamp, serverTimestamp 
-        };
-        window.appIdGlobal = appId; 
-
+      window.fbApp = fbApp;
+      window.fbAuth = fbAuth;
+      window.db = db;
+      window.firebase = {
+        collection,
+        addDoc,
+        query,
+        orderBy,
+        limit,
+        getDocs,
+        Timestamp,
+        serverTimestamp,
+      };
+      window.appIdGlobal = appId;
     </script>
     <style>
-        body { margin: 0; display: flex; flex-direction: column; align-items: center; height: 100vh; width: 100vw; background-color: #2c2c2c; font-family: 'Press Start 2P', cursive; color: #fff; overflow: hidden; -webkit-tap-highlight-color: transparent; }
-        h1.game-title { margin: 10px 0; font-size: 1.5em; color: #ffd700; text-shadow: 2px 2px #000; text-align: center; position: relative; z-index: 10; }
-        #gameContainer { width: 100%; flex-grow: 1; display: flex; justify-content: center; align-items: center; position: relative; }
-        canvas { border: 2px solid #000; background-color: #78c850; image-rendering: pixelated; image-rendering: -moz-crisp-edges; image-rendering: crisp-edges; box-shadow: 0 0 10px rgba(0,0,0,0.5); max-width: 100%; max-height: 100%; aspect-ratio: 4 / 3; display: none; }
-        
-        .screen-overlay { display: none; flex-direction: column; justify-content: center; align-items: center; width: 100%; height: 100%; position: absolute; top: 0; left: 0; background-color: rgba(44, 44, 44, 0.95); z-index: 200; padding: 20px; box-sizing: border-box; text-align: center; }
-        #menuScreen { display: flex; }
-        
-        #menuLogo { width: 200px; height: auto; margin-bottom: 30px; animation: pulseLogo 2s infinite ease-in-out; }
-        @keyframes pulseLogo { 0% { transform: scale(1); } 50% { transform: scale(1.1); } 100% { transform: scale(1); } }
-        
-        .menu-button, .action-button { font-family: 'Press Start 2P', cursive; font-size: 1em; color: #ffd700; background-color: rgba(80, 80, 80, 0.7); border: 2px solid #ffd700; padding: 12px 25px; margin: 8px; border-radius: 8px; cursor: pointer; text-shadow: 1px 1px #000; transition: background-color 0.2s, transform 0.1s; }
-        .menu-button:hover, .action-button:hover { background-color: rgba(100, 100, 100, 0.9); transform: scale(1.05); }
-        
-        .btn-3d {
-            background-color: #f39c12; /* Orange */
-            border: none;
-            border-bottom: 4px solid #c0392b; /* Darker orange/red */
-            color: white;
-            text-shadow: 0 -1px 0 #7f2319;
+      body {
+        margin: 0;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        height: 100vh;
+        width: 100vw;
+        background-color: #2c2c2c;
+        font-family: "Press Start 2P", cursive;
+        color: #fff;
+        overflow: hidden;
+        -webkit-tap-highlight-color: transparent;
+      }
+      h1.game-title {
+        margin: 10px 0;
+        font-size: 1.5em;
+        color: #ffd700;
+        text-shadow: 2px 2px #000;
+        text-align: center;
+        position: relative;
+        z-index: 10;
+      }
+      #gameContainer {
+        width: 100%;
+        flex-grow: 1;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        position: relative;
+      }
+      canvas {
+        border: 2px solid #000;
+        background-color: #78c850;
+        image-rendering: pixelated;
+        image-rendering: -moz-crisp-edges;
+        image-rendering: crisp-edges;
+        box-shadow: 0 0 10px rgba(0, 0, 0, 0.5);
+        max-width: 100%;
+        max-height: 100%;
+        aspect-ratio: 4 / 3;
+        display: none;
+      }
+
+      .screen-overlay {
+        display: none;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+        width: 100%;
+        height: 100%;
+        position: absolute;
+        top: 0;
+        left: 0;
+        background-color: rgba(44, 44, 44, 0.95);
+        z-index: 200;
+        padding: 20px;
+        box-sizing: border-box;
+        text-align: center;
+      }
+      #menuScreen {
+        display: flex;
+      }
+
+      #menuLogo {
+        width: 200px;
+        height: auto;
+        margin-bottom: 30px;
+        animation: pulseLogo 2s infinite ease-in-out;
+      }
+      @keyframes pulseLogo {
+        0% {
+          transform: scale(1);
         }
-        .btn-3d:hover {
-            background-color: #e67e22;
-             border-bottom: 4px solid #a32d20;
+        50% {
+          transform: scale(1.1);
         }
-        .btn-3d:active {
-            transform: translateY(2px) scale(1.05);
-            border-bottom-width: 2px;
+        100% {
+          transform: scale(1);
         }
+      }
 
+      .menu-button,
+      .action-button {
+        font-family: "Press Start 2P", cursive;
+        font-size: 1em;
+        color: #ffd700;
+        background-color: rgba(80, 80, 80, 0.7);
+        border: 2px solid #ffd700;
+        padding: 12px 25px;
+        margin: 8px;
+        border-radius: 8px;
+        cursor: pointer;
+        text-shadow: 1px 1px #000;
+        transition: background-color 0.2s, transform 0.1s;
+      }
+      .menu-button:hover,
+      .action-button:hover {
+        background-color: rgba(100, 100, 100, 0.9);
+        transform: scale(1.05);
+      }
 
-        #leaderboardContent, #navodContent { width: 80%; max-width: 500px; max-height: 70%; overflow-y: auto; background-color: rgba(0,0,0,0.5); padding: 15px; border-radius: 8px; border: 2px solid #ffd700; margin-bottom: 20px; }
-        #leaderboardContent h2, #navodContent h2 { text-align: center; margin-top: 0; color: #ffd700; }
-        #leaderboardList { list-style: none; padding: 0; margin: 0; }
-        #leaderboardList li { display: flex; justify-content: space-between; padding: 8px 5px; border-bottom: 1px dashed rgba(255,255,255,0.3); font-size: 0.9em; }
-        #leaderboardList li:last-child { border-bottom: none; }
-        #leaderboardList .rank { min-width: 30px; text-align: right; margin-right: 10px; }
-        #leaderboardList .name { flex-grow: 1; }
-        #leaderboardList .score { font-weight: bold; }
-        .loading-text { text-align: center; font-size: 1em; margin: 20px; }
-        #navodContent p { margin-bottom: 10px; line-height: 1.6; font-size: 0.9em; }
-        #navodContent strong { color: #FFD700; }
+      .btn-3d {
+        background-color: #f39c12; /* Orange */
+        border: none;
+        border-bottom: 4px solid #c0392b; /* Darker orange/red */
+        color: white;
+        text-shadow: 0 -1px 0 #7f2319;
+      }
+      .btn-3d:hover {
+        background-color: #e67e22;
+        border-bottom: 4px solid #a32d20;
+      }
+      .btn-3d:active {
+        transform: translateY(2px) scale(1.05);
+        border-bottom-width: 2px;
+      }
 
+      #leaderboardContent,
+      #navodContent {
+        width: 80%;
+        max-width: 500px;
+        max-height: 70%;
+        overflow-y: auto;
+        background-color: rgba(0, 0, 0, 0.5);
+        padding: 15px;
+        border-radius: 8px;
+        border: 2px solid #ffd700;
+        margin-bottom: 20px;
+      }
+      #leaderboardContent h2,
+      #navodContent h2 {
+        text-align: center;
+        margin-top: 0;
+        color: #ffd700;
+      }
+      #leaderboardList {
+        list-style: none;
+        padding: 0;
+        margin: 0;
+      }
+      #leaderboardList li {
+        display: flex;
+        justify-content: space-between;
+        padding: 8px 5px;
+        border-bottom: 1px dashed rgba(255, 255, 255, 0.3);
+        font-size: 0.9em;
+      }
+      #leaderboardList li:last-child {
+        border-bottom: none;
+      }
+      #leaderboardList .rank {
+        min-width: 30px;
+        text-align: right;
+        margin-right: 10px;
+      }
+      #leaderboardList .name {
+        flex-grow: 1;
+      }
+      #leaderboardList .score {
+        font-weight: bold;
+      }
+      .loading-text {
+        text-align: center;
+        font-size: 1em;
+        margin: 20px;
+      }
+      #navodContent p {
+        margin-bottom: 10px;
+        line-height: 1.6;
+        font-size: 0.9em;
+      }
+      #navodContent strong {
+        color: #ffd700;
+      }
 
-        #gameOverScreen h2 { font-size: 2em; color: #FF0000; margin-bottom: 20px; }
-        #gameOverScreen p { font-size: 1.2em; color: #FFD700; margin-bottom: 30px; }
-        #gameOverButtonsContainer { display: flex; justify-content: center; flex-wrap: wrap; }
+      #gameOverScreen h2 {
+        font-size: 2em;
+        color: #ff0000;
+        margin-bottom: 20px;
+      }
+      #gameOverScreen p {
+        font-size: 1.2em;
+        color: #ffd700;
+        margin-bottom: 30px;
+      }
+      #gameOverButtonsContainer {
+        display: flex;
+        justify-content: center;
+        flex-wrap: wrap;
+      }
 
-        #controlsContainer { display: none; width: 100%; position: absolute; bottom: 0; left: 0; padding: 20px; box-sizing: border-box; justify-content: space-between; align-items: flex-end; pointer-events: none; z-index: 5; }
-        
-        #joystickBase { width: 120px; height: 120px; background-color: rgba(80, 80, 80, 0.5); border-radius: 50%; position: relative; border: 2px solid rgba(255, 255, 255, 0.3); pointer-events: auto; }
-        #joystickKnob { width: 60px; height: 60px; background-color: rgba(150, 150, 150, 0.8); border-radius: 50%; position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); border: 2px solid rgba(255, 255, 255, 0.6); }
+      #controlsContainer {
+        display: none;
+        width: 100%;
+        position: absolute;
+        bottom: 0;
+        left: 0;
+        padding: 20px;
+        box-sizing: border-box;
+        justify-content: space-between;
+        align-items: flex-end;
+        pointer-events: none;
+        z-index: 5;
+      }
 
-        #actionButtons { display: flex; flex-direction: column; align-items: center; pointer-events: auto; }
-        #btnDash { width: 80px; height: 80px; font-size: 0.9em; padding: 5px; text-align: center; background-color: rgba(80, 80, 80, 0.6); border: 2px solid rgba(255, 255, 255, 0.5); color: white; font-family: 'Press Start 2P', cursive; display: flex; justify-content: center; align-items: center; cursor: pointer; border-radius: 10px; transition: background-color 0.1s; }
-        #btnDash:active { background-color: rgba(120, 120, 120, 0.8); }
-        
-        #buyMeACoffeeButtonContainer { position: fixed; left: 15px; bottom: 15px; z-index: 210; display: none; }
-        #buyMeACoffeeButtonContainer img { width: 180px; height: auto; border-radius: 8px; box-shadow: 2px 2px 5px rgba(0,0,0,0.5); }
+      #joystickBase {
+        width: 120px;
+        height: 120px;
+        background-color: rgba(80, 80, 80, 0.5);
+        border-radius: 50%;
+        position: relative;
+        border: 2px solid rgba(255, 255, 255, 0.3);
+        pointer-events: auto;
+      }
+      #joystickKnob {
+        width: 60px;
+        height: 60px;
+        background-color: rgba(150, 150, 150, 0.8);
+        border-radius: 50%;
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        border: 2px solid rgba(255, 255, 255, 0.6);
+      }
+
+      #actionButtons {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        pointer-events: auto;
+      }
+      #btnDash {
+        width: 80px;
+        height: 80px;
+        font-size: 0.9em;
+        padding: 5px;
+        text-align: center;
+        background-color: rgba(80, 80, 80, 0.6);
+        border: 2px solid rgba(255, 255, 255, 0.5);
+        color: white;
+        font-family: "Press Start 2P", cursive;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        cursor: pointer;
+        border-radius: 10px;
+        transition: background-color 0.1s;
+      }
+      #btnDash:active {
+        background-color: rgba(120, 120, 120, 0.8);
+      }
+
+      #buyMeACoffeeButtonContainer {
+        position: fixed;
+        left: 15px;
+        bottom: 15px;
+        z-index: 210;
+        display: none;
+      }
+      #buyMeACoffeeButtonContainer img {
+        width: 180px;
+        height: auto;
+        border-radius: 8px;
+        box-shadow: 2px 2px 5px rgba(0, 0, 0, 0.5);
+      }
     </style>
-</head>
-<body>
+  </head>
+  <body>
     <h1 class="game-title">Pug Banger Fiesta</h1>
 
     <div id="menuScreen" class="screen-overlay">
-        <img src="https://i.postimg.cc/TYTXPPDJ/logo-Without-Bg.png" alt="Game Logo" id="menuLogo">
-        <button class="menu-button" id="btnHraj">Hraj</button>
-        <button class="menu-button" id="btnZebricekMenu">Žebříček</button>
-        <button class="menu-button btn-3d" id="btnNavod">Návod</button>
+      <img
+        src="https://i.postimg.cc/TYTXPPDJ/logo-Without-Bg.png"
+        alt="Game Logo"
+        id="menuLogo"
+      />
+      <button class="menu-button" id="btnHraj">Hraj</button>
+      <button class="menu-button" id="btnZebricekMenu">Žebříček</button>
+      <button class="menu-button btn-3d" id="btnNavod">Návod</button>
     </div>
 
     <div id="navodScreen" class="screen-overlay">
-        <div id="navodContent">
-            <h2>Návod ke hře</h2>
-            <p><strong>Cíl:</strong> Tvým úkolem je jako správný mopsík "označkovat" co nejvíce psích slečen v omezeném čase!</p> 
-            <p><strong>Ovládání (PC):</strong></p>
-            <ul>
-                <li><strong>W, A, S, D:</strong> Pohyb</li>
-                <li><strong>Mezerník:</strong> Rychlý úprk (dash) pro označkování</li>
-            </ul>
-            <p><strong>Ovládání (Mobil):</strong></p>
-            <ul>
-                <li><strong>Joystick (vlevo dole):</strong> Pohyb</li>
-                <li><strong>Tlačítko DASH (vpravo dole):</strong> Rychlý úprk (dash) pro označkování</li>
-            </ul>
-            <p>Hodně štěstí, mopsí šampione!</p>
-        </div>
-        <button class="action-button" id="btnNavodToMenu">Zavřít</button>
+      <div id="navodContent">
+        <h2>Návod ke hře</h2>
+        <p>
+          <strong>Cíl:</strong> Tvým úkolem je jako správný mopsík "označkovat"
+          co nejvíce psích slečen v omezeném čase!
+        </p>
+        <p><strong>Ovládání (PC):</strong></p>
+        <ul>
+          <li><strong>W, A, S, D:</strong> Pohyb</li>
+          <li><strong>Mezerník:</strong> Rychlý úprk (dash) pro označkování</li>
+        </ul>
+        <p><strong>Ovládání (Mobil):</strong></p>
+        <ul>
+          <li><strong>Joystick (vlevo dole):</strong> Pohyb</li>
+          <li>
+            <strong>Tlačítko DASH (vpravo dole):</strong> Rychlý úprk (dash) pro
+            označkování
+          </li>
+        </ul>
+        <p>Hodně štěstí, mopsí šampione!</p>
+      </div>
+      <button class="action-button" id="btnNavodToMenu">Zavřít</button>
     </div>
 
-
     <div id="leaderboardScreen" class="screen-overlay">
-        <div id="leaderboardContent">
-            <h2>Žebříček</h2>
-            <ul id="leaderboardList"></ul>
-            <p id="leaderboardLoadingText" class="loading-text">Načítání...</p>
-        </div>
-        <button class="action-button" id="btnLeaderboardToMenu">Menu</button>
+      <div id="leaderboardContent">
+        <h2>Žebříček</h2>
+        <ul id="leaderboardList"></ul>
+        <p id="leaderboardLoadingText" class="loading-text">Načítání...</p>
+      </div>
+      <button class="action-button" id="btnLeaderboardToMenu">Menu</button>
     </div>
 
     <div id="gameOverScreen" class="screen-overlay">
-        <h2>Konec Hry!</h2>
-        <p id="gameOverScore">Skóre: 0</p>
-        <div id="gameOverButtonsContainer">
-            <button class="action-button" id="btnSaveScoreGameOver">Uložit skóre</button> 
-            <button class="action-button" id="btnZebricekGameOver">Žebříček</button> 
-            <button class="action-button" id="btnGameOverToMenu">Menu</button>
-        </div>
+      <h2>Konec Hry!</h2>
+      <p id="gameOverScore">Skóre: 0</p>
+      <div id="gameOverButtonsContainer">
+        <button class="action-button" id="btnSaveScoreGameOver">
+          Uložit skóre
+        </button>
+        <button class="action-button" id="btnZebricekGameOver">Žebříček</button>
+        <button class="action-button" id="btnGameOverToMenu">Menu</button>
+      </div>
     </div>
 
     <div id="gameContainer">
-        <canvas id="gameCanvas"></canvas>
+      <canvas id="gameCanvas"></canvas>
     </div>
 
     <div id="controlsContainer">
-        <div id="joystickBase">
-            <div id="joystickKnob"></div>
-        </div>
-        <div id="actionButtons">
-            <div id="btnDash">DASH</div>
-        </div>
+      <div id="joystickBase">
+        <div id="joystickKnob"></div>
+      </div>
+      <div id="actionButtons">
+        <div id="btnDash">DASH</div>
+      </div>
     </div>
 
     <div id="buyMeACoffeeButtonContainer">
-        <a href="https://buymeacoffee.com/jojkos" target="_blank" rel="noopener noreferrer">
-            <img src="https://cdn.buymeacoffee.com/buttons/v2/default-yellow.png" alt="Buy Me A Coffee">
-        </a>
+      <a
+        href="https://buymeacoffee.com/jojkos"
+        target="_blank"
+        rel="noopener noreferrer"
+      >
+        <img
+          src="https://cdn.buymeacoffee.com/buttons/v2/default-yellow.png"
+          alt="Buy Me A Coffee"
+        />
+      </a>
     </div>
 
     <script type="module">
-        const canvas = document.getElementById('gameCanvas');
-        const ctx = canvas.getContext('2d');
-        const menuScreen = document.getElementById('menuScreen');
-        const navodScreen = document.getElementById('navodScreen'); 
-        const leaderboardScreen = document.getElementById('leaderboardScreen');
-        const gameOverScreen = document.getElementById('gameOverScreen');
-        const btnHraj = document.getElementById('btnHraj');
-        const btnZebricekMenu = document.getElementById('btnZebricekMenu'); 
-        const btnNavod = document.getElementById('btnNavod'); 
-        const btnNavodToMenu = document.getElementById('btnNavodToMenu'); 
-        const btnLeaderboardToMenu = document.getElementById('btnLeaderboardToMenu');
-        const btnSaveScoreGameOver = document.getElementById('btnSaveScoreGameOver'); 
-        const btnZebricekGameOver = document.getElementById('btnZebricekGameOver'); 
-        const btnGameOverToMenu = document.getElementById('btnGameOverToMenu');
-        const buyMeACoffeeContainer = document.getElementById('buyMeACoffeeButtonContainer');
-        const controlsContainer = document.getElementById('controlsContainer');
-        const leaderboardListEl = document.getElementById('leaderboardList');
-        const leaderboardLoadingTextEl = document.getElementById('leaderboardLoadingText');
-        const gameOverScoreEl = document.getElementById('gameOverScore');
+      const canvas = document.getElementById("gameCanvas");
+      const ctx = canvas.getContext("2d");
+      const menuScreen = document.getElementById("menuScreen");
+      const navodScreen = document.getElementById("navodScreen");
+      const leaderboardScreen = document.getElementById("leaderboardScreen");
+      const gameOverScreen = document.getElementById("gameOverScreen");
+      const btnHraj = document.getElementById("btnHraj");
+      const btnZebricekMenu = document.getElementById("btnZebricekMenu");
+      const btnNavod = document.getElementById("btnNavod");
+      const btnNavodToMenu = document.getElementById("btnNavodToMenu");
+      const btnLeaderboardToMenu = document.getElementById(
+        "btnLeaderboardToMenu"
+      );
+      const btnSaveScoreGameOver = document.getElementById(
+        "btnSaveScoreGameOver"
+      );
+      const btnZebricekGameOver = document.getElementById(
+        "btnZebricekGameOver"
+      );
+      const btnGameOverToMenu = document.getElementById("btnGameOverToMenu");
+      const buyMeACoffeeContainer = document.getElementById(
+        "buyMeACoffeeButtonContainer"
+      );
+      const controlsContainer = document.getElementById("controlsContainer");
+      const leaderboardListEl = document.getElementById("leaderboardList");
+      const leaderboardLoadingTextEl = document.getElementById(
+        "leaderboardLoadingText"
+      );
+      const gameOverScoreEl = document.getElementById("gameOverScore");
 
-        const joystickBase = document.getElementById('joystickBase');
-        const joystickKnob = document.getElementById('joystickKnob');
-        const btnDash = document.getElementById('btnDash'); 
+      const joystickBase = document.getElementById("joystickBase");
+      const joystickKnob = document.getElementById("joystickKnob");
+      const btnDash = document.getElementById("btnDash");
 
-        let gameState = 'menu'; 
-        let countdownValue = 3;
-        let gameTimerValue = 30; // Seconds
-        let gameTimerInterval = null;
-        let countdownInterval = null;
-        let scoreSavedThisSession = false; 
-        let lastTime = 0; 
+      let gameState = "menu";
+      let countdownValue = 3;
+      let gameTimerValue = 30; // Seconds
+      let gameTimerInterval = null;
+      let countdownInterval = null;
+      let scoreSavedThisSession = false;
+      let lastTime = 0;
 
-        function resizeCanvas() { 
-            const gameContainer = document.getElementById('gameContainer');
-            const cW = gameContainer.offsetWidth; 
-            const cH = gameContainer.offsetHeight; 
-            console.log("ResizeCanvas: Container dimensions:", cW, "x", cH); 
+      function resizeCanvas() {
+        const gameContainer = document.getElementById("gameContainer");
+        const cW = gameContainer.offsetWidth;
+        const cH = gameContainer.offsetHeight;
+        console.log("ResizeCanvas: Container dimensions:", cW, "x", cH);
 
-            const ratio = 4/3; let nW = cW, nH = cW/ratio;
-            if (nH > cH || cW === 0) { 
-                nH = cH; 
-                nW = cH * ratio;
-            }
-            if (nH === 0 && cW > 0) { 
-                 nW = cW;
-                 nH = nW / ratio;
-            }
-
-            canvas.width = Math.max(1, nW); 
-            canvas.height = Math.max(1, nH); 
-            ctx.imageSmoothingEnabled = false; 
-            console.log("Canvas resized to:", canvas.width, "x", canvas.height); 
+        const ratio = 4 / 3;
+        let nW = cW,
+          nH = cW / ratio;
+        if (nH > cH || cW === 0) {
+          nH = cH;
+          nW = cH * ratio;
         }
-        window.addEventListener('resize', resizeCanvas);
+        if (nH === 0 && cW > 0) {
+          nW = cW;
+          nH = nW / ratio;
+        }
+
+        canvas.width = Math.max(1, nW);
+        canvas.height = Math.max(1, nH);
         ctx.imageSmoothingEnabled = false;
+        console.log("Canvas resized to:", canvas.width, "x", canvas.height);
+      }
+      window.addEventListener("resize", resizeCanvas);
+      ctx.imageSmoothingEnabled = false;
 
-        const playerImg = new Image(); const femaleDogImg = new Image();
-        let imagesToLoad = 2;
+      const playerImg = new Image();
+      const femaleDogImg = new Image();
+      let imagesToLoad = 2;
 
-        let tagSoundSynth, failSoundSynth, backgroundMusicLoop, musicSynth; 
-        const synth = window.speechSynthesis;
-        let musicStarted = false; let audioInitialized = false; 
+      let tagSoundSynth, failSoundSynth, backgroundMusicLoop, musicSynth;
+      const synth = window.speechSynthesis;
+      let musicStarted = false;
+      let audioInitialized = false;
 
-        if (typeof Tone !== 'undefined') { 
-            tagSoundSynth = new Tone.Synth({oscillator:{type:"sine"},envelope:{attack:0.005,decay:0.1,sustain:0.05,release:0.1}}).toDestination();
-            failSoundSynth = new Tone.Synth({oscillator:{type:"square"},envelope:{attack:0.01,decay:0.2,sustain:0,release:0.1},volume:-10}).toDestination();
-            musicSynth = new Tone.Synth({oscillator:{type:"triangle8"},envelope:{attack:0.01,decay:0.2,sustain:0.1,release:0.3},volume:-12}).toDestination();
-            const musicNotes = ["C4","E4","G4","C5","A4","G4","E4","C4","D4","F4","A4","D5","B4","A4","F4","D4","E4","G4","B4","E5","C5","B4","G4","E4","F4","A4","C5","F5","D5","C5","A4","F4"];
-            let noteIndex = 0;
-            backgroundMusicLoop = new Tone.Loop(t => {musicSynth.triggerAttackRelease(musicNotes[noteIndex++%musicNotes.length],"8n",t)},"4n");
-        } else { console.warn("Tone.js not loaded."); }
+      if (typeof Tone !== "undefined") {
+        tagSoundSynth = new Tone.Synth({
+          oscillator: { type: "sine" },
+          envelope: { attack: 0.005, decay: 0.1, sustain: 0.05, release: 0.1 },
+        }).toDestination();
+        failSoundSynth = new Tone.Synth({
+          oscillator: { type: "square" },
+          envelope: { attack: 0.01, decay: 0.2, sustain: 0, release: 0.1 },
+          volume: -10,
+        }).toDestination();
+        musicSynth = new Tone.Synth({
+          oscillator: { type: "triangle8" },
+          envelope: { attack: 0.01, decay: 0.2, sustain: 0.1, release: 0.3 },
+          volume: -12,
+        }).toDestination();
+        const musicNotes = [
+          "C4",
+          "E4",
+          "G4",
+          "C5",
+          "A4",
+          "G4",
+          "E4",
+          "C4",
+          "D4",
+          "F4",
+          "A4",
+          "D5",
+          "B4",
+          "A4",
+          "F4",
+          "D4",
+          "E4",
+          "G4",
+          "B4",
+          "E5",
+          "C5",
+          "B4",
+          "G4",
+          "E4",
+          "F4",
+          "A4",
+          "C5",
+          "F5",
+          "D5",
+          "C5",
+          "A4",
+          "F4",
+        ];
+        let noteIndex = 0;
+        backgroundMusicLoop = new Tone.Loop((t) => {
+          musicSynth.triggerAttackRelease(
+            musicNotes[noteIndex++ % musicNotes.length],
+            "8n",
+            t
+          );
+        }, "4n");
+      } else {
+        console.warn("Tone.js not loaded.");
+      }
 
-        function playTagSound() { if (tagSoundSynth && Tone.context.state === 'running') tagSoundSynth.triggerAttackRelease("G5","32n",Tone.now());}
-        function playFailSound() { if (failSoundSynth && Tone.context.state === 'running') failSoundSynth.triggerAttackRelease("C2","16n",Tone.now());}
-        function speakText(text) { if(synth && text && audioInitialized){const u=new SpeechSynthesisUtterance(text);u.pitch=1.2;u.rate=1.1;u.lang="cs-CZ";synth.speak(u);}}
-        
-        function initAudioSystemOnce() { 
-            if(audioInitialized)return;
-            if(Tone && Tone.context.state !== 'running'){Tone.start().then(()=>{console.log("Audio started.");audioInitialized=true;}).catch(e=>console.error("Audio start err:",e));
-            } else if (Tone && Tone.context.state === 'running'){audioInitialized=true;}
+      function playTagSound() {
+        if (tagSoundSynth && Tone.context.state === "running")
+          tagSoundSynth.triggerAttackRelease("G5", "32n", Tone.now());
+      }
+      function playFailSound() {
+        if (failSoundSynth && Tone.context.state === "running")
+          failSoundSynth.triggerAttackRelease("C2", "16n", Tone.now());
+      }
+      function speakText(text) {
+        if (synth && text && audioInitialized) {
+          const u = new SpeechSynthesisUtterance(text);
+          u.pitch = 1.2;
+          u.rate = 1.1;
+          u.lang = "cs-CZ";
+          synth.speak(u);
         }
-        
-        function imageLoaded() { imagesToLoad--; if(imagesToLoad===0){resizeCanvas();showMenu();}}
-        playerImg.onload=imageLoaded; femaleDogImg.onload=imageLoaded;
-        playerImg.src='https://i.postimg.cc/1mC0gcq3/pug.png'; femaleDogImg.src='https://i.postimg.cc/vBk60hr7/female-Pug.png';
-        playerImg.onerror=()=>{console.error("Player img fail.");imageLoaded();}; 
-        femaleDogImg.onerror=()=>{console.error("Female dog img fail.");imageLoaded();};
+      }
 
-        const SPRITE_SCALE_BASE=1.5; let currentSpriteScale=SPRITE_SCALE_BASE; 
-        const PLAYER_BASE_WIDTH=32, PLAYER_BASE_HEIGHT=30;
-        const FEMALE_DOG_BASE_WIDTH=32, FEMALE_DOG_BASE_HEIGHT=32;
-        const PLAYER_SPEED_BASE = 450; // Player speed (pixels per second)
-        const FEMALE_DOG_SPEED_BASE = 250; 
-        let playerSpeed = PLAYER_SPEED_BASE; 
-        let femaleDogSpeed = FEMALE_DOG_SPEED_BASE;
-        const DASH_SPEED_MULTIPLIER = 2.5; 
-        const DASH_DURATION = 0.3; 
-        const FLEE_RADIUS_BASE = 160; let fleeRadius = FLEE_RADIUS_BASE;
-        const MAX_FEMALE_DOGS = 5; 
-        const FEMALE_DOG_SPAWN_COOLDOWN = 1.5; 
-        const TAG_LOCK_DURATION = 0.33; 
-        const TAG_ANIMATION_TOTAL_DURATION = 0.83; 
-        const SUCCESS_TEXT_DURATION = 1.5; 
-        const PARTICLE_DURATION = 0.5; 
-        const MISS_LUNGE_DURATION = 0.2; 
-        const HEART_ANIM_DURATION = 1.16; 
+      function initAudioSystemOnce() {
+        if (audioInitialized) return;
+        if (Tone && Tone.context.state !== "running") {
+          Tone.start()
+            .then(() => {
+              console.log("Audio started.");
+              audioInitialized = true;
+            })
+            .catch((e) => console.error("Audio start err:", e));
+        } else if (Tone && Tone.context.state === "running") {
+          audioInitialized = true;
+        }
+      }
 
-        let player, femaleDogs=[], score=0, keys={}; 
-        let femaleDogSpawnTimer=0, taggedDogInfo=null; 
-        let successMessages=[]; 
-        let heartAnimations = []; 
-        let backgroundFlowers = []; 
+      function imageLoaded() {
+        imagesToLoad--;
+        if (imagesToLoad === 0) {
+          resizeCanvas();
+          showMenu();
+        }
+      }
+      playerImg.onload = imageLoaded;
+      femaleDogImg.onload = imageLoaded;
+      playerImg.src = "https://i.postimg.cc/1mC0gcq3/pug.png";
+      femaleDogImg.src = "https://i.postimg.cc/vBk60hr7/female-Pug.png";
+      playerImg.onerror = () => {
+        console.error("Player img fail.");
+        imageLoaded();
+      };
+      femaleDogImg.onerror = () => {
+        console.error("Female dog img fail.");
+        imageLoaded();
+      };
 
-        const singleTagTexts=["štěká, ale nekouše","Haf haf, a je po ptákách!","utrhnem se ze řetězu","o jé!","má naštěkáno do boudy!","psí děvka","silnější pes mrdá","beng beng beng, jak rej koranteng"];
-        const multiTagTexts={2:"trojka!",3:"skuby duby du!",4:"Mega Combo!",5:"Pugtastic!"};
+      const SPRITE_SCALE_BASE = 1.5;
+      let currentSpriteScale = SPRITE_SCALE_BASE;
+      const PLAYER_BASE_WIDTH = 32,
+        PLAYER_BASE_HEIGHT = 30;
+      const FEMALE_DOG_BASE_WIDTH = 32,
+        FEMALE_DOG_BASE_HEIGHT = 32;
+      const PLAYER_SPEED_BASE = 450; // Player speed (pixels per second)
+      const FEMALE_DOG_SPEED_BASE = 250;
+      let playerSpeed = PLAYER_SPEED_BASE;
+      let femaleDogSpeed = FEMALE_DOG_SPEED_BASE;
+      const DASH_SPEED_MULTIPLIER = 2.5;
+      const DASH_DURATION = 0.3;
+      const FLEE_RADIUS_BASE = 160;
+      let fleeRadius = FLEE_RADIUS_BASE;
+      const MAX_FEMALE_DOGS = 5;
+      const FEMALE_DOG_SPAWN_COOLDOWN = 1.5;
+      const TAG_LOCK_DURATION = 0.33;
+      const TAG_ANIMATION_TOTAL_DURATION = 0.83;
+      const SUCCESS_TEXT_DURATION = 1.5;
+      const PARTICLE_DURATION = 0.5;
+      const MISS_LUNGE_DURATION = 0.2;
+      const HEART_ANIM_DURATION = 1.16;
 
-        function createPlayer(){const sw=PLAYER_BASE_WIDTH*currentSpriteScale,sh=PLAYER_BASE_HEIGHT*currentSpriteScale;return{x:canvas.width/2-sw/2,y:canvas.height/2-sh/2,width:sw,height:sh,speed:playerSpeed,dx:0,dy:0,isDashing:false,dashTimer:0,currentDashSpeed:0,trail:[],maxTrailLength:4,isCurrentlyTagging:false,tagLockTimer:0, isMissLungeAnimating: false, missLungeTimer: 0 };}
-        function createFemaleDog(){const p=canvas.width*0.05,sw=FEMALE_DOG_BASE_WIDTH*currentSpriteScale,sh=FEMALE_DOG_BASE_HEIGHT*currentSpriteScale;return{x:Math.random()*(canvas.width-sw-2*p)+p,y:Math.random()*(canvas.height-sh-2*p)+p,width:sw,height:sh,speed:femaleDogSpeed,dx:(Math.random()-0.5)*2,dy:(Math.random()-0.5)*2,moveTimer:Math.random()*2+1};} 
-        function createParticle(x,y){return{x:x,y:y,size:Math.random()*5+2,speedX:(Math.random()-0.5)*120,speedY:(Math.random()-0.5)*120-60,alpha:1,duration:PARTICLE_DURATION,color:`hsl(${Math.random()*60+200},100%,70%)`};}
-        
-function createFlower() {
-  const petalColors = [
-    '#FFEB3B','#FFC107','#FFF176','#FF80AB',
-    '#F8BBD0','#E1BEE7','#81D4FA','#B3E5FC'
-  ];
+      let player,
+        femaleDogs = [],
+        score = 0,
+        keys = {};
+      let femaleDogSpawnTimer = 0,
+        taggedDogInfo = null;
+      let successMessages = [];
+      let heartAnimations = [];
+      let backgroundFlowers = [];
 
-  const x = Math.random() * canvas.width;
-  const y = Math.random() * (canvas.height * 0.8) + (canvas.height * 0.2);
+      const singleTagTexts = [
+        "štěká, ale nekouše",
+        "Haf haf, a je po ptákách!",
+        "utrhnem se ze řetězu",
+        "o jé!",
+        "má naštěkáno do boudy!",
+        "silnější pes",
+        "beng beng beng, jak rej koranteng",
+      ];
+      const multiTagTexts = {
+        2: "trojka!",
+        3: "skuby duby du!",
+        4: "Mega Combo!",
+        5: "Pugtastic!",
+      };
 
-  const stemHeight   = Math.random() * 30 + 20;
-  const centerRadius = Math.random() * 2  + 3;
-  const petalRadius  = Math.random() * 3  + 4;
-  const numPetals    = Math.floor(Math.random() * 3) + 5;
+      function createPlayer() {
+        const sw = PLAYER_BASE_WIDTH * currentSpriteScale,
+          sh = PLAYER_BASE_HEIGHT * currentSpriteScale;
+        return {
+          x: canvas.width / 2 - sw / 2,
+          y: canvas.height / 2 - sh / 2,
+          width: sw,
+          height: sh,
+          speed: playerSpeed,
+          dx: 0,
+          dy: 0,
+          isDashing: false,
+          dashTimer: 0,
+          currentDashSpeed: 0,
+          trail: [],
+          maxTrailLength: 4,
+          isCurrentlyTagging: false,
+          tagLockTimer: 0,
+          isMissLungeAnimating: false,
+          missLungeTimer: 0,
+        };
+      }
+      function createFemaleDog() {
+        const p = canvas.width * 0.05,
+          sw = FEMALE_DOG_BASE_WIDTH * currentSpriteScale,
+          sh = FEMALE_DOG_BASE_HEIGHT * currentSpriteScale;
+        return {
+          x: Math.random() * (canvas.width - sw - 2 * p) + p,
+          y: Math.random() * (canvas.height - sh - 2 * p) + p,
+          width: sw,
+          height: sh,
+          speed: femaleDogSpeed,
+          dx: (Math.random() - 0.5) * 2,
+          dy: (Math.random() - 0.5) * 2,
+          moveTimer: Math.random() * 2 + 1,
+        };
+      }
+      function createParticle(x, y) {
+        return {
+          x: x,
+          y: y,
+          size: Math.random() * 5 + 2,
+          speedX: (Math.random() - 0.5) * 120,
+          speedY: (Math.random() - 0.5) * 120 - 60,
+          alpha: 1,
+          duration: PARTICLE_DURATION,
+          color: `hsl(${Math.random() * 60 + 200},100%,70%)`,
+        };
+      }
 
-  return {
-    x, y,
-    stemHeight,
-    centerRadius,
-    petalRadius,
-    numPetals,
-    petalColor: petalColors[Math.floor(Math.random() * petalColors.length)],
-    stemColor: '#4CAF50'
-  };
-}
-        document.addEventListener('keydown',(e)=>{keys[e.key.toLowerCase()]=true;initAudioSystemOnce();});
-        document.addEventListener('keyup',(e)=>{keys[e.key.toLowerCase()]=false;});
-        
-        let joystickActive = false; let joystickBaseRectState; let joystickRadiusState;
-        let knobRadiusState; let maxKnobDisplacementState;
-        let currentJoystickTouchId = null;
+      function createFlower() {
+        const petalColors = [
+          "#FFEB3B",
+          "#FFC107",
+          "#FFF176",
+          "#FF80AB",
+          "#F8BBD0",
+          "#E1BEE7",
+          "#81D4FA",
+          "#B3E5FC",
+        ];
 
+        const x = Math.random() * canvas.width;
+        const y = Math.random() * (canvas.height * 0.8) + canvas.height * 0.2;
 
-        function updateJoystickPositionAndKeys(currentX, currentY) {
-            if (!joystickBaseRectState || joystickRadiusState <= 0) return; 
+        const stemHeight = Math.random() * 30 + 20;
+        const centerRadius = Math.random() * 2 + 3;
+        const petalRadius = Math.random() * 3 + 4;
+        const numPetals = Math.floor(Math.random() * 3) + 5;
 
-            const baseCenterX = joystickBaseRectState.left + joystickRadiusState;
-            const baseCenterY = joystickBaseRectState.top + joystickRadiusState;
+        return {
+          x,
+          y,
+          stemHeight,
+          centerRadius,
+          petalRadius,
+          numPetals,
+          petalColor:
+            petalColors[Math.floor(Math.random() * petalColors.length)],
+          stemColor: "#4CAF50",
+        };
+      }
+      document.addEventListener("keydown", (e) => {
+        keys[e.key.toLowerCase()] = true;
+        initAudioSystemOnce();
+      });
+      document.addEventListener("keyup", (e) => {
+        keys[e.key.toLowerCase()] = false;
+      });
 
-            let deltaX = currentX - baseCenterX;
-            let deltaY = currentY - baseCenterY;
-            
-            const distance = Math.sqrt(deltaX * deltaX + deltaY * deltaY);
-            const angle = Math.atan2(deltaY, deltaX);
+      let joystickActive = false;
+      let joystickBaseRectState;
+      let joystickRadiusState;
+      let knobRadiusState;
+      let maxKnobDisplacementState;
+      let currentJoystickTouchId = null;
 
-            if (distance > maxKnobDisplacementState) {
-                deltaX = Math.cos(angle) * maxKnobDisplacementState;
-                deltaY = Math.sin(angle) * maxKnobDisplacementState;
-            }
+      function updateJoystickPositionAndKeys(currentX, currentY) {
+        if (!joystickBaseRectState || joystickRadiusState <= 0) return;
 
-            joystickKnob.style.transform = `translate(calc(-50% + ${deltaX}px), calc(-50% + ${deltaY}px))`;
+        const baseCenterX = joystickBaseRectState.left + joystickRadiusState;
+        const baseCenterY = joystickBaseRectState.top + joystickRadiusState;
 
-            keys['w'] = false; keys['a'] = false; keys['s'] = false; keys['d'] = false;
-            const angleDeg = angle * 180 / Math.PI;
+        let deltaX = currentX - baseCenterX;
+        let deltaY = currentY - baseCenterY;
 
-            if (distance > knobRadiusState * 0.3) { // Deadzone
-                if (angleDeg >= -22.5 && angleDeg < 22.5) keys['d'] = true; 
-                else if (angleDeg >= 22.5 && angleDeg < 67.5) { keys['s'] = true; keys['d'] = true; } 
-                else if (angleDeg >= 67.5 && angleDeg < 112.5) keys['s'] = true; 
-                else if (angleDeg >= 112.5 && angleDeg < 157.5) { keys['s'] = true; keys['a'] = true; } 
-                else if (angleDeg >= 157.5 || angleDeg < -157.5) keys['a'] = true; 
-                else if (angleDeg >= -157.5 && angleDeg < -112.5) { keys['w'] = true; keys['a'] = true; } 
-                else if (angleDeg >= -112.5 && angleDeg < -67.5) keys['w'] = true; 
-                else if (angleDeg >= -67.5 && angleDeg < -22.5) { keys['w'] = true; keys['d'] = true; } 
-            }
+        const distance = Math.sqrt(deltaX * deltaX + deltaY * deltaY);
+        const angle = Math.atan2(deltaY, deltaX);
+
+        if (distance > maxKnobDisplacementState) {
+          deltaX = Math.cos(angle) * maxKnobDisplacementState;
+          deltaY = Math.sin(angle) * maxKnobDisplacementState;
         }
 
-        joystickBase.addEventListener('touchstart', (e) => { 
-            e.preventDefault(); initAudioSystemOnce();
-            if (e.touches.length === 1) {
-                currentJoystickTouchId = e.touches[0].identifier;
-                joystickBaseRectState = joystickBase.getBoundingClientRect(); 
-                joystickRadiusState = joystickBaseRectState.width / 2;
-                knobRadiusState = joystickKnob.offsetWidth / 2 || 30; 
-                maxKnobDisplacementState = joystickRadiusState - knobRadiusState;
-                if (joystickRadiusState <= 0) { console.warn("Joystick base no dimensions."); return; }
-                joystickActive = true;
-                updateJoystickPositionAndKeys(e.touches[0].clientX, e.touches[0].clientY); 
-            }
-        }, { passive: false });
+        joystickKnob.style.transform = `translate(calc(-50% + ${deltaX}px), calc(-50% + ${deltaY}px))`;
 
-        joystickBase.addEventListener('mousedown', (e) => {
-            e.preventDefault(); initAudioSystemOnce();
+        keys["w"] = false;
+        keys["a"] = false;
+        keys["s"] = false;
+        keys["d"] = false;
+        const angleDeg = (angle * 180) / Math.PI;
+
+        if (distance > knobRadiusState * 0.3) {
+          // Deadzone
+          if (angleDeg >= -22.5 && angleDeg < 22.5) keys["d"] = true;
+          else if (angleDeg >= 22.5 && angleDeg < 67.5) {
+            keys["s"] = true;
+            keys["d"] = true;
+          } else if (angleDeg >= 67.5 && angleDeg < 112.5) keys["s"] = true;
+          else if (angleDeg >= 112.5 && angleDeg < 157.5) {
+            keys["s"] = true;
+            keys["a"] = true;
+          } else if (angleDeg >= 157.5 || angleDeg < -157.5) keys["a"] = true;
+          else if (angleDeg >= -157.5 && angleDeg < -112.5) {
+            keys["w"] = true;
+            keys["a"] = true;
+          } else if (angleDeg >= -112.5 && angleDeg < -67.5) keys["w"] = true;
+          else if (angleDeg >= -67.5 && angleDeg < -22.5) {
+            keys["w"] = true;
+            keys["d"] = true;
+          }
+        }
+      }
+
+      joystickBase.addEventListener(
+        "touchstart",
+        (e) => {
+          e.preventDefault();
+          initAudioSystemOnce();
+          if (e.touches.length === 1) {
+            currentJoystickTouchId = e.touches[0].identifier;
             joystickBaseRectState = joystickBase.getBoundingClientRect();
             joystickRadiusState = joystickBaseRectState.width / 2;
             knobRadiusState = joystickKnob.offsetWidth / 2 || 30;
             maxKnobDisplacementState = joystickRadiusState - knobRadiusState;
-            if (joystickRadiusState <= 0) { console.warn("Joystick base no dimensions."); return; }
+            if (joystickRadiusState <= 0) {
+              console.warn("Joystick base no dimensions.");
+              return;
+            }
             joystickActive = true;
-            updateJoystickPositionAndKeys(e.clientX, e.clientY);
-        }, { passive: false });
+            updateJoystickPositionAndKeys(
+              e.touches[0].clientX,
+              e.touches[0].clientY
+            );
+          }
+        },
+        { passive: false }
+      );
 
+      joystickBase.addEventListener(
+        "mousedown",
+        (e) => {
+          e.preventDefault();
+          initAudioSystemOnce();
+          joystickBaseRectState = joystickBase.getBoundingClientRect();
+          joystickRadiusState = joystickBaseRectState.width / 2;
+          knobRadiusState = joystickKnob.offsetWidth / 2 || 30;
+          maxKnobDisplacementState = joystickRadiusState - knobRadiusState;
+          if (joystickRadiusState <= 0) {
+            console.warn("Joystick base no dimensions.");
+            return;
+          }
+          joystickActive = true;
+          updateJoystickPositionAndKeys(e.clientX, e.clientY);
+        },
+        { passive: false }
+      );
 
-        document.addEventListener('touchmove', (e) => { 
-            if (!joystickActive || gameState !== 'playing' || currentJoystickTouchId === null) return;
-            for (let i=0; i < e.touches.length; i++) {
-                if (e.touches[i].identifier === currentJoystickTouchId) {
-                    updateJoystickPositionAndKeys(e.touches[i].clientX, e.touches[i].clientY);
-                    break;
-                }
+      document.addEventListener(
+        "touchmove",
+        (e) => {
+          if (
+            !joystickActive ||
+            gameState !== "playing" ||
+            currentJoystickTouchId === null
+          )
+            return;
+          for (let i = 0; i < e.touches.length; i++) {
+            if (e.touches[i].identifier === currentJoystickTouchId) {
+              updateJoystickPositionAndKeys(
+                e.touches[i].clientX,
+                e.touches[i].clientY
+              );
+              break;
             }
-        }, { passive: false });
+          }
+        },
+        { passive: false }
+      );
 
-        document.addEventListener('mousemove', (e) => {
-            if (!joystickActive || gameState !== 'playing' ) return;
-            updateJoystickPositionAndKeys(e.clientX, e.clientY);
-        }, { passive: false});
+      document.addEventListener(
+        "mousemove",
+        (e) => {
+          if (!joystickActive || gameState !== "playing") return;
+          updateJoystickPositionAndKeys(e.clientX, e.clientY);
+        },
+        { passive: false }
+      );
 
-
-        document.addEventListener('touchend', (e) => {
-            for (let i=0; i < e.changedTouches.length; i++) {
-                if (e.changedTouches[i].identifier === currentJoystickTouchId) {
-                    joystickActive = false;
-                    currentJoystickTouchId = null;
-                    joystickKnob.style.transform = 'translate(-50%, -50%)'; 
-                    keys['w'] = false; keys['a'] = false; keys['s'] = false; keys['d'] = false; 
-                    break;
-                }
-            }
-        });
-         document.addEventListener('mouseup', (e) => {
-            if (joystickActive) {
-                joystickActive = false;
-                joystickKnob.style.transform = 'translate(-50%, -50%)';
-                keys['w'] = false; keys['a'] = false; keys['s'] = false; keys['d'] = false;
-            }
-        });
-
-
-        if (btnDash) { 
-            btnDash.addEventListener('touchstart',(e)=>{e.preventDefault();keys[' ']=true;initAudioSystemOnce();},{passive:false});
-            btnDash.addEventListener('touchend',(e)=>{e.preventDefault();keys[' ']=false;},{passive:false});
-            btnDash.addEventListener('mousedown',(e)=>{e.preventDefault();keys[' ']=true;initAudioSystemOnce();},{passive:false});
-            btnDash.addEventListener('mouseup',(e)=>{e.preventDefault();keys[' ']=false;},{passive:false});
+      document.addEventListener("touchend", (e) => {
+        for (let i = 0; i < e.changedTouches.length; i++) {
+          if (e.changedTouches[i].identifier === currentJoystickTouchId) {
+            joystickActive = false;
+            currentJoystickTouchId = null;
+            joystickKnob.style.transform = "translate(-50%, -50%)";
+            keys["w"] = false;
+            keys["a"] = false;
+            keys["s"] = false;
+            keys["d"] = false;
+            break;
+          }
         }
-        
-        function showScreen(screenToShow){
-            menuScreen.style.display='none';navodScreen.style.display='none';leaderboardScreen.style.display='none';gameOverScreen.style.display='none';
-            canvas.style.display='none';controlsContainer.style.display='none';buyMeACoffeeButtonContainer.style.display='none';
-            if(screenToShow==='menu')menuScreen.style.display='flex';
-            else if(screenToShow==='navod')navodScreen.style.display='flex';
-            else if(screenToShow==='leaderboard')leaderboardScreen.style.display='flex';
-            else if(screenToShow==='gameOver')gameOverScreen.style.display='flex';
-            else if(screenToShow==='game')canvas.style.display='block';
-            if(screenToShow==='menu')buyMeACoffeeButtonContainer.style.display='block';
+      });
+      document.addEventListener("mouseup", (e) => {
+        if (joystickActive) {
+          joystickActive = false;
+          joystickKnob.style.transform = "translate(-50%, -50%)";
+          keys["w"] = false;
+          keys["a"] = false;
+          keys["s"] = false;
+          keys["d"] = false;
         }
+      });
 
-        function showMenu(){ gameState='menu';showScreen('menu');scoreSavedThisSession=false;if(btnSaveScoreGameOver){btnSaveScoreGameOver.disabled=false;btnSaveScoreGameOver.textContent="Uložit skóre";}if(musicStarted&&backgroundMusicLoop){backgroundMusicLoop.stop();Tone.Transport.stop();musicStarted=false;console.log("Music stopped.");}if(gameTimerInterval)clearInterval(gameTimerInterval);gameTimerInterval=null;if(countdownInterval)clearInterval(countdownInterval);countdownInterval=null;}
+      if (btnDash) {
+        btnDash.addEventListener(
+          "touchstart",
+          (e) => {
+            e.preventDefault();
+            keys[" "] = true;
+            initAudioSystemOnce();
+          },
+          { passive: false }
+        );
+        btnDash.addEventListener(
+          "touchend",
+          (e) => {
+            e.preventDefault();
+            keys[" "] = false;
+          },
+          { passive: false }
+        );
+        btnDash.addEventListener(
+          "mousedown",
+          (e) => {
+            e.preventDefault();
+            keys[" "] = true;
+            initAudioSystemOnce();
+          },
+          { passive: false }
+        );
+        btnDash.addEventListener(
+          "mouseup",
+          (e) => {
+            e.preventDefault();
+            keys[" "] = false;
+          },
+          { passive: false }
+        );
+      }
 
-        btnHraj.addEventListener('click',()=>{initAudioSystemOnce();showScreen('game');startCountdown();});
-        btnZebricekMenu.addEventListener('click',()=>{initAudioSystemOnce();showLeaderboard();});
-        btnNavod.addEventListener('click', () => { initAudioSystemOnce(); showScreen('navod'); });
-        btnNavodToMenu.addEventListener('click', () => { initAudioSystemOnce(); showMenu(); });
-        btnLeaderboardToMenu.addEventListener('click',()=>{initAudioSystemOnce();showMenu();});
-        btnGameOverToMenu.addEventListener('click',()=>{initAudioSystemOnce();showMenu();});
-        btnSaveScoreGameOver.addEventListener('click', async () => { initAudioSystemOnce();if(scoreSavedThisSession){try{alert("Skóre již bylo uloženo!");}catch(e){console.warn("Alert blocked.");}return;}let pN="";try{pN=prompt("Zadej jméno (max 10):","Hráč");}catch(e){console.warn("Prompt blocked.");pN=null;}if(pN&&pN.trim()!==""){const tN=pN.trim().substring(0,10);await saveScoreToLeaderboard(tN,score);scoreSavedThisSession=true;btnSaveScoreGameOver.textContent="Uloženo!";btnSaveScoreGameOver.disabled=true;try{alert("Skóre uloženo!");}catch(e){console.warn("Alert blocked.");}}else if(pN===""){try{alert("Jméno prázdné!");}catch(e){console.warn("Alert blocked.");}}else{console.log("Save cancelled.");}});
-        btnZebricekGameOver.addEventListener('click', () => {initAudioSystemOnce();showLeaderboard();});
-        
-        async function saveScoreToLeaderboard(name,playerScore){ if(!window.db){alert("DB N/A.");return;}try{const p=`artifacts/${window.appIdGlobal}/public/data/pugTaggerScores`;await window.firebase.addDoc(window.firebase.collection(window.db,p),{name:name,score:playerScore,timestamp:window.firebase.serverTimestamp()});console.log("Score saved:",name,playerScore);}catch(e){console.error("Save err:",e);alert("Save err:"+e.message);}}
-        async function showLeaderboard(){ gameState='leaderboard';showScreen('leaderboard');leaderboardListEl.innerHTML='';leaderboardLoadingTextEl.textContent='Načítání...';leaderboardLoadingTextEl.style.display='block';if(!window.db){leaderboardLoadingTextEl.textContent="DB N/A.";return;}try{const p=`artifacts/${window.appIdGlobal}/public/data/pugTaggerScores`;const q=window.firebase.query(window.firebase.collection(window.db,p),window.firebase.orderBy("score","desc"),window.firebase.limit(10));const querySnapshot=await window.firebase.getDocs(q);if(querySnapshot.empty){leaderboardLoadingTextEl.textContent="Žádné výsledky.";}else{leaderboardLoadingTextEl.style.display='none';let rank=1;querySnapshot.forEach((doc)=>{const data=doc.data();const li=document.createElement('li');li.innerHTML=`<span class="rank">${rank}.</span><span class="name">${data.name}</span><span class="score">${data.score}</span>`;leaderboardListEl.appendChild(li);rank++;});}}catch(e){console.error("Leaderboard err:",e);leaderboardLoadingTextEl.textContent="Chyba načítání.";}}
+      function showScreen(screenToShow) {
+        menuScreen.style.display = "none";
+        navodScreen.style.display = "none";
+        leaderboardScreen.style.display = "none";
+        gameOverScreen.style.display = "none";
+        canvas.style.display = "none";
+        controlsContainer.style.display = "none";
+        buyMeACoffeeButtonContainer.style.display = "none";
+        if (screenToShow === "menu") menuScreen.style.display = "flex";
+        else if (screenToShow === "navod") navodScreen.style.display = "flex";
+        else if (screenToShow === "leaderboard")
+          leaderboardScreen.style.display = "flex";
+        else if (screenToShow === "gameOver")
+          gameOverScreen.style.display = "flex";
+        else if (screenToShow === "game") canvas.style.display = "block";
+        if (screenToShow === "menu")
+          buyMeACoffeeButtonContainer.style.display = "block";
+      }
 
-        function startCountdown(){gameState='countdown';countdownValue=3;if(countdownInterval)clearInterval(countdownInterval);countdownInterval=setInterval(()=>{countdownValue--;if(countdownValue<0){clearInterval(countdownInterval);countdownInterval=null;startGame();}},1000);}
-        function drawCountdown(){ctx.clearRect(0,0,canvas.width,canvas.height);ctx.fillStyle="rgba(0,0,0,0.5)";ctx.fillRect(0,0,canvas.width,canvas.height);ctx.font=`${canvas.width/8}px "Press Start 2P"`;ctx.fillStyle="#FFD700";ctx.textAlign="center";ctx.textBaseline="middle";let txt=countdownValue>0?countdownValue.toString():"START!";if(countdownValue===0)txt="START!";if(countdownValue<0)txt="";ctx.fillText(txt,canvas.width/2,canvas.height/2);}
-        
-        function startGame(){
-            gameState='playing'; 
-            initGameLogic(); 
-            gameTimerValue=30; 
-            if(gameTimerInterval) clearInterval(gameTimerInterval); 
-            gameTimerInterval = null; 
-
-            if(audioInitialized&&backgroundMusicLoop&&!musicStarted){Tone.Transport.start();backgroundMusicLoop.start(0);musicStarted=true;console.log("Music started.");}
-            controlsContainer.style.display = 'flex'; 
+      function showMenu() {
+        gameState = "menu";
+        showScreen("menu");
+        scoreSavedThisSession = false;
+        if (btnSaveScoreGameOver) {
+          btnSaveScoreGameOver.disabled = false;
+          btnSaveScoreGameOver.textContent = "Uložit skóre";
         }
-        function drawGameTimer(){ctx.font=`${canvas.width/30}px "Press Start 2P"`;ctx.fillStyle="#FFFFFF";ctx.textAlign="right";ctx.fillText(`Čas: ${Math.max(0, Math.ceil(gameTimerValue))}`,canvas.width-(canvas.width*0.025),canvas.height*0.06);} 
-        
-        function endGame(){gameState='gameOver';showScreen('gameOver');gameOverScoreEl.textContent=`Skóre: ${score}`;scoreSavedThisSession=false;if(btnSaveScoreGameOver){btnSaveScoreGameOver.disabled=false;btnSaveScoreGameOver.textContent="Uložit skóre";}if(musicStarted&&backgroundMusicLoop){backgroundMusicLoop.stop();Tone.Transport.stop();musicStarted=false;console.log("Music stopped.");}}
-
-        function updatePlayer(dt){if(!player)return;if(player.isMissLungeAnimating){player.missLungeTimer-=dt;if(player.missLungeTimer<=0)player.isMissLungeAnimating=false;return;}if(player.isCurrentlyTagging){player.tagLockTimer-=dt;if(taggedDogInfo){const hp=(TAG_LOCK_DURATION-player.tagLockTimer)/TAG_LOCK_DURATION;const bY=Math.sin(hp*Math.PI)*(-player.height*0.15);player.x=taggedDogInfo.originalX+(taggedDogInfo.dogData.width-player.width)/2;player.y=taggedDogInfo.originalY-player.height*0.3+bY;}if(player.tagLockTimer<=0)player.isCurrentlyTagging=false;player.dx=0;player.dy=0;player.trail=[];return;}player.dx=0;player.dy=0;if(!player.isDashing){if(keys['w'])player.dy=-1;if(keys['s'])player.dy=1;if(keys['a'])player.dx=-1;if(keys['d'])player.dx=1;if(player.dx!==0&&player.dy!==0){const f=1/Math.sqrt(2);player.dx*=f;player.dy*=f;}if(keys[' ']&&!player.isDashing&&!taggedDogInfo&&!player.isCurrentlyTagging&&!player.isMissLungeAnimating){player.isDashing=true;player.dashTimer=DASH_DURATION;let m=Math.sqrt(player.dx*player.dx+player.dy*player.dy);if(m>0)player.currentDashSpeed=player.speed*DASH_SPEED_MULTIPLIER;else{player.dx=1;player.currentDashSpeed=player.speed*DASH_SPEED_MULTIPLIER;}}else if(keys[' ']&&(player.isDashing||taggedDogInfo||player.isCurrentlyTagging||player.isMissLungeAnimating)){playFailSound();}if(player.trail.length>0)player.trail.pop();}else{player.dashTimer-=dt;player.x+=player.dx*player.currentDashSpeed*dt;player.y+=player.dy*player.currentDashSpeed*dt;player.trail.unshift({x:player.x,y:player.y,width:player.width,height:player.height});if(player.trail.length>player.maxTrailLength)player.trail.pop();if(player.dashTimer<=0){player.isDashing=false;player.currentDashSpeed=0;if(!player.isCurrentlyTagging&&!taggedDogInfo){player.isMissLungeAnimating=true;player.missLungeTimer=MISS_LUNGE_DURATION;playFailSound();}}}if(!player.isDashing&&!player.isMissLungeAnimating){player.x+=player.dx*player.speed*dt;player.y+=player.dy*player.speed*dt;}player.x=Math.max(0,Math.min(player.x,canvas.width-player.width));player.y=Math.max(0,Math.min(player.y,canvas.height-player.height));}
-        function updateFemaleDog(dog, dt){if(!player)return;const dX=player.x+player.width/2-(dog.x+dog.width/2);const dY=player.y+player.height/2-(dog.y+dog.height/2);const dist=Math.sqrt(dX*dX+dY*dY);if(dist<fleeRadius&&!player.isCurrentlyTagging){const angle=Math.atan2(dY,dX);dog.dx=-Math.cos(angle);dog.dy=-Math.sin(angle);}else{dog.moveTimer-=dt;if(dog.moveTimer<=0){const randAngle=Math.random()*Math.PI*2;dog.dx=Math.cos(randAngle);dog.dy=Math.sin(randAngle);dog.moveTimer=Math.random()*2+1;}}dog.x+=dog.dx*dog.speed*dt;dog.y+=dog.dy*dog.speed*dt;if(dog.x<0){dog.x=0;dog.dx*=-1;}if(dog.x+dog.width>canvas.width){dog.x=canvas.width-dog.width;dog.dx*=-1;}if(dog.y<0){dog.y=0;dog.dy*=-1;}if(dog.y+dog.height>canvas.height){dog.y=canvas.height-dog.height;dog.dy*=-1;}}
-        function updateTagAnimationAndScore(dt){if(taggedDogInfo){taggedDogInfo.animTimer-=dt;if(taggedDogInfo.animTimer<-0.16)taggedDogInfo=null;}}
-        function updateSuccessMessages(dt){for(let i=successMessages.length-1;i>=0;i--){const msg=successMessages[i];msg.timer-=dt;msg.alpha=msg.timer/SUCCESS_TEXT_DURATION;msg.y-=30*dt;msg.scale=1+(SUCCESS_TEXT_DURATION-msg.timer)/SUCCESS_TEXT_DURATION*0.3;if(msg.particles){for(let j=msg.particles.length-1;j>=0;j--){const p=msg.particles[j];p.x+=p.speedX*dt;p.y+=p.speedY*dt;p.alpha=p.duration/PARTICLE_DURATION;p.duration-=dt;if(p.duration<=0)msg.particles.splice(j,1);}}if(msg.timer<=0)successMessages.splice(i,1);}}
-        function updateHeartAnimations(dt) {for(let i=heartAnimations.length-1;i>=0;i--){const h=heartAnimations[i];h.timer-=dt;h.y-=h.riseSpeed*60*dt;h.alpha=h.timer/HEART_ANIM_DURATION;if(h.phase==='grow'&&h.currentScale<h.maxScale){h.currentScale+=3*dt;if(h.currentScale>=h.maxScale)h.phase='float';}if(h.timer<=0||h.alpha<=0)heartAnimations.splice(i,1);}}
-        function checkCollisions(){if(!player||player.isCurrentlyTagging||taggedDogInfo||player.isMissLungeAnimating)return;let newlyTaggedDogs=[];if(player.isDashing){for(let i=femaleDogs.length-1;i>=0;i--){const dog=femaleDogs[i];if(player.x<dog.x+dog.width&&player.x+player.width>dog.x&&player.y<dog.y+dog.height&&player.y+player.height>dog.y){newlyTaggedDogs.push({dog:dog,index:i,originalX:dog.x,originalY:dog.y,originalWidth:dog.width,originalHeight:dog.height});}}}if(newlyTaggedDogs.length>0){playTagSound();player.isDashing=false;player.dashTimer=0;player.trail=[];let successText="";let particlesForMessage=[];if(newlyTaggedDogs.length===1){const tagged=newlyTaggedDogs[0];score++;femaleDogSpawnTimer=FEMALE_DOG_SPAWN_COOLDOWN;player.isCurrentlyTagging=true;player.tagLockTimer=TAG_LOCK_DURATION;taggedDogInfo={dogData:{...tagged.dog},animTimer:TAG_ANIMATION_TOTAL_DURATION,originalX:tagged.originalX,originalY:tagged.originalY,scoreAwarded:true};femaleDogs.splice(tagged.index,1);successText=singleTagTexts[Math.floor(Math.random()*singleTagTexts.length)];heartAnimations.push({x:tagged.originalX+tagged.originalWidth/2,y:tagged.originalY-10,currentScale:0.1,maxScale:1.2,alpha:1,timer:HEART_ANIM_DURATION,riseSpeed:0.7,phase:'grow'});}else{score+=newlyTaggedDogs.length;femaleDogSpawnTimer=FEMALE_DOG_SPAWN_COOLDOWN;if(newlyTaggedDogs.length>=5)successText=multiTagTexts[5];else successText=multiTagTexts[newlyTaggedDogs.length]||`Combo x${newlyTaggedDogs.length}!`;for(let k=0;k<newlyTaggedDogs.length*5;k++){particlesForMessage.push(createParticle(player.x+player.width/2,player.y+player.height/2));}newlyTaggedDogs.forEach(tagged=>{heartAnimations.push({x:tagged.originalX+tagged.originalWidth/2,y:tagged.originalY-10,currentScale:0.1,maxScale:1.0,alpha:1,timer:HEART_ANIM_DURATION,riseSpeed:0.6,phase:'grow'});});newlyTaggedDogs.sort((a,b)=>b.index-a.index);newlyTaggedDogs.forEach(tagged=>femaleDogs.splice(tagged.index,1));}if(successText){successMessages.push({text:successText,x:player.x+player.width/2,y:player.y-10,alpha:1,scale:1,timer:SUCCESS_TEXT_DURATION,particles:particlesForMessage});speakText(successText);}}}
-        function spawnFemaleDogs(dt){if(femaleDogSpawnTimer>0){femaleDogSpawnTimer-=dt;return;}if(player && femaleDogs.length<MAX_FEMALE_DOGS&&!taggedDogInfo&&!player.isCurrentlyTagging&&!player.isMissLungeAnimating){femaleDogs.push(createFemaleDog());femaleDogSpawnTimer=FEMALE_DOG_SPAWN_COOLDOWN;}}
-
-        function drawPlayer(){if(!player)return;if(player.trail.length>0){for(let i=0;i<player.trail.length;i++){const t=player.trail[i];const alpha=0.4*(1-(i+1)/(player.trail.length+1));ctx.globalAlpha=alpha;if(playerImg.complete&&playerImg.naturalWidth!==0)ctx.drawImage(playerImg,t.x,t.y,t.width,t.height);ctx.globalAlpha=1.0;}}if(player.isMissLungeAnimating){const lP=(MISS_LUNGE_DURATION-player.missLungeTimer)/MISS_LUNGE_DURATION;const lY=Math.sin(lP*Math.PI)*-(player.height*0.2);if(playerImg.complete&&playerImg.naturalWidth!==0)ctx.drawImage(playerImg,player.x,player.y+lY,player.width,player.height);else{ctx.fillStyle='saddlebrown';ctx.fillRect(player.x,player.y+lY,player.width,player.height);}}else if(!player.isCurrentlyTagging){if(playerImg.complete&&playerImg.naturalWidth!==0)ctx.drawImage(playerImg,player.x,player.y,player.width,player.height);else{ctx.fillStyle='saddlebrown';ctx.fillRect(player.x,player.y,player.width,player.height);}}}
-        function drawFemaleDog(dog){if(femaleDogImg.complete&&femaleDogImg.naturalWidth!==0)ctx.drawImage(femaleDogImg,dog.x,dog.y,dog.width,dog.height);else{ctx.fillStyle='lightpink';ctx.fillRect(dog.x,dog.y,dog.width,dog.height);}}
-        function drawActiveTagAnimation(){if(!taggedDogInfo||taggedDogInfo.animTimer<=-0.16)return;const td=taggedDogInfo.dogData;const aT=taggedDogInfo.animTimer;if(player&&player.isCurrentlyTagging){const hP=(TAG_LOCK_DURATION-player.tagLockTimer)/TAG_LOCK_DURATION;const dBY=Math.sin(hP*Math.PI)*(td.height*0.1);if(femaleDogImg.complete&&femaleDogImg.naturalWidth!==0)ctx.drawImage(femaleDogImg,td.x,td.y+dBY,td.width,td.height);else{ctx.fillStyle='lightpink';ctx.fillRect(td.x,td.y+dBY,td.width,td.height);}if(playerImg.complete&&playerImg.naturalWidth!==0)ctx.drawImage(playerImg,player.x,player.y,player.width,player.height);else{ctx.fillStyle='saddlebrown';ctx.fillRect(player.x,player.y,player.width,player.height);}}else{const fD=TAG_ANIMATION_TOTAL_DURATION-TAG_LOCK_DURATION;const cFT=aT;const fP=Math.max(0,Math.min(1,cFT/fD));ctx.globalAlpha=fP;const s=fP*0.8+0.2;const dX=td.x+(td.width*(1-s))/2;const dY=td.y+(td.height*(1-s))/2;if(femaleDogImg.complete&&femaleDogImg.naturalWidth!==0)ctx.drawImage(femaleDogImg,dX,dY,td.width*s,td.height*s);else{ctx.fillStyle='lightpink';ctx.fillRect(dX,dY,td.width*s,td.height*s);}ctx.globalAlpha=1.0;}}
-        function drawSuccessMessages(){successMessages.forEach(msg=>{if(msg.particles){msg.particles.forEach(p=>{ctx.globalAlpha=p.alpha;ctx.fillStyle=p.color;ctx.beginPath();ctx.arc(p.x,p.y,p.size,0,Math.PI*2);ctx.fill();});ctx.globalAlpha=1;}ctx.save();ctx.globalAlpha=msg.alpha;ctx.fillStyle='#FFD700';ctx.strokeStyle='#000000';ctx.lineWidth=2;const fS=Math.max(12,Math.min(24,canvas.width/35))*msg.scale;ctx.font=`${fS}px "Press Start 2P"`;ctx.textAlign='center';ctx.strokeText(msg.text,msg.x,msg.y);ctx.fillText(msg.text,msg.x,msg.y);ctx.restore();});}
-        function drawHeart(x,y,s,a){ctx.save();ctx.globalAlpha=a;ctx.fillStyle='red';ctx.strokeStyle='darkred';ctx.lineWidth=2;ctx.beginPath();const tCH=s*0.3;ctx.moveTo(x,y+tCH);ctx.bezierCurveTo(x,y,x-s/2,y,x-s/2,y+tCH);ctx.bezierCurveTo(x-s/2,y+(s+tCH)/2,x,y+(s+tCH)/2+tCH/2,x,y+s);ctx.bezierCurveTo(x,y+(s+tCH)/2+tCH/2,x+s/2,y+(s+tCH)/2,x+s/2,y+tCH);ctx.bezierCurveTo(x+s/2,y,x,y,x,y+tCH);ctx.closePath();ctx.fill();ctx.stroke();ctx.restore();}
-        function drawHeartAnimations(){heartAnimations.forEach(h=>{drawHeart(h.x-(10*h.currentScale)/2,h.y-(10*h.currentScale)/2,10*h.currentScale,h.alpha);});}
-        function drawFlowers(){
-            console.log("Drawing " + backgroundFlowers.length + " flowers."); // DEBUG
-            backgroundFlowers.forEach(f=>{ctx.strokeStyle=f.stemColor;ctx.lineWidth=Math.max(1,canvas.width/200);ctx.beginPath();ctx.moveTo(f.x,f.y+f.stemHeight);ctx.lineTo(f.x,f.y);ctx.stroke();ctx.fillStyle=f.petalColor;for(let i=0;i<f.numPetals;i++){const ang=(i/f.numPetals)*Math.PI*2;const pX=f.x+Math.cos(ang)*(f.centerRadius+f.petalRadius/2);const pY=f.y+Math.sin(ang)*(f.centerRadius+f.petalRadius/2);ctx.beginPath();ctx.arc(pX,pY,f.petalRadius,0,Math.PI*2);ctx.fill();}ctx.fillStyle='#FFD700';ctx.beginPath();ctx.arc(f.x,f.y,f.centerRadius,0,Math.PI*2);ctx.fill();});
+        if (musicStarted && backgroundMusicLoop) {
+          backgroundMusicLoop.stop();
+          Tone.Transport.stop();
+          musicStarted = false;
+          console.log("Music stopped.");
         }
-        function drawScoreOnCanvas(){ctx.fillStyle='#FFFFFF';const bFS=24;const sFS=Math.max(12,Math.min(bFS,canvas.width/30));ctx.font=`${sFS}px "Press Start 2P"`;ctx.textAlign='left';ctx.fillText('Skóre: '+score,canvas.width*0.02,canvas.height*0.05);}
-        
-        function initGameLogic(){
-            resizeCanvas();
+        if (gameTimerInterval) clearInterval(gameTimerInterval);
+        gameTimerInterval = null;
+        if (countdownInterval) clearInterval(countdownInterval);
+        countdownInterval = null;
+      }
 
-                // reference design is 800 px wide
-                const scaleFactor = canvas.width / 800;
-
-                /* sprite & distance scaling (already there) */
-                currentSpriteScale = SPRITE_SCALE_BASE * Math.max(0.7, Math.min(1.5, scaleFactor * 1.1));
-
-                /* NEW — speed scaling */
-                playerSpeed     = PLAYER_SPEED_BASE     * scaleFactor;   // was PLAYER_SPEED_BASE
-                femaleDogSpeed  = FEMALE_DOG_SPEED_BASE * scaleFactor;   // was FEMALE_DOG_SPEED_BASE
-            fleeRadius = FLEE_RADIUS_BASE * Math.max(0.7, Math.min(1.5, scaleFactor)); 
-
-            player=createPlayer();
-            femaleDogs=[];
-            backgroundFlowers = []; 
-            const numFlowers = 20 + Math.floor(Math.random() * 10); 
-            console.log("INIT GAME LOGIC: Creating " + numFlowers + " flowers. Canvas: " + canvas.width + "x" + canvas.height); 
-            if (canvas.width > 0 && canvas.height > 0) { 
-                for (let i = 0; i < numFlowers; i++) {
-                    backgroundFlowers.push(createFlower());
-                }
-            } else {
-                console.warn("INIT GAME LOGIC: Canvas dimensions are 0, not creating flowers yet.");
-            }
-            console.log("INIT GAME LOGIC: Flowers array length:", backgroundFlowers.length); 
-
-            for(let i=0;i<Math.floor(MAX_FEMALE_DOGS/2)+1;i++){femaleDogs.push(createFemaleDog());}
-            score=0;keys={};femaleDogSpawnTimer=FEMALE_DOG_SPAWN_COOLDOWN;taggedDogInfo=null;successMessages=[]; heartAnimations = [];
-            gameTimerValue=30; 
-        }
-
-        let animationFrameId;
-        function gameLoop(currentTime){
-            if (!lastTime) lastTime = currentTime;
-            const deltaTime = (currentTime - lastTime) / 1000; // Delta time in seconds
-            lastTime = currentTime;
-
-            if(gameState==='menu'){}
-            else if(gameState==='leaderboard'){ctx.clearRect(0,0,canvas.width,canvas.height);}
-            else if(gameState==='countdown'){drawCountdown();}
-            else if(gameState==='playing'){
-                gameTimerValue -= deltaTime; 
-                if (gameTimerValue <= 0) {
-                    endGame();
-                } else {
-                    updatePlayer(deltaTime);femaleDogs.forEach(dog => updateFemaleDog(dog, deltaTime));
-                    updateTagAnimationAndScore(deltaTime);updateSuccessMessages(deltaTime); updateHeartAnimations(deltaTime);
-                    checkCollisions();spawnFemaleDogs(deltaTime);
-                    ctx.clearRect(0,0,canvas.width,canvas.height); 
-                    drawFlowers(); 
-                    femaleDogs.forEach(drawFemaleDog);drawPlayer(); 
-                    drawActiveTagAnimation();drawSuccessMessages(); drawHeartAnimations();
-                    drawScoreOnCanvas();drawGameTimer();
-                }
-                controlsContainer.style.display = 'flex'; 
-            } else if(gameState==='gameOver'){
-                ctx.clearRect(0,0,canvas.width,canvas.height);
-                controlsContainer.style.display = 'none'; 
-            }
-            animationFrameId=requestAnimationFrame(gameLoop); 
-        }
-        
+      btnHraj.addEventListener("click", () => {
+        initAudioSystemOnce();
+        showScreen("game");
+        startCountdown();
+      });
+      btnZebricekMenu.addEventListener("click", () => {
+        initAudioSystemOnce();
+        showLeaderboard();
+      });
+      btnNavod.addEventListener("click", () => {
+        initAudioSystemOnce();
+        showScreen("navod");
+      });
+      btnNavodToMenu.addEventListener("click", () => {
+        initAudioSystemOnce();
         showMenu();
-        requestAnimationFrame(gameLoop); 
-        
+      });
+      btnLeaderboardToMenu.addEventListener("click", () => {
+        initAudioSystemOnce();
+        showMenu();
+      });
+      btnGameOverToMenu.addEventListener("click", () => {
+        initAudioSystemOnce();
+        showMenu();
+      });
+      btnSaveScoreGameOver.addEventListener("click", async () => {
+        initAudioSystemOnce();
+        if (scoreSavedThisSession) {
+          try {
+            alert("Skóre již bylo uloženo!");
+          } catch (e) {
+            console.warn("Alert blocked.");
+          }
+          return;
+        }
+        let pN = "";
+        try {
+          pN = prompt("Zadej jméno (max 10):", "Hráč");
+        } catch (e) {
+          console.warn("Prompt blocked.");
+          pN = null;
+        }
+        if (pN && pN.trim() !== "") {
+          const tN = pN.trim().substring(0, 10);
+          await saveScoreToLeaderboard(tN, score);
+          scoreSavedThisSession = true;
+          btnSaveScoreGameOver.textContent = "Uloženo!";
+          btnSaveScoreGameOver.disabled = true;
+          try {
+            alert("Skóre uloženo!");
+          } catch (e) {
+            console.warn("Alert blocked.");
+          }
+        } else if (pN === "") {
+          try {
+            alert("Jméno prázdné!");
+          } catch (e) {
+            console.warn("Alert blocked.");
+          }
+        } else {
+          console.log("Save cancelled.");
+        }
+      });
+      btnZebricekGameOver.addEventListener("click", () => {
+        initAudioSystemOnce();
+        showLeaderboard();
+      });
+
+      async function saveScoreToLeaderboard(name, playerScore) {
+        if (!window.db) {
+          alert("DB N/A.");
+          return;
+        }
+        try {
+          const p = `artifacts/${window.appIdGlobal}/public/data/pugTaggerScores`;
+          await window.firebase.addDoc(
+            window.firebase.collection(window.db, p),
+            {
+              name: name,
+              score: playerScore,
+              timestamp: window.firebase.serverTimestamp(),
+            }
+          );
+          console.log("Score saved:", name, playerScore);
+        } catch (e) {
+          console.error("Save err:", e);
+          alert("Save err:" + e.message);
+        }
+      }
+      async function showLeaderboard() {
+        gameState = "leaderboard";
+        showScreen("leaderboard");
+        leaderboardListEl.innerHTML = "";
+        leaderboardLoadingTextEl.textContent = "Načítání...";
+        leaderboardLoadingTextEl.style.display = "block";
+        if (!window.db) {
+          leaderboardLoadingTextEl.textContent = "DB N/A.";
+          return;
+        }
+        try {
+          const p = `artifacts/${window.appIdGlobal}/public/data/pugTaggerScores`;
+          const q = window.firebase.query(
+            window.firebase.collection(window.db, p),
+            window.firebase.orderBy("score", "desc"),
+            window.firebase.limit(10)
+          );
+          const querySnapshot = await window.firebase.getDocs(q);
+          if (querySnapshot.empty) {
+            leaderboardLoadingTextEl.textContent = "Žádné výsledky.";
+          } else {
+            leaderboardLoadingTextEl.style.display = "none";
+            let rank = 1;
+            querySnapshot.forEach((doc) => {
+              const data = doc.data();
+              const li = document.createElement("li");
+              li.innerHTML = `<span class="rank">${rank}.</span><span class="name">${data.name}</span><span class="score">${data.score}</span>`;
+              leaderboardListEl.appendChild(li);
+              rank++;
+            });
+          }
+        } catch (e) {
+          console.error("Leaderboard err:", e);
+          leaderboardLoadingTextEl.textContent = "Chyba načítání.";
+        }
+      }
+
+      function startCountdown() {
+        gameState = "countdown";
+        countdownValue = 3;
+        if (countdownInterval) clearInterval(countdownInterval);
+        countdownInterval = setInterval(() => {
+          countdownValue--;
+          if (countdownValue < 0) {
+            clearInterval(countdownInterval);
+            countdownInterval = null;
+            startGame();
+          }
+        }, 1000);
+      }
+      function drawCountdown() {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        ctx.fillStyle = "rgba(0,0,0,0.5)";
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+        ctx.font = `${canvas.width / 8}px "Press Start 2P"`;
+        ctx.fillStyle = "#FFD700";
+        ctx.textAlign = "center";
+        ctx.textBaseline = "middle";
+        let txt = countdownValue > 0 ? countdownValue.toString() : "START!";
+        if (countdownValue === 0) txt = "START!";
+        if (countdownValue < 0) txt = "";
+        ctx.fillText(txt, canvas.width / 2, canvas.height / 2);
+      }
+
+      function startGame() {
+        gameState = "playing";
+        initGameLogic();
+        gameTimerValue = 30;
+        if (gameTimerInterval) clearInterval(gameTimerInterval);
+        gameTimerInterval = null;
+
+        if (audioInitialized && backgroundMusicLoop && !musicStarted) {
+          Tone.Transport.start();
+          backgroundMusicLoop.start(0);
+          musicStarted = true;
+          console.log("Music started.");
+        }
+        controlsContainer.style.display = "flex";
+      }
+      function drawGameTimer() {
+        ctx.font = `${canvas.width / 30}px "Press Start 2P"`;
+        ctx.fillStyle = "#FFFFFF";
+        ctx.textAlign = "right";
+        ctx.fillText(
+          `Čas: ${Math.max(0, Math.ceil(gameTimerValue))}`,
+          canvas.width - canvas.width * 0.025,
+          canvas.height * 0.06
+        );
+      }
+
+      function endGame() {
+        gameState = "gameOver";
+        showScreen("gameOver");
+        gameOverScoreEl.textContent = `Skóre: ${score}`;
+        scoreSavedThisSession = false;
+        if (btnSaveScoreGameOver) {
+          btnSaveScoreGameOver.disabled = false;
+          btnSaveScoreGameOver.textContent = "Uložit skóre";
+        }
+        if (musicStarted && backgroundMusicLoop) {
+          backgroundMusicLoop.stop();
+          Tone.Transport.stop();
+          musicStarted = false;
+          console.log("Music stopped.");
+        }
+      }
+
+      function updatePlayer(dt) {
+        if (!player) return;
+        if (player.isMissLungeAnimating) {
+          player.missLungeTimer -= dt;
+          if (player.missLungeTimer <= 0) player.isMissLungeAnimating = false;
+          return;
+        }
+        if (player.isCurrentlyTagging) {
+          player.tagLockTimer -= dt;
+          if (taggedDogInfo) {
+            const hp =
+              (TAG_LOCK_DURATION - player.tagLockTimer) / TAG_LOCK_DURATION;
+            const bY = Math.sin(hp * Math.PI) * (-player.height * 0.15);
+            player.x =
+              taggedDogInfo.originalX +
+              (taggedDogInfo.dogData.width - player.width) / 2;
+            player.y = taggedDogInfo.originalY - player.height * 0.3 + bY;
+          }
+          if (player.tagLockTimer <= 0) player.isCurrentlyTagging = false;
+          player.dx = 0;
+          player.dy = 0;
+          player.trail = [];
+          return;
+        }
+        player.dx = 0;
+        player.dy = 0;
+        if (!player.isDashing) {
+          if (keys["w"]) player.dy = -1;
+          if (keys["s"]) player.dy = 1;
+          if (keys["a"]) player.dx = -1;
+          if (keys["d"]) player.dx = 1;
+          if (player.dx !== 0 && player.dy !== 0) {
+            const f = 1 / Math.sqrt(2);
+            player.dx *= f;
+            player.dy *= f;
+          }
+          if (
+            keys[" "] &&
+            !player.isDashing &&
+            !taggedDogInfo &&
+            !player.isCurrentlyTagging &&
+            !player.isMissLungeAnimating
+          ) {
+            player.isDashing = true;
+            player.dashTimer = DASH_DURATION;
+            let m = Math.sqrt(player.dx * player.dx + player.dy * player.dy);
+            if (m > 0)
+              player.currentDashSpeed = player.speed * DASH_SPEED_MULTIPLIER;
+            else {
+              player.dx = 1;
+              player.currentDashSpeed = player.speed * DASH_SPEED_MULTIPLIER;
+            }
+          } else if (
+            keys[" "] &&
+            (player.isDashing ||
+              taggedDogInfo ||
+              player.isCurrentlyTagging ||
+              player.isMissLungeAnimating)
+          ) {
+            playFailSound();
+          }
+          if (player.trail.length > 0) player.trail.pop();
+        } else {
+          player.dashTimer -= dt;
+          player.x += player.dx * player.currentDashSpeed * dt;
+          player.y += player.dy * player.currentDashSpeed * dt;
+          player.trail.unshift({
+            x: player.x,
+            y: player.y,
+            width: player.width,
+            height: player.height,
+          });
+          if (player.trail.length > player.maxTrailLength) player.trail.pop();
+          if (player.dashTimer <= 0) {
+            player.isDashing = false;
+            player.currentDashSpeed = 0;
+            if (!player.isCurrentlyTagging && !taggedDogInfo) {
+              player.isMissLungeAnimating = true;
+              player.missLungeTimer = MISS_LUNGE_DURATION;
+              playFailSound();
+            }
+          }
+        }
+        if (!player.isDashing && !player.isMissLungeAnimating) {
+          player.x += player.dx * player.speed * dt;
+          player.y += player.dy * player.speed * dt;
+        }
+        player.x = Math.max(0, Math.min(player.x, canvas.width - player.width));
+        player.y = Math.max(
+          0,
+          Math.min(player.y, canvas.height - player.height)
+        );
+      }
+      function updateFemaleDog(dog, dt) {
+        if (!player) return;
+        const dX = player.x + player.width / 2 - (dog.x + dog.width / 2);
+        const dY = player.y + player.height / 2 - (dog.y + dog.height / 2);
+        const dist = Math.sqrt(dX * dX + dY * dY);
+        if (dist < fleeRadius && !player.isCurrentlyTagging) {
+          const angle = Math.atan2(dY, dX);
+          dog.dx = -Math.cos(angle);
+          dog.dy = -Math.sin(angle);
+        } else {
+          dog.moveTimer -= dt;
+          if (dog.moveTimer <= 0) {
+            const randAngle = Math.random() * Math.PI * 2;
+            dog.dx = Math.cos(randAngle);
+            dog.dy = Math.sin(randAngle);
+            dog.moveTimer = Math.random() * 2 + 1;
+          }
+        }
+        dog.x += dog.dx * dog.speed * dt;
+        dog.y += dog.dy * dog.speed * dt;
+        if (dog.x < 0) {
+          dog.x = 0;
+          dog.dx *= -1;
+        }
+        if (dog.x + dog.width > canvas.width) {
+          dog.x = canvas.width - dog.width;
+          dog.dx *= -1;
+        }
+        if (dog.y < 0) {
+          dog.y = 0;
+          dog.dy *= -1;
+        }
+        if (dog.y + dog.height > canvas.height) {
+          dog.y = canvas.height - dog.height;
+          dog.dy *= -1;
+        }
+      }
+      function updateTagAnimationAndScore(dt) {
+        if (taggedDogInfo) {
+          taggedDogInfo.animTimer -= dt;
+          if (taggedDogInfo.animTimer < -0.16) taggedDogInfo = null;
+        }
+      }
+      function updateSuccessMessages(dt) {
+        for (let i = successMessages.length - 1; i >= 0; i--) {
+          const msg = successMessages[i];
+          msg.timer -= dt;
+          msg.alpha = msg.timer / SUCCESS_TEXT_DURATION;
+          msg.y -= 30 * dt;
+          msg.scale =
+            1 +
+            ((SUCCESS_TEXT_DURATION - msg.timer) / SUCCESS_TEXT_DURATION) * 0.3;
+          if (msg.particles) {
+            for (let j = msg.particles.length - 1; j >= 0; j--) {
+              const p = msg.particles[j];
+              p.x += p.speedX * dt;
+              p.y += p.speedY * dt;
+              p.alpha = p.duration / PARTICLE_DURATION;
+              p.duration -= dt;
+              if (p.duration <= 0) msg.particles.splice(j, 1);
+            }
+          }
+          if (msg.timer <= 0) successMessages.splice(i, 1);
+        }
+      }
+      function updateHeartAnimations(dt) {
+        for (let i = heartAnimations.length - 1; i >= 0; i--) {
+          const h = heartAnimations[i];
+          h.timer -= dt;
+          h.y -= h.riseSpeed * 60 * dt;
+          h.alpha = h.timer / HEART_ANIM_DURATION;
+          if (h.phase === "grow" && h.currentScale < h.maxScale) {
+            h.currentScale += 3 * dt;
+            if (h.currentScale >= h.maxScale) h.phase = "float";
+          }
+          if (h.timer <= 0 || h.alpha <= 0) heartAnimations.splice(i, 1);
+        }
+      }
+      function checkCollisions() {
+        if (
+          !player ||
+          player.isCurrentlyTagging ||
+          taggedDogInfo ||
+          player.isMissLungeAnimating
+        )
+          return;
+        let newlyTaggedDogs = [];
+        if (player.isDashing) {
+          for (let i = femaleDogs.length - 1; i >= 0; i--) {
+            const dog = femaleDogs[i];
+            if (
+              player.x < dog.x + dog.width &&
+              player.x + player.width > dog.x &&
+              player.y < dog.y + dog.height &&
+              player.y + player.height > dog.y
+            ) {
+              newlyTaggedDogs.push({
+                dog: dog,
+                index: i,
+                originalX: dog.x,
+                originalY: dog.y,
+                originalWidth: dog.width,
+                originalHeight: dog.height,
+              });
+            }
+          }
+        }
+        if (newlyTaggedDogs.length > 0) {
+          playTagSound();
+          player.isDashing = false;
+          player.dashTimer = 0;
+          player.trail = [];
+          let successText = "";
+          let particlesForMessage = [];
+          if (newlyTaggedDogs.length === 1) {
+            const tagged = newlyTaggedDogs[0];
+            score++;
+            femaleDogSpawnTimer = FEMALE_DOG_SPAWN_COOLDOWN;
+            player.isCurrentlyTagging = true;
+            player.tagLockTimer = TAG_LOCK_DURATION;
+            taggedDogInfo = {
+              dogData: { ...tagged.dog },
+              animTimer: TAG_ANIMATION_TOTAL_DURATION,
+              originalX: tagged.originalX,
+              originalY: tagged.originalY,
+              scoreAwarded: true,
+            };
+            femaleDogs.splice(tagged.index, 1);
+            successText =
+              singleTagTexts[Math.floor(Math.random() * singleTagTexts.length)];
+            heartAnimations.push({
+              x: tagged.originalX + tagged.originalWidth / 2,
+              y: tagged.originalY - 10,
+              currentScale: 0.1,
+              maxScale: 1.2,
+              alpha: 1,
+              timer: HEART_ANIM_DURATION,
+              riseSpeed: 0.7,
+              phase: "grow",
+            });
+          } else {
+            score += newlyTaggedDogs.length;
+            femaleDogSpawnTimer = FEMALE_DOG_SPAWN_COOLDOWN;
+            if (newlyTaggedDogs.length >= 5) successText = multiTagTexts[5];
+            else
+              successText =
+                multiTagTexts[newlyTaggedDogs.length] ||
+                `Combo x${newlyTaggedDogs.length}!`;
+            for (let k = 0; k < newlyTaggedDogs.length * 5; k++) {
+              particlesForMessage.push(
+                createParticle(
+                  player.x + player.width / 2,
+                  player.y + player.height / 2
+                )
+              );
+            }
+            newlyTaggedDogs.forEach((tagged) => {
+              heartAnimations.push({
+                x: tagged.originalX + tagged.originalWidth / 2,
+                y: tagged.originalY - 10,
+                currentScale: 0.1,
+                maxScale: 1.0,
+                alpha: 1,
+                timer: HEART_ANIM_DURATION,
+                riseSpeed: 0.6,
+                phase: "grow",
+              });
+            });
+            newlyTaggedDogs.sort((a, b) => b.index - a.index);
+            newlyTaggedDogs.forEach((tagged) =>
+              femaleDogs.splice(tagged.index, 1)
+            );
+          }
+          if (successText) {
+            successMessages.push({
+              text: successText,
+              x: player.x + player.width / 2,
+              y: player.y - 10,
+              alpha: 1,
+              scale: 1,
+              timer: SUCCESS_TEXT_DURATION,
+              particles: particlesForMessage,
+            });
+            speakText(successText);
+          }
+        }
+      }
+      function spawnFemaleDogs(dt) {
+        if (femaleDogSpawnTimer > 0) {
+          femaleDogSpawnTimer -= dt;
+          return;
+        }
+        if (
+          player &&
+          femaleDogs.length < MAX_FEMALE_DOGS &&
+          !taggedDogInfo &&
+          !player.isCurrentlyTagging &&
+          !player.isMissLungeAnimating
+        ) {
+          femaleDogs.push(createFemaleDog());
+          femaleDogSpawnTimer = FEMALE_DOG_SPAWN_COOLDOWN;
+        }
+      }
+
+      function drawPlayer() {
+        if (!player) return;
+        if (player.trail.length > 0) {
+          for (let i = 0; i < player.trail.length; i++) {
+            const t = player.trail[i];
+            const alpha = 0.4 * (1 - (i + 1) / (player.trail.length + 1));
+            ctx.globalAlpha = alpha;
+            if (playerImg.complete && playerImg.naturalWidth !== 0)
+              ctx.drawImage(playerImg, t.x, t.y, t.width, t.height);
+            ctx.globalAlpha = 1.0;
+          }
+        }
+        if (player.isMissLungeAnimating) {
+          const lP =
+            (MISS_LUNGE_DURATION - player.missLungeTimer) / MISS_LUNGE_DURATION;
+          const lY = Math.sin(lP * Math.PI) * -(player.height * 0.2);
+          if (playerImg.complete && playerImg.naturalWidth !== 0)
+            ctx.drawImage(
+              playerImg,
+              player.x,
+              player.y + lY,
+              player.width,
+              player.height
+            );
+          else {
+            ctx.fillStyle = "saddlebrown";
+            ctx.fillRect(player.x, player.y + lY, player.width, player.height);
+          }
+        } else if (!player.isCurrentlyTagging) {
+          if (playerImg.complete && playerImg.naturalWidth !== 0)
+            ctx.drawImage(
+              playerImg,
+              player.x,
+              player.y,
+              player.width,
+              player.height
+            );
+          else {
+            ctx.fillStyle = "saddlebrown";
+            ctx.fillRect(player.x, player.y, player.width, player.height);
+          }
+        }
+      }
+      function drawFemaleDog(dog) {
+        if (femaleDogImg.complete && femaleDogImg.naturalWidth !== 0)
+          ctx.drawImage(femaleDogImg, dog.x, dog.y, dog.width, dog.height);
+        else {
+          ctx.fillStyle = "lightpink";
+          ctx.fillRect(dog.x, dog.y, dog.width, dog.height);
+        }
+      }
+      function drawActiveTagAnimation() {
+        if (!taggedDogInfo || taggedDogInfo.animTimer <= -0.16) return;
+        const td = taggedDogInfo.dogData;
+        const aT = taggedDogInfo.animTimer;
+        if (player && player.isCurrentlyTagging) {
+          const hP =
+            (TAG_LOCK_DURATION - player.tagLockTimer) / TAG_LOCK_DURATION;
+          const dBY = Math.sin(hP * Math.PI) * (td.height * 0.1);
+          if (femaleDogImg.complete && femaleDogImg.naturalWidth !== 0)
+            ctx.drawImage(femaleDogImg, td.x, td.y + dBY, td.width, td.height);
+          else {
+            ctx.fillStyle = "lightpink";
+            ctx.fillRect(td.x, td.y + dBY, td.width, td.height);
+          }
+          if (playerImg.complete && playerImg.naturalWidth !== 0)
+            ctx.drawImage(
+              playerImg,
+              player.x,
+              player.y,
+              player.width,
+              player.height
+            );
+          else {
+            ctx.fillStyle = "saddlebrown";
+            ctx.fillRect(player.x, player.y, player.width, player.height);
+          }
+        } else {
+          const fD = TAG_ANIMATION_TOTAL_DURATION - TAG_LOCK_DURATION;
+          const cFT = aT;
+          const fP = Math.max(0, Math.min(1, cFT / fD));
+          ctx.globalAlpha = fP;
+          const s = fP * 0.8 + 0.2;
+          const dX = td.x + (td.width * (1 - s)) / 2;
+          const dY = td.y + (td.height * (1 - s)) / 2;
+          if (femaleDogImg.complete && femaleDogImg.naturalWidth !== 0)
+            ctx.drawImage(femaleDogImg, dX, dY, td.width * s, td.height * s);
+          else {
+            ctx.fillStyle = "lightpink";
+            ctx.fillRect(dX, dY, td.width * s, td.height * s);
+          }
+          ctx.globalAlpha = 1.0;
+        }
+      }
+      function drawSuccessMessages() {
+        successMessages.forEach((msg) => {
+          if (msg.particles) {
+            msg.particles.forEach((p) => {
+              ctx.globalAlpha = p.alpha;
+              ctx.fillStyle = p.color;
+              ctx.beginPath();
+              ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
+              ctx.fill();
+            });
+            ctx.globalAlpha = 1;
+          }
+          ctx.save();
+          ctx.globalAlpha = msg.alpha;
+          ctx.fillStyle = "#FFD700";
+          ctx.strokeStyle = "#000000";
+          ctx.lineWidth = 2;
+          const fS = Math.max(12, Math.min(24, canvas.width / 35)) * msg.scale;
+          ctx.font = `${fS}px "Press Start 2P"`;
+          ctx.textAlign = "center";
+          ctx.strokeText(msg.text, msg.x, msg.y);
+          ctx.fillText(msg.text, msg.x, msg.y);
+          ctx.restore();
+        });
+      }
+      function drawHeart(x, y, s, a) {
+        ctx.save();
+        ctx.globalAlpha = a;
+        ctx.fillStyle = "red";
+        ctx.strokeStyle = "darkred";
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        const tCH = s * 0.3;
+        ctx.moveTo(x, y + tCH);
+        ctx.bezierCurveTo(x, y, x - s / 2, y, x - s / 2, y + tCH);
+        ctx.bezierCurveTo(
+          x - s / 2,
+          y + (s + tCH) / 2,
+          x,
+          y + (s + tCH) / 2 + tCH / 2,
+          x,
+          y + s
+        );
+        ctx.bezierCurveTo(
+          x,
+          y + (s + tCH) / 2 + tCH / 2,
+          x + s / 2,
+          y + (s + tCH) / 2,
+          x + s / 2,
+          y + tCH
+        );
+        ctx.bezierCurveTo(x + s / 2, y, x, y, x, y + tCH);
+        ctx.closePath();
+        ctx.fill();
+        ctx.stroke();
+        ctx.restore();
+      }
+      function drawHeartAnimations() {
+        heartAnimations.forEach((h) => {
+          drawHeart(
+            h.x - (10 * h.currentScale) / 2,
+            h.y - (10 * h.currentScale) / 2,
+            10 * h.currentScale,
+            h.alpha
+          );
+        });
+      }
+      function drawFlowers() {
+        console.log("Drawing " + backgroundFlowers.length + " flowers."); // DEBUG
+        backgroundFlowers.forEach((f) => {
+          ctx.strokeStyle = f.stemColor;
+          ctx.lineWidth = Math.max(1, canvas.width / 200);
+          ctx.beginPath();
+          ctx.moveTo(f.x, f.y + f.stemHeight);
+          ctx.lineTo(f.x, f.y);
+          ctx.stroke();
+          ctx.fillStyle = f.petalColor;
+          for (let i = 0; i < f.numPetals; i++) {
+            const ang = (i / f.numPetals) * Math.PI * 2;
+            const pX =
+              f.x + Math.cos(ang) * (f.centerRadius + f.petalRadius / 2);
+            const pY =
+              f.y + Math.sin(ang) * (f.centerRadius + f.petalRadius / 2);
+            ctx.beginPath();
+            ctx.arc(pX, pY, f.petalRadius, 0, Math.PI * 2);
+            ctx.fill();
+          }
+          ctx.fillStyle = "#FFD700";
+          ctx.beginPath();
+          ctx.arc(f.x, f.y, f.centerRadius, 0, Math.PI * 2);
+          ctx.fill();
+        });
+      }
+      function drawScoreOnCanvas() {
+        ctx.fillStyle = "#FFFFFF";
+        const bFS = 24;
+        const sFS = Math.max(12, Math.min(bFS, canvas.width / 30));
+        ctx.font = `${sFS}px "Press Start 2P"`;
+        ctx.textAlign = "left";
+        ctx.fillText(
+          "Skóre: " + score,
+          canvas.width * 0.02,
+          canvas.height * 0.05
+        );
+      }
+
+      function initGameLogic() {
+        resizeCanvas();
+
+        // reference design is 800 px wide
+        const scaleFactor = canvas.width / 800;
+
+        /* sprite & distance scaling (already there) */
+        currentSpriteScale =
+          SPRITE_SCALE_BASE * Math.max(0.7, Math.min(1.5, scaleFactor * 1.1));
+
+        /* NEW — speed scaling */
+        playerSpeed = PLAYER_SPEED_BASE * scaleFactor; // was PLAYER_SPEED_BASE
+        femaleDogSpeed = FEMALE_DOG_SPEED_BASE * scaleFactor; // was FEMALE_DOG_SPEED_BASE
+        fleeRadius =
+          FLEE_RADIUS_BASE * Math.max(0.7, Math.min(1.5, scaleFactor));
+
+        player = createPlayer();
+        femaleDogs = [];
+        backgroundFlowers = [];
+        const numFlowers = 20 + Math.floor(Math.random() * 10);
+        console.log(
+          "INIT GAME LOGIC: Creating " +
+            numFlowers +
+            " flowers. Canvas: " +
+            canvas.width +
+            "x" +
+            canvas.height
+        );
+        if (canvas.width > 0 && canvas.height > 0) {
+          for (let i = 0; i < numFlowers; i++) {
+            backgroundFlowers.push(createFlower());
+          }
+        } else {
+          console.warn(
+            "INIT GAME LOGIC: Canvas dimensions are 0, not creating flowers yet."
+          );
+        }
+        console.log(
+          "INIT GAME LOGIC: Flowers array length:",
+          backgroundFlowers.length
+        );
+
+        for (let i = 0; i < Math.floor(MAX_FEMALE_DOGS / 2) + 1; i++) {
+          femaleDogs.push(createFemaleDog());
+        }
+        score = 0;
+        keys = {};
+        femaleDogSpawnTimer = FEMALE_DOG_SPAWN_COOLDOWN;
+        taggedDogInfo = null;
+        successMessages = [];
+        heartAnimations = [];
+        gameTimerValue = 30;
+      }
+
+      let animationFrameId;
+      function gameLoop(currentTime) {
+        if (!lastTime) lastTime = currentTime;
+        const deltaTime = (currentTime - lastTime) / 1000; // Delta time in seconds
+        lastTime = currentTime;
+
+        if (gameState === "menu") {
+        } else if (gameState === "leaderboard") {
+          ctx.clearRect(0, 0, canvas.width, canvas.height);
+        } else if (gameState === "countdown") {
+          drawCountdown();
+        } else if (gameState === "playing") {
+          gameTimerValue -= deltaTime;
+          if (gameTimerValue <= 0) {
+            endGame();
+          } else {
+            updatePlayer(deltaTime);
+            femaleDogs.forEach((dog) => updateFemaleDog(dog, deltaTime));
+            updateTagAnimationAndScore(deltaTime);
+            updateSuccessMessages(deltaTime);
+            updateHeartAnimations(deltaTime);
+            checkCollisions();
+            spawnFemaleDogs(deltaTime);
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            drawFlowers();
+            femaleDogs.forEach(drawFemaleDog);
+            drawPlayer();
+            drawActiveTagAnimation();
+            drawSuccessMessages();
+            drawHeartAnimations();
+            drawScoreOnCanvas();
+            drawGameTimer();
+          }
+          controlsContainer.style.display = "flex";
+        } else if (gameState === "gameOver") {
+          ctx.clearRect(0, 0, canvas.width, canvas.height);
+          controlsContainer.style.display = "none";
+        }
+        animationFrameId = requestAnimationFrame(gameLoop);
+      }
+
+      showMenu();
+      requestAnimationFrame(gameLoop);
     </script>
-</body>
+  </body>
 </html>
