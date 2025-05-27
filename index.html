@@ -1,138 +1,303 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Jojko's Game Portal</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700;900&family=Orbitron:wght@400;700;900&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700;900&family=Orbitron:wght@400;700;900&display=swap" rel="stylesheet" />
     <style>
+        :root {
+            --bg-1: #0a0a0f;
+            --bg-2: #1a1a2e;
+            --bg-3: #16213e;
+            --bg-4: #0f3460;
+        }
+        
+        * {
+            box-sizing: border-box;
+        }
+        
         body {
             font-family: 'Inter', sans-serif;
-            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+            background: radial-gradient(ellipse at top, var(--bg-1) 0%, var(--bg-2) 25%, var(--bg-3) 60%, var(--bg-4) 100%);
             color: #e0e0e0;
-            overflow-x: hidden; /* Prevent horizontal scroll */
+            overflow-x: hidden;
+            overflow-y: hidden; /* Keep this to prevent scrollbars from temporary large elements */
+            perspective: 1000px;
+            height: 100vh;
+            margin: 0; /* Ensure no default margin */
         }
+        
         .orbitron-font {
             font-family: 'Orbitron', sans-serif;
         }
+        
         .text-glow {
-            text-shadow: 0 0 5px #00c6ff, 0 0 10px #00c6ff, 0 0 15px #00c6ff, 0 0 20px #0077b6, 0 0 30px #0077b6, 0 0 40px #0077b6, 0 0 50px #0077b6;
+            text-shadow: 
+                0 0 10px rgba(0, 198, 255, 0.8),
+                0 0 20px rgba(0, 198, 255, 0.6),
+                0 0 30px rgba(0, 198, 255, 0.4),
+                0 0 40px rgba(0, 119, 182, 0.3);
         }
-        .card-glow {
-            box-shadow: 0 0 15px rgba(0, 198, 255, 0.3), 0 0 30px rgba(0, 119, 182, 0.2);
-            transition: transform 0.3s ease-in-out, box-shadow 0.3s ease-in-out;
+        
+        .card-3d {
+            transform-style: preserve-3d;
+            transition: all 0.4s cubic-bezier(0.23, 1, 0.32, 1);
+            background: linear-gradient(145deg, rgba(30, 41, 59, 0.8), rgba(15, 23, 42, 0.9));
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(56, 189, 248, 0.2);
+            position: relative;
+            overflow: hidden;
         }
-        .card-glow:hover {
-            transform: translateY(-10px) scale(1.03);
-            box-shadow: 0 0 25px rgba(0, 198, 255, 0.5), 0 0 50px rgba(0, 119, 182, 0.4);
+        
+        .card-3d::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(56, 189, 248, 0.1), transparent);
+            transition: left 0.6s ease;
         }
+        
+        .card-3d:hover::before {
+            left: 100%;
+        }
+        
+        /* CSS :hover state for card - JS will enhance this on mousemove */
+        .card-3d:hover {
+            /* Default hover transform, JS will override with more dynamic rotation */
+            transform: translateY(-20px) translateZ(10px) scale(1.02); 
+            box-shadow: 
+                0 25px 50px rgba(0, 0, 0, 0.3),
+                0 0 0 1px rgba(56, 189, 248, 0.3),
+                0 0 30px rgba(56, 189, 248, 0.2),
+                inset 0 1px 0 rgba(255, 255, 255, 0.1);
+        }
+        
+        /* Particles animating in from bottom */
+        .floating-element {
+            position: absolute; /* Relative to parallax-layer */
+            pointer-events: none;
+            border-radius: 50%;
+            filter: blur(1px);
+            animation: float linear infinite;
+        }
+        
+        @keyframes float { /* For particles animating in */
+            0% {
+                transform: translateY(100vh) rotate(0deg);
+                opacity: 0;
+            }
+            10% {
+                opacity: 1;
+            }
+            90% {
+                opacity: 1;
+            }
+            100% {
+                transform: translateY(-100px) rotate(360deg); /* Relative to parent container */
+                opacity: 0;
+            }
+        }
+
+        /* Particles immediately visible and wobbling */
+        .immediate-floating-element {
+            position: fixed; /* Relative to viewport */
+            pointer-events: none;
+            border-radius: 50%;
+            filter: blur(1px);
+            animation: gentleWobble linear infinite;
+        }
+
+        @keyframes gentleWobble {
+            0% { transform: translate(0px, 0px) rotate(0deg); }
+            25% { transform: translate(3px, 2px) rotate(3deg); }
+            50% { transform: translate(-2px, -3px) rotate(-2deg); }
+            75% { transform: translate(2px, -2px) rotate(4deg); }
+            100% { transform: translate(0px, 0px) rotate(0deg); }
+        }
+        
+        /* Mouse cursor effect */
+        .cursor-glow {
+            position: fixed;
+            width: 20px;
+            height: 20px;
+            background: radial-gradient(circle, rgba(56, 189, 248, 0.8) 0%, rgba(56, 189, 248, 0.3) 30%, transparent 70%);
+            border-radius: 50%;
+            pointer-events: none;
+            z-index: 9999;
+            transition: transform 0.1s ease, opacity 0.2s ease; /* Added opacity transition */
+            mix-blend-mode: screen;
+        }
+        
+        /* Parallax layers */
+        .parallax-layer {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%; /* Changed from 120% to simplify particle positioning logic */
+            height: 100%;/* Changed from 120% */
+            pointer-events: none;
+            /* Centering the layer if it was larger than viewport:
+            transform: translate(-10%, -10%); /* If width/height were 120% to center it */
+        }
+        
+        /* Page entrance animations */
+        @keyframes slideInDown {
+            from { opacity: 0; transform: translate3d(0, -60px, 0) rotateX(-15deg); }
+            to { opacity: 1; transform: translate3d(0, 0, 0) rotateX(0deg); }
+        }
+        
+        @keyframes slideInUp {
+            from { opacity: 0; transform: translate3d(0, 60px, 0) rotateX(15deg); }
+            to { opacity: 1; transform: translate3d(0, 0, 0) rotateX(0deg); }
+        }
+        
+        .animate-slideInDown { animation: slideInDown 1s cubic-bezier(0.23, 1, 0.32, 1) forwards; }
+        .animate-slideInUp { animation: slideInUp 1s cubic-bezier(0.23, 1, 0.32, 1) forwards; opacity: 0; }
+        
+        /* Staggered animations */
+        .game-card:nth-child(1) { animation-delay: 0.2s; }
+        .game-card:nth-child(2) { animation-delay: 0.4s; }
+        .game-card:nth-child(3) { animation-delay: 0.6s; }
+        .game-card:nth-child(4) { animation-delay: 0.8s; }
+        
         .coffee-link {
             position: fixed;
             bottom: 20px;
             right: 20px;
-            padding: 10px 15px;
-            background-color: #FFDD00; /* Coffee color */
+            padding: 12px 18px;
+            background: linear-gradient(135deg, #ffdd00, #ffd700);
             color: #1a1a2e;
-            border-radius: 8px;
+            border-radius: 12px;
             text-decoration: none;
             font-weight: bold;
-            transition: transform 0.3s ease, background-color 0.3s ease;
+            transition: all 0.3s cubic-bezier(0.23, 1, 0.32, 1);
             z-index: 1000;
+            box-shadow: 0 8px 20px rgba(255, 221, 0, 0.3);
         }
+        
         .coffee-link:hover {
-            background-color: #FFE866;
-            transform: scale(1.1);
+            background: linear-gradient(135deg, #ffe866, #ffdd00);
+            transform: translateY(-3px) scale(1.05);
+            box-shadow: 0 15px 30px rgba(255, 221, 0, 0.4);
         }
-        /* Animation for title */
-        @keyframes fadeInDown {
-            0% {
-                opacity: 0;
-                transform: translateY(-30px);
-            }
-            100% {
-                opacity: 1;
-                transform: translateY(0);
-            }
-        }
-        .animate-fadeInDown {
-            animation: fadeInDown 1s ease-out forwards;
-        }
-
-        /* Animation for cards */
-        @keyframes fadeInUp {
-            0% {
-                opacity: 0;
-                transform: translateY(30px);
-            }
-            100% {
-                opacity: 1;
-                transform: translateY(0);
-            }
-        }
-        .animate-fadeInUp {
-            animation: fadeInUp 1s ease-out forwards;
-            opacity: 0; /* Start hidden */
-        }
-
-        /* Staggered animation for cards */
-        .game-card:nth-child(1) { animation-delay: 0.2s; }
-        .game-card:nth-child(2) { animation-delay: 0.4s; }
-        .game-card:nth-child(3) { animation-delay: 0.6s; }
-        .game-card:nth-child(4) { animation-delay: 0.8s; } /* Add more if needed */
-
-
-        /* Subtle background particle-like effect */
-        .particles {
+        
+        /* Mesh gradient background */
+        .mesh-gradient {
             position: fixed;
             top: 0;
             left: 0;
             width: 100%;
             height: 100%;
-            pointer-events: none; /* Allow clicks through */
+            z-index: -2;
+            background: 
+                radial-gradient(circle at 20% 30%, rgba(56, 189, 248, 0.1) 0%, transparent 50%),
+                radial-gradient(circle at 80% 70%, rgba(147, 51, 234, 0.08) 0%, transparent 50%),
+                radial-gradient(circle at 40% 80%, rgba(59, 130, 246, 0.06) 0%, transparent 50%),
+                linear-gradient(135deg, var(--bg-1) 0%, var(--bg-2) 25%, var(--bg-3) 60%, var(--bg-4) 100%);
+            animation: meshMove 20s ease-in-out infinite;
+        }
+        
+        @keyframes meshMove {
+            0%, 100% { filter: hue-rotate(0deg); }
+            50% { filter: hue-rotate(20deg); }
+        }
+        
+        /* Interactive glow effect */
+        .interactive-glow {
+            position: fixed;
+            width: 600px;
+            height: 600px;
+            background: radial-gradient(circle, rgba(56, 189, 248, 0.08) 0%, transparent 70%);
+            border-radius: 50%;
+            pointer-events: none;
             z-index: -1;
+            transition: all 0.3s ease;
+            filter: blur(40px);
         }
     </style>
 </head>
-<body class="min-h-screen flex flex-col items-center justify-center p-4 sm:p-6">
-
-    <div class="particles" id="particles-js-placeholder">
-        </div>
-
-    <header class="text-center mb-10 sm:mb-16 animate-fadeInDown">
-        <h1 class="orbitron-font text-5xl sm:text-6xl md:text-7xl font-bold text-glow">JOJKO'S GAMES</h1>
-        <p class="text-lg sm:text-xl text-sky-300 mt-3">Your portal to awesome gaming adventures!</p>
+<body class="min-h-screen flex flex-col items-center justify-center p-4 sm:p-6 select-none">
+    <div class="mesh-gradient"></div>
+    <div class="interactive-glow" id="interactiveGlow"></div>
+    <div class="cursor-glow" id="cursorGlow"></div>
+    
+    <div class="parallax-layer" id="floatingElementsContainer"></div>
+    
+    <header class="text-center mb-10 sm:mb-16 animate-slideInDown z-10 relative">
+        <h1 class="orbitron-font text-5xl sm:text-6xl md:text-8xl font-bold text-glow mb-4">
+            JOJKO'S GAMES
+        </h1>
+        <div class="w-24 h-1 bg-gradient-to-r from-transparent via-sky-400 to-transparent mx-auto mb-6"></div>
+        <p class="text-lg sm:text-xl text-sky-300/80 font-light tracking-wide">
+            Your portal to awesome gaming adventures
+        </p>
     </header>
 
-    <main class="w-full max-w-4xl">
-        <h2 class="orbitron-font text-3xl sm:text-4xl font-semibold text-center mb-8 text-sky-400 animate-fadeInUp" style="animation-delay: 0.1s;">Choose Your Destiny</h2>
-        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 sm:gap-8">
-            <a href="pokemonShooter/index.html" class="whitespace-nowrap game-card block bg-slate-800/70 backdrop-blur-sm p-6 rounded-xl card-glow animate-fadeInUp">
-                <h3 class="orbitron-font text-2xl font-bold text-sky-300 mb-2">Pokemon shooter</h3>
-                <span class="inline-block bg-sky-500 text-white text-sm font-semibold px-4 py-2 rounded-md hover:bg-sky-400 transition-colors duration-300 mt-4">Play Now &rarr;</span>
-            </a>
-
-            <a href="tralalaGame/index.html" class="whitespace-nowrap game-card block bg-slate-800/70 backdrop-blur-sm p-6 rounded-xl card-glow animate-fadeInUp">
-                <h3 class="orbitron-font text-2xl font-bold text-sky-300 mb-2">Tralala clicker</h3>
-                <span class="inline-block bg-sky-500 text-white text-sm font-semibold px-4 py-2 rounded-md hover:bg-sky-400 transition-colors duration-300 mt-4">Learn More &rarr;</span>
-            </a>
-
-            <a href="pugFiesta/index.html" class="whitespace-nowrap game-card block bg-slate-800/70 backdrop-blur-sm p-6 rounded-xl card-glow animate-fadeInUp">
-                <h3 class="orbitron-font text-2xl font-bold text-sky-300 mb-2">Pug fiesta</h3>
-                <span class="inline-block bg-sky-500 text-white text-sm font-semibold px-4 py-2 rounded-md hover:bg-sky-400 transition-colors duration-300 mt-4">Enter Arena &rarr;</span>
+    <main class="w-full max-w-5xl z-10 relative">
+        <h2 class="orbitron-font text-3xl sm:text-4xl md:text-5xl font-semibold text-center mb-12 text-sky-400/90 animate-slideInUp" style="animation-delay:0.1s">
+            Choose Your Destiny
+        </h2>
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-2 gap-8 sm:gap-10">
+            <a href="pokemonShooter/index.html" class="game-card block card-3d p-8 rounded-2xl animate-slideInUp group">
+                <div class="relative z-10">
+                    <h3 class="orbitron-font text-2xl sm:text-3xl font-bold text-sky-300 mb-3 group-hover:text-sky-200 transition-colors duration-300">
+                        Pokemon Shooter
+                    </h3>
+                    <p class="text-gray-400 mb-6 opacity-80 group-hover:opacity-100 transition-opacity duration-300">
+                        Epic battles await in this action-packed adventure
+                    </p>
+                    <span class="inline-flex items-center bg-gradient-to-r from-sky-500 to-blue-600 text-white text-sm font-semibold px-6 py-3 rounded-lg hover:from-sky-400 hover:to-blue-500 transition-all duration-300 group-hover:shadow-lg group-hover:shadow-sky-500/25">
+                        Play Now →
+                    </span>
+                </div>
             </a>
             
-            <a href="lolWheel/index.html" class="whitespace-nowrap game-card block bg-slate-800/70 backdrop-blur-sm p-6 rounded-xl card-glow animate-fadeInUp">
-                <h3 class="orbitron-font text-2xl font-bold text-sky-300 mb-2">LoL wheel</h3>
-                <span class="inline-block bg-sky-500 text-white text-sm font-semibold px-4 py-2 rounded-md hover:bg-sky-400 transition-colors duration-300 mt-4">Enter Arena &rarr;</span>
+            <a href="tralalaGame/index.html" class="game-card block card-3d p-8 rounded-2xl animate-slideInUp group">
+                <div class="relative z-10">
+                    <h3 class="orbitron-font text-2xl sm:text-3xl font-bold text-sky-300 mb-3 group-hover:text-sky-200 transition-colors duration-300">
+                        Tralala Clicker
+                    </h3>
+                    <p class="text-gray-400 mb-6 opacity-80 group-hover:opacity-100 transition-opacity duration-300">
+                        Click your way to victory in this addictive game
+                    </p>
+                    <span class="inline-flex items-center bg-gradient-to-r from-sky-500 to-blue-600 text-white text-sm font-semibold px-6 py-3 rounded-lg hover:from-sky-400 hover:to-blue-500 transition-all duration-300 group-hover:shadow-lg group-hover:shadow-sky-500/25">
+                        Play Now →
+                    </span>
+                </div>
             </a>
-
-            <!-- Example:
-            <a href="#" class="game-card block bg-slate-800/70 backdrop-blur-sm p-6 rounded-xl card-glow animate-fadeInUp">
-                <h3 class="orbitron-font text-2xl font-bold text-sky-300 mb-2">Another Game</h3>
-                <span class="inline-block bg-sky-500 text-white text-sm font-semibold px-4 py-2 rounded-md hover:bg-sky-400 transition-colors duration-300 mt-4">Check it Out &rarr;</span>
+            
+            <a href="pugFiesta/index.html" class="game-card block card-3d p-8 rounded-2xl animate-slideInUp group">
+                <div class="relative z-10">
+                    <h3 class="orbitron-font text-2xl sm:text-3xl font-bold text-sky-300 mb-3 group-hover:text-sky-200 transition-colors duration-300">
+                        Pug Fiesta
+                    </h3>
+                    <p class="text-gray-400 mb-6 opacity-80 group-hover:opacity-100 transition-opacity duration-300">
+                        Join the cutest party with adorable pugs
+                    </p>
+                    <span class="inline-flex items-center bg-gradient-to-r from-sky-500 to-blue-600 text-white text-sm font-semibold px-6 py-3 rounded-lg hover:from-sky-400 hover:to-blue-500 transition-all duration-300 group-hover:shadow-lg group-hover:shadow-sky-500/25">
+                        Play Now →
+                    </span>
+                </div>
             </a>
-            -->
+            
+            <a href="lolWheel/index.html" class="game-card block card-3d p-8 rounded-2xl animate-slideInUp group">
+                <div class="relative z-10">
+                    <h3 class="orbitron-font text-2xl sm:text-3xl font-bold text-sky-300 mb-3 group-hover:text-sky-200 transition-colors duration-300">
+                        LoL Wheel
+                    </h3>
+                    <p class="text-gray-400 mb-6 opacity-80 group-hover:opacity-100 transition-opacity duration-300">
+                        Spin the wheel of League of Legends destiny
+                    </p>
+                    <span class="inline-flex items-center bg-gradient-to-r from-sky-500 to-blue-600 text-white text-sm font-semibold px-6 py-3 rounded-lg hover:from-sky-400 hover:to-blue-500 transition-all duration-300 group-hover:shadow-lg group-hover:shadow-sky-500/25">
+                        Play Now →
+                    </span>
+                </div>
+            </a>
         </div>
     </main>
 
@@ -141,38 +306,149 @@
     </a>
 
     <script>
-        // Fallback for particles if particles.js is not loaded or for a simpler effect.
-        // This creates a very basic starfield effect with CSS.
+        const cursorGlow = document.getElementById('cursorGlow');
+        const interactiveGlow = document.getElementById('interactiveGlow');
+        const floatingElementsContainer = document.getElementById('floatingElementsContainer'); // Renamed for clarity
+        
+        let mouseX = 0, mouseY = 0;
+        let glowX = 0, glowY = 0;
+        
+        document.addEventListener('mousemove', (e) => {
+            mouseX = e.clientX;
+            mouseY = e.clientY;
+            
+            cursorGlow.style.left = (mouseX - 10) + 'px';
+            cursorGlow.style.top = (mouseY - 10) + 'px';
+        });
+        
+        function updateInteractiveGlow() {
+            glowX += (mouseX - glowX) * 0.1;
+            glowY += (mouseY - glowY) * 0.1;
+            interactiveGlow.style.left = (glowX - 300) + 'px';
+            interactiveGlow.style.top = (glowY - 300) + 'px';
+            requestAnimationFrame(updateInteractiveGlow);
+        }
+        if (interactiveGlow) updateInteractiveGlow(); // Check if element exists
+        
+        // Card 3D interactions
+        const hoverTranslateY = -20; // More pronounced upward movement
+        const hoverTranslateZ = 15;  // Slight pop forward for 3D effect
+        const tiltIntensity = 10;    // Reduced from 8 for slightly more tilt
+
+        document.querySelectorAll('.card-3d').forEach(card => {
+            card.addEventListener('mousemove', (e) => {
+                const rect = card.getBoundingClientRect();
+                const x = e.clientX - rect.left;
+                const y = e.clientY - rect.top;
+                const centerX = rect.width / 2;
+                const centerY = rect.height / 2;
+                const rotateX = (y - centerY) / tiltIntensity; 
+                const rotateY = (centerX - x) / tiltIntensity;
+                
+                card.style.transform = `
+                    translate3d(0, ${hoverTranslateY}px, ${hoverTranslateZ}px)
+                    rotateX(${rotateX}deg) 
+                    rotateY(${rotateY}deg) 
+                    scale(1.02)
+                `;
+            });
+            
+            card.addEventListener('mouseleave', () => {
+                // Reset to a stable non-rotated, non-translated state, allowing CSS transition back
+                card.style.transform = 'translate3d(0,0,0) rotateX(0deg) rotateY(0deg) scale(1)';
+            });
+        });
+        
+        // Create particles that animate in from bottom
+        function createFloatingElement() {
+            if (!floatingElementsContainer) return;
+            const element = document.createElement('div');
+            element.className = 'floating-element';
+            
+            const size = Math.random() * 8 + 2;
+            const opacity = Math.random() * 0.6 + 0.2;
+            const duration = Math.random() * 20 + 15; // Duration for the float animation
+            const colors = ['#38bdf8', '#3b82f6', '#8b5cf6', '#06b6d4'];
+            const color = colors[Math.floor(Math.random() * colors.length)];
+            
+            element.style.width = size + 'px';
+            element.style.height = size + 'px';
+            // Positioned relative to floatingElementsContainer (which is 100% viewport width/height)
+            element.style.left = Math.random() * 100 + '%'; 
+            element.style.background = color;
+            element.style.opacity = 0; // Start transparent for animation
+            element.style.animationDuration = duration + 's';
+            element.style.animationDelay = Math.random() * 5 + 's'; // Random start for staggering
+            
+            floatingElementsContainer.appendChild(element);
+            
+            // Remove after animation completes + a buffer
+            setTimeout(() => {
+                if (element.parentNode) element.remove();
+            }, (duration + parseFloat(element.style.animationDelay || 0) + 1) * 1000); // Adjusted timeout
+        }
+        
+        // Create immediately visible, wobbling particles
+        function createImmediateFloatingElement() {
+            if (!floatingElementsContainer) return;
+            const element = document.createElement('div');
+            element.className = 'immediate-floating-element'; // Uses new CSS class and animation
+            
+            const size = Math.random() * 6 + 2; // Slightly smaller for base layer
+            const initialOpacity = Math.random() * 0.4 + 0.1; // More subtle base layer
+            const wobbleDuration = Math.random() * 15 + 10; // Duration for wobble
+            const colors = ['#38bdf8', '#3b82f6', '#8b5cf6', '#06b6d4', '#a78bfa']; // Added more subtle color
+            const color = colors[Math.floor(Math.random() * colors.length)];
+            
+            element.style.width = size + 'px';
+            element.style.height = size + 'px';
+            element.style.left = Math.random() * 100 + 'vw'; // Positioned relative to viewport width
+            element.style.top = Math.random() * 100 + 'vh';  // Positioned relative to viewport height
+            element.style.background = color;
+            element.style.opacity = initialOpacity;
+            element.style.animationDuration = wobbleDuration + 's';
+            // Start at a random point in the wobble animation cycle
+            element.style.animationDelay = -(Math.random() * wobbleDuration) + 's'; 
+            
+            floatingElementsContainer.appendChild(element);
+            // These particles are persistent and do not remove themselves
+        }
+        
         document.addEventListener('DOMContentLoaded', () => {
-            const particlesContainer = document.getElementById('particles-js-placeholder');
-            if (particlesContainer) {
-                const numStars = 100; // Adjust for more/less stars
-                for (let i = 0; i < numStars; i++) {
-                    let star = document.createElement('div');
-                    star.style.position = 'absolute';
-                    star.style.width = `${Math.random() * 2 + 1}px`; // Star size
-                    star.style.height = star.style.width;
-                    star.style.backgroundColor = 'rgba(224, 224, 224, 0.5)'; // Star color and opacity
-                    star.style.borderRadius = '50%';
-                    star.style.left = `${Math.random() * 100}%`;
-                    star.style.top = `${Math.random() * 100}%`;
-                    // Simple animation
-                    star.style.animation = `twinkle ${Math.random() * 5 + 3}s linear infinite alternate`;
-                    particlesContainer.appendChild(star);
+            if (floatingElementsContainer) {
+                for (let i = 0; i < 35; i++) { // Increased number of immediate particles
+                    createImmediateFloatingElement();
                 }
             }
+            // Start generating animating-in particles after a short delay
+            setTimeout(() => {
+                 if (floatingElementsContainer) setInterval(createFloatingElement, 1000); // Slower interval
+            }, 500);
+        });
+        
+        // Parallax effect for background elements container
+        document.addEventListener('mousemove', (e) => {
+            const x = (e.clientX / window.innerWidth - 0.5) * 2; // Range -1 to 1
+            const y = (e.clientY / window.innerHeight - 0.5) * 2; // Range -1 to 1
+            
+            if (floatingElementsContainer) {
+                floatingElementsContainer.style.transform = `translate(${x * 15}px, ${y * 15}px)`; // Reduced parallax intensity
+            }
+            
+            const meshGradient = document.querySelector('.mesh-gradient');
+            if (meshGradient) {
+                meshGradient.style.transform = `translate(${x * 5}px, ${y * 5}px)`;
+            }
+        });
+        
+        document.addEventListener('mouseleave', () => {
+            if (cursorGlow) cursorGlow.style.opacity = '0';
+        });
+        
+        document.addEventListener('mouseenter', () => {
+            if (cursorGlow) cursorGlow.style.opacity = '1';
         });
 
-        // Keyframes for twinkle animation (can be added to <style> tag or here)
-        const styleSheet = document.createElement("style");
-        styleSheet.type = "text/css";
-        styleSheet.innerText = `
-            @keyframes twinkle {
-                0% { opacity: 0.3; transform: scale(0.8); }
-                100% { opacity: 0.8; transform: scale(1.2); }
-            }
-        `;
-        document.head.appendChild(styleSheet);
     </script>
 </body>
 </html>
