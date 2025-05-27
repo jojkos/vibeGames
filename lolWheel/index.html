@@ -28,7 +28,7 @@
             border-right: 20px solid transparent;
             border-top: 35px solid #f59e0b; /* Tailwind amber-500 */
             position: absolute;
-            top: -10px; /* Adjust to sit nicely on top of the canvas border */
+            top: -10px; 
             left: 50%;
             transform: translateX(-50%);
             z-index: 10;
@@ -42,17 +42,20 @@
         }
         #currentSelectionDisplay {
             position: absolute;
-            top: calc(50% + 60px); /* Position below the spin button */
+            top: calc(50% + 70px); 
             left: 50%;
             transform: translateX(-50%);
-            z-index: 16; /* Above canvas, potentially above button if overlap occurs */
-            min-width: 200px; /* Ensure it has some width */
-            padding: 5px 10px;
-            background-color: rgba(0,0,0,0.5); /* Semi-transparent background for readability */
-            border-radius: 0.375rem; /* Tailwind rounded-md */
-            text-shadow: 1px 1px 2px rgba(0,0,0,0.8);
+            z-index: 16; 
+            min-width: 220px; 
+            padding: 8px 12px;
+            background-color: rgba(0,0,0,0.6); 
+            border-radius: 0.375rem; 
+            text-shadow: 1px 1px 3px rgba(0,0,0,0.9);
+            font-size: 1.1rem; 
+            opacity: 0; /* Initially hidden */
+            transition: opacity 0.3s ease-in-out;
         }
-        #selectedChampionName {
+        #selectedChampionName { /* This is the large name display at the bottom */
             text-shadow: 2px 2px 8px rgba(0,0,0,0.7);
         }
         .modal {
@@ -67,6 +70,7 @@
             background-color: rgba(0,0,0,0.6);
             align-items: center;
             justify-content: center;
+            padding: 1rem; 
         }
         .modal-content {
             background-color: #2d3748; 
@@ -77,6 +81,7 @@
             max-width: 500px;
             border-radius: 0.5rem;
             text-align: center;
+            position: relative; 
         }
         .modal-close-button {
             background-color: #718096; 
@@ -85,7 +90,53 @@
             border-radius: 0.375rem;
             cursor: pointer;
             margin-top: 15px;
+            border: none;
+            font-weight: bold;
         }
+        .modal-close-button:hover {
+            background-color: #4a5568;
+        }
+
+        /* Styles for the Champion Image Modal */
+        #championImageModal .modal-content {
+            max-width: 700px; 
+            padding: 20px; /* Increased padding a bit for name */
+            background-color: #1a202c; 
+        }
+        #championImageModal #modalChampionName { /* Style for name inside image modal */
+            font-size: 1.75rem; /* Tailwind text-2xl */
+            font-weight: bold;
+            color: #e2e8f0; /* Tailwind gray-200 */
+            margin-bottom: 15px;
+            text-shadow: 1px 1px 4px rgba(0,0,0,0.7);
+        }
+        #championImageModal img {
+            max-width: 100%;
+            height: auto;
+            border-radius: 0.375rem;
+            /* margin-bottom: 10px; Removed as close button is now absolute */
+        }
+        .image-modal-close-button { 
+            position: absolute;
+            top: 15px;
+            right: 15px;
+            background-color: rgba(0, 0, 0, 0.5);
+            color: white;
+            border: none;
+            border-radius: 50%;
+            width: 35px;
+            height: 35px;
+            font-size: 20px;
+            line-height: 35px;
+            text-align: center;
+            cursor: pointer;
+            transition: background-color 0.2s;
+            z-index: 101; /* Ensure close button is above image if overlap */
+        }
+        .image-modal-close-button:hover {
+            background-color: rgba(0, 0, 0, 0.8);
+        }
+
     </style>
 </head>
 <body class="flex flex-col items-center justify-center min-h-screen p-4 overflow-hidden">
@@ -96,9 +147,7 @@
         <button id="spinButton" class="bg-purple-600 hover:bg-purple-700 text-white font-bold py-4 px-10 rounded-lg shadow-md transition duration-150 ease-in-out text-2xl focus:outline-none focus:ring-2 focus:ring-purple-400">
             Spin!
         </button>
-        <div id="currentSelectionDisplay" class="text-center text-lg sm:text-xl font-semibold text-white opacity-0 transition-opacity duration-300">
-            Ready to Spin!
-        </div>
+        <div id="currentSelectionDisplay" class="text-center font-semibold text-white transition-opacity duration-300"></div>
     </div>
 
     <div id="result" class="mt-8 text-center h-24"> 
@@ -109,6 +158,14 @@
         <div class="modal-content">
             <p id="modalMessageText"></p>
             <button id="modalCloseButton" class="modal-close-button">OK</button>
+        </div>
+    </div>
+
+    <div id="championImageModal" class="modal">
+        <div class="modal-content">
+            <button id="championImageModalCloseButton" class="image-modal-close-button">&times;</button>
+            <h3 id="modalChampionName"></h3>
+            <img id="selectedChampionImage" src="" alt="Selected Champion">
         </div>
     </div>
 
@@ -177,11 +234,17 @@
         const ctx = canvas.getContext('2d');
         const spinButton = document.getElementById('spinButton');
         const selectedChampionNameDisplay = document.getElementById('selectedChampionName');
-        const currentSelectionDisplay = document.getElementById('currentSelectionDisplay'); // New element
+        const currentSelectionDisplay = document.getElementById('currentSelectionDisplay'); 
         
-        const modal = document.getElementById('messageModal');
+        const messageModal = document.getElementById('messageModal');
         const modalMessageText = document.getElementById('modalMessageText');
         const modalCloseButton = document.getElementById('modalCloseButton');
+
+        const championImageModal = document.getElementById('championImageModal');
+        const modalChampionNameElement = document.getElementById('modalChampionName'); // New element for name in modal
+        const selectedChampionImage = document.getElementById('selectedChampionImage');
+        const championImageModalCloseButton = document.getElementById('championImageModalCloseButton');
+
 
         let currentAngle = 0;
         let isSpinning = false;
@@ -212,7 +275,7 @@
             centerX = canvasSize / 2;
             centerY = canvasSize / 2;
             drawWheel();
-            updateCurrentSelectionDisplay(false); // Update display on resize if not spinning
+            updateCurrentSelectionDisplay(); // Update based on current isSpinning state
         }
 
         function drawWheel() {
@@ -253,33 +316,55 @@
             }
         }
         
-        function showModal(message) {
+        function showMessageModal(message) {
             modalMessageText.textContent = message;
-            modal.style.display = 'flex';
+            messageModal.style.display = 'flex';
         }
 
         modalCloseButton.onclick = function() {
-            modal.style.display = 'none';
+            messageModal.style.display = 'none';
         }
+        
+        function showChampionImageModal(imageUrl, championName) {
+            modalChampionNameElement.textContent = championName.toUpperCase(); // Set name in modal
+            selectedChampionImage.src = imageUrl;
+            selectedChampionImage.alt = `Splash art for ${championName}`;
+            championImageModal.style.display = 'flex';
+        }
+
+        championImageModalCloseButton.onclick = function() {
+            championImageModal.style.display = 'none';
+        }
+
         window.onclick = function(event) {
-            if (event.target == modal) {
-                modal.style.display = 'none';
+            if (event.target == messageModal) {
+                messageModal.style.display = 'none';
+            }
+            if (event.target == championImageModal) {
+                championImageModal.style.display = 'none';
             }
         }
 
-        function updateCurrentSelectionDisplay(spinning = isSpinning) {
-            // This function updates the text below the spin button
-            const normalizedAngle = (currentAngle % (2 * Math.PI) + 2 * Math.PI) % (2 * Math.PI);
-            const effectivePointer = (pointerFixedAngle - normalizedAngle + 2 * Math.PI) % (2 * Math.PI);
-            const currentIndex = Math.floor(effectivePointer / arcSize);
-            const currentChamp = champions[currentIndex];
+        function updateCurrentSelectionDisplay() {
+            if (isSpinning) {
+                const normalizedAngle = (currentAngle % (2 * Math.PI) + 2 * Math.PI) % (2 * Math.PI);
+                const effectivePointer = (pointerFixedAngle - normalizedAngle + 2 * Math.PI) % (2 * Math.PI);
+                const currentIndex = Math.floor(effectivePointer / arcSize);
+                const currentChamp = champions[currentIndex];
 
-            if (currentChamp) {
-                currentSelectionDisplay.textContent = currentChamp.name;
+                if (currentChamp) {
+                    currentSelectionDisplay.textContent = currentChamp.name;
+                } else {
+                    currentSelectionDisplay.textContent = 'Spinning...';
+                }
                 currentSelectionDisplay.style.opacity = '1';
             } else {
-                currentSelectionDisplay.textContent = spinning ? 'Spinning...' : 'Ready';
-                currentSelectionDisplay.style.opacity = spinning ? '1' : '0.7';
+                // If not spinning, and not immediately after a spin finished (handled in finishSpin)
+                // Check if it has text from a previous win, otherwise hide it.
+                if (!currentSelectionDisplay.textContent || currentSelectionDisplay.textContent === 'Spinning...') {
+                     currentSelectionDisplay.textContent = '';
+                     currentSelectionDisplay.style.opacity = '0';
+                }
             }
         }
 
@@ -291,8 +376,8 @@
             spinButton.classList.add('opacity-50', 'cursor-not-allowed'); 
             spinButton.classList.remove('hover:bg-purple-700');
 
-            selectedChampionNameDisplay.style.opacity = '0';
-            currentSelectionDisplay.textContent = 'Spinning...'; // Initial text for spinning
+            selectedChampionNameDisplay.style.opacity = '0'; // Hide bottom large name
+            currentSelectionDisplay.textContent = 'Spinning...'; 
             currentSelectionDisplay.style.opacity = '1';
 
 
@@ -317,7 +402,7 @@
 
                 currentAngle = startAngle + totalRotation * easedProgress;
                 drawWheel();
-                updateCurrentSelectionDisplay(true); // Update hovered champ name during spin
+                updateCurrentSelectionDisplay(); // Update hovered champ name during spin
 
                 if (progress < 1) {
                     requestAnimationFrame(animateSpin);
@@ -330,7 +415,7 @@
         }
 
         function finishSpin() {
-            isSpinning = false;
+            isSpinning = false; // Set before updating display
             spinButton.disabled = false;
             spinButton.classList.remove('opacity-50', 'cursor-not-allowed');
             spinButton.classList.add('hover:bg-purple-700');
@@ -342,15 +427,18 @@
             const winner = champions[winningIndex];
 
             if (winner) {
-                // Update the display under the spin button with the final winner
+                // Update display below spin button
                 currentSelectionDisplay.textContent = winner.name.toUpperCase();
                 currentSelectionDisplay.style.opacity = '1';
 
-                // Update the large display at the bottom of the page
+                // Update large display at the bottom
                 selectedChampionNameDisplay.textContent = winner.name.toUpperCase();
                 selectedChampionNameDisplay.style.opacity = '1';
 
                 const imageUrl = `https://ddragon.leagueoflegends.com/cdn/img/champion/splash/${winner.key}_0.jpg`;
+                
+                showChampionImageModal(imageUrl, winner.name);
+
                 const img = new Image();
                 img.onload = () => {
                     document.body.style.backgroundImage = `url(${imageUrl})`;
@@ -360,16 +448,16 @@
                     console.error(`Failed to load image for ${winner.name}`);
                     document.body.style.backgroundImage = ''; 
                     document.body.style.backgroundColor = '#1a202c'; 
-                    showModal(`Could not load image for ${winner.name}. Using default background.`);
+                    showMessageModal(`Could not load background image for ${winner.name}. Using default background.`);
                 };
                 img.src = imageUrl;
             } else {
                 console.error("Could not determine winner. Winning index:", winningIndex, "Current Angle:", currentAngle, "Effective Pointer:", effectivePointerPosition);
-                selectedChampionNameDisplay.textContent = "Error!";
-                selectedChampionNameDisplay.style.opacity = '1';
                 currentSelectionDisplay.textContent = "Error!";
                 currentSelectionDisplay.style.opacity = '1';
-                showModal("An error occurred while determining the winner.");
+                selectedChampionNameDisplay.textContent = "Error!";
+                selectedChampionNameDisplay.style.opacity = '1';
+                showMessageModal("An error occurred while determining the winner.");
             }
         }
 
