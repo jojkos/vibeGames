@@ -1,474 +1,1622 @@
 <!DOCTYPE html>
 <html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>LoL Wheel of Champions</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700&display=swap"
+      rel="stylesheet"
+    />
     <style>
-        body {
-            font-family: 'Inter', sans-serif;
-            background-color: #1a202c; /* Tailwind gray-900 */
-            color: #e2e8f0; /* Tailwind gray-200 */
-            transition: background-image 0.7s ease-in-out;
-            background-size: cover;
-            background-position: center;
-            background-repeat: no-repeat;
-        }
-        canvas {
-            display: block;
-            margin: 0 auto;
-            border-radius: 50%;
-            box-shadow: 0 10px 25px rgba(0,0,0,0.3), 0 0 0 10px #2d3748; /* Tailwind gray-800 for border */
-        }
-        #pointer {
-            width: 0;
-            height: 0;
-            border-left: 20px solid transparent;
-            border-right: 20px solid transparent;
-            border-top: 35px solid #f59e0b; /* Tailwind amber-500 */
-            position: absolute;
-            top: -10px; 
-            left: 50%;
-            transform: translateX(-50%);
-            z-index: 10;
-        }
-        #spinButton {
-            position: absolute;
-            left: 50%;
-            top: 50%;
-            transform: translate(-50%, -50%);
-            z-index: 15; 
-        }
-        #currentSelectionDisplay {
-            position: absolute;
-            top: calc(50% + 70px); 
-            left: 50%;
-            transform: translateX(-50%);
-            z-index: 16; 
-            min-width: 220px; 
-            padding: 8px 12px;
-            background-color: rgba(0,0,0,0.6); 
-            border-radius: 0.375rem; 
-            text-shadow: 1px 1px 3px rgba(0,0,0,0.9);
-            font-size: 1.1rem; 
-            opacity: 0; /* Initially hidden */
-            transition: opacity 0.3s ease-in-out;
-        }
-        #selectedChampionName { /* This is the large name display at the bottom */
-            text-shadow: 2px 2px 8px rgba(0,0,0,0.7);
-        }
-        .modal {
-            display: none; 
-            position: fixed;
-            z-index: 100;
-            left: 0;
-            top: 0;
-            width: 100%;
-            height: 100%;
-            overflow: auto;
-            background-color: rgba(0,0,0,0.6);
-            align-items: center;
-            justify-content: center;
-            padding: 1rem; 
-        }
-        .modal-content {
-            background-color: #2d3748; 
-            margin: auto;
-            padding: 20px;
-            border: 1px solid #4a5568; 
-            width: 80%;
-            max-width: 500px;
-            border-radius: 0.5rem;
-            text-align: center;
-            position: relative; 
-        }
-        .modal-close-button {
-            background-color: #718096; 
-            color: white;
-            padding: 10px 15px;
-            border-radius: 0.375rem;
-            cursor: pointer;
-            margin-top: 15px;
-            border: none;
-            font-weight: bold;
-        }
-        .modal-close-button:hover {
-            background-color: #4a5568;
-        }
+      body {
+        font-family: "Inter", sans-serif;
+        background-color: #1a202c; /* Tailwind gray-900 */
+        color: #e2e8f0; /* Tailwind gray-200 */
+        transition: background-image 0.7s ease-in-out;
+        background-size: cover;
+        background-position: center;
+        background-repeat: no-repeat;
+      }
+      canvas {
+        display: block;
+        margin: 0 auto;
+        border-radius: 50%;
+        box-shadow: 0 10px 25px rgba(0, 0, 0, 0.3), 0 0 0 10px #2d3748; /* Tailwind gray-800 for border */
+      }
+      #pointer {
+        width: 0;
+        height: 0;
+        border-left: 20px solid transparent;
+        border-right: 20px solid transparent;
+        border-top: 35px solid #f59e0b; /* Tailwind amber-500 */
+        position: absolute;
+        top: -10px; /* Adjusted to point more accurately at the edge of the wheel */
+        left: 50%;
+        transform: translateX(-50%);
+        z-index: 10;
+      }
+      #spinButton {
+        position: absolute;
+        left: 50%;
+        top: 50%;
+        transform: translate(-50%, -50%);
+        z-index: 15;
+      }
+      #currentSelectionDisplay {
+        position: absolute;
+        top: calc(50% + 70px); /* Below the spin button */
+        left: 50%;
+        transform: translateX(-50%);
+        z-index: 16;
+        min-width: 220px;
+        padding: 8px 12px;
+        background-color: rgba(0, 0, 0, 0.6);
+        border-radius: 0.375rem; /* Tailwind rounded-md */
+        text-shadow: 1px 1px 3px rgba(0, 0, 0, 0.9);
+        font-size: 1.1rem; /* Tailwind text-lg */
+        opacity: 0; /* Initially hidden */
+        transition: opacity 0.3s ease-in-out;
+      }
+      #selectedChampionName {
+        /* This is the large name display at the bottom */
+        text-shadow: 2px 2px 8px rgba(0, 0, 0, 0.7);
+      }
+      .modal {
+        display: none; /* Hidden by default */
+        position: fixed;
+        z-index: 100;
+        left: 0;
+        top: 0;
+        width: 100%;
+        height: 100%;
+        overflow: auto;
+        background-color: rgba(0, 0, 0, 0.6);
+        align-items: center;
+        justify-content: center;
+        padding: 1rem; /* Tailwind p-4 */
+      }
+      .modal-content {
+        background-color: #2d3748; /* Tailwind gray-800 */
+        margin: auto;
+        padding: 20px;
+        border: 1px solid #4a5568; /* Tailwind gray-700 */
+        width: 80%;
+        max-width: 500px;
+        border-radius: 0.5rem; /* Tailwind rounded-lg */
+        text-align: center;
+        position: relative; /* For absolute positioning of close button if needed */
+      }
+      .modal-close-button {
+        background-color: #718096; /* Tailwind gray-500 */
+        color: white;
+        padding: 10px 15px;
+        border-radius: 0.375rem; /* Tailwind rounded-md */
+        cursor: pointer;
+        margin-top: 15px;
+        border: none;
+        font-weight: bold;
+      }
+      .modal-close-button:hover {
+        background-color: #4a5568; /* Tailwind gray-700 */
+      }
 
-        /* Styles for the Champion Image Modal */
-        #championImageModal .modal-content {
-            max-width: 700px; 
-            padding: 20px; /* Increased padding a bit for name */
-            background-color: #1a202c; 
-        }
-        #championImageModal #modalChampionName { /* Style for name inside image modal */
-            font-size: 1.75rem; /* Tailwind text-2xl */
-            font-weight: bold;
-            color: #e2e8f0; /* Tailwind gray-200 */
-            margin-bottom: 15px;
-            text-shadow: 1px 1px 4px rgba(0,0,0,0.7);
-        }
-        #championImageModal img {
-            max-width: 100%;
-            height: auto;
-            border-radius: 0.375rem;
-            /* margin-bottom: 10px; Removed as close button is now absolute */
-        }
-        .image-modal-close-button { 
-            position: absolute;
-            top: 15px;
-            right: 15px;
-            background-color: rgba(0, 0, 0, 0.5);
-            color: white;
-            border: none;
-            border-radius: 50%;
-            width: 35px;
-            height: 35px;
-            font-size: 20px;
-            line-height: 35px;
-            text-align: center;
-            cursor: pointer;
-            transition: background-color 0.2s;
-            z-index: 101; /* Ensure close button is above image if overlap */
-        }
-        .image-modal-close-button:hover {
-            background-color: rgba(0, 0, 0, 0.8);
-        }
-
+      /* Styles for the Champion Image Modal */
+      #championImageModal .modal-content {
+        max-width: 700px; /* Wider for potential duo images */
+        padding: 20px;
+        background-color: #1a202c; /* Darker background for image modal */
+      }
+      #championImageModal #modalChampionName {
+        font-size: 1.75rem; /* Tailwind text-2xl */
+        font-weight: bold;
+        color: #e2e8f0; /* Tailwind gray-200 */
+        margin-bottom: 15px;
+        text-shadow: 1px 1px 4px rgba(0, 0, 0, 0.7);
+      }
+      #championImageModal #modalChampionDescription {
+        font-size: 0.95rem; /* Tailwind text-base */
+        color: #cbd5e0; /* Tailwind gray-300 */
+        margin-bottom: 15px;
+        line-height: 1.6;
+        max-height: 100px; /* Limit description height */
+        overflow-y: auto; /* Allow scrolling for long descriptions */
+      }
+      #championImageModal img {
+        max-width: 100%;
+        height: auto;
+        border-radius: 0.375rem; /* Tailwind rounded-md */
+        /* margin-bottom: 10px; */ /* Removed as close button is absolute */
+      }
+      .image-modal-close-button {
+        /* General close button for image modal */
+        position: absolute;
+        top: 15px;
+        right: 15px;
+        background-color: rgba(0, 0, 0, 0.5);
+        color: white;
+        border: none;
+        border-radius: 50%;
+        width: 35px;
+        height: 35px;
+        font-size: 20px;
+        line-height: 35px; /* Vertically center the '×' */
+        text-align: center;
+        cursor: pointer;
+        transition: background-color 0.2s;
+        z-index: 101; /* Ensure close button is above image */
+      }
+      .image-modal-close-button:hover {
+        background-color: rgba(0, 0, 0, 0.8);
+      }
+      #modeSelectorContainer {
+        margin-bottom: 1.5rem; /* Tailwind mb-6 */
+        display: flex;
+        align-items: center;
+        gap: 0.75rem; /* Tailwind gap-3 */
+      }
+      #modeSelector {
+        background-color: #2d3748; /* Tailwind gray-800 */
+        color: #e2e8f0; /* Tailwind gray-200 */
+        border: 1px solid #4a5568; /* Tailwind gray-700 */
+        padding: 0.5rem 1rem; /* Tailwind p-2 px-4 */
+        border-radius: 0.375rem; /* Tailwind rounded-md */
+        font-size: 1rem; /* Tailwind text-base */
+      }
     </style>
-</head>
-<body class="flex flex-col items-center justify-center min-h-screen p-4 overflow-hidden">
-
-    <div id="game-container" class="relative w-full max-w-[600px] sm:max-w-[700px] md:max-w-[800px] aspect-square flex items-center justify-center">
-        <canvas id="wheelCanvas"></canvas>
-        <div id="pointer"></div>
-        <button id="spinButton" class="bg-purple-600 hover:bg-purple-700 text-white font-bold py-4 px-10 rounded-lg shadow-md transition duration-150 ease-in-out text-2xl focus:outline-none focus:ring-2 focus:ring-purple-400">
-            Spin!
-        </button>
-        <div id="currentSelectionDisplay" class="text-center font-semibold text-white transition-opacity duration-300"></div>
+  </head>
+  <body
+    class="flex flex-col items-center justify-center min-h-screen p-4 overflow-hidden"
+  >
+    <div id="modeSelectorContainer">
+      <label for="modeSelector" class="text-lg font-semibold"
+        >Select Mode:</label
+      >
+      <select id="modeSelector">
+        <option value="duo">Bot Lane Duo</option>
+        <option value="single">Single Champion</option>
+      </select>
     </div>
 
-    <div id="result" class="mt-8 text-center h-24"> 
-        <h2 id="selectedChampionName" class="text-4xl sm:text-5xl md:text-6xl font-bold transition-opacity duration-500 opacity-0"></h2>
+    <div
+      id="game-container"
+      class="relative w-full max-w-[600px] sm:max-w-[700px] md:max-w-[800px] aspect-square flex items-center justify-center"
+    >
+      <canvas id="wheelCanvas"></canvas>
+      <div id="pointer"></div>
+      <button
+        id="spinButton"
+        class="bg-purple-600 hover:bg-purple-700 text-white font-bold py-4 px-10 rounded-lg shadow-md transition duration-150 ease-in-out text-2xl focus:outline-none focus:ring-2 focus:ring-purple-400"
+      >
+        Spin!
+      </button>
+      <div
+        id="currentSelectionDisplay"
+        class="text-center font-semibold text-white transition-opacity duration-300"
+      ></div>
+    </div>
+
+    <div id="result" class="mt-8 text-center h-24">
+      <h2
+        id="selectedChampionName"
+        class="text-4xl sm:text-5xl md:text-6xl font-bold transition-opacity duration-500 opacity-0"
+      ></h2>
     </div>
 
     <div id="messageModal" class="modal">
-        <div class="modal-content">
-            <p id="modalMessageText"></p>
-            <button id="modalCloseButton" class="modal-close-button">OK</button>
-        </div>
+      <div class="modal-content">
+        <p id="modalMessageText"></p>
+        <button id="modalCloseButton" class="modal-close-button">OK</button>
+      </div>
     </div>
 
     <div id="championImageModal" class="modal">
-        <div class="modal-content">
-            <button id="championImageModalCloseButton" class="image-modal-close-button">&times;</button>
-            <h3 id="modalChampionName"></h3>
-            <img id="selectedChampionImage" src="" alt="Selected Champion">
-        </div>
+      <div class="modal-content">
+        <button
+          id="championImageModalCloseButton"
+          class="image-modal-close-button"
+        >
+          &times;
+        </button>
+        <h3 id="modalChampionName"></h3>
+        <img
+          id="selectedChampionImage"
+          src="https://placehold.co/600x355/1a202c/e2e8f0?text=Champion+Art"
+          alt="Selected Champion"
+        />
+        <p id="modalChampionDescription"></p>
+      </div>
     </div>
 
     <script>
-        const champions = [
-            // Champion list remains the same
-            { name: "Aatrox", key: "Aatrox" }, { name: "Ahri", key: "Ahri" }, { name: "Akali", key: "Akali" },
-            { name: "Akshan", key: "Akshan" }, { name: "Alistar", key: "Alistar" }, { name: "Amumu", key: "Amumu" },
-            { name: "Anivia", key: "Anivia" }, { name: "Annie", key: "Annie" }, { name: "Aphelios", key: "Aphelios" },
-            { name: "Ashe", key: "Ashe" }, { name: "Aurelion Sol", key: "AurelionSol" }, { name: "Aurora", key: "Aurora" },
-            { name: "Azir", key: "Azir" }, { name: "Bard", key: "Bard" }, { name: "Bel’Veth", key: "Belveth" },
-            { name: "Blitzcrank", key: "Blitzcrank" }, { name: "Brand", key: "Brand" }, { name: "Braum", key: "Braum" },
-            { name: "Briar", key: "Briar" }, { name: "Caitlyn", key: "Caitlyn" }, { name: "Camille", key: "Camille" },
-            { name: "Cassiopeia", key: "Cassiopeia" }, { name: "Cho’Gath", key: "Chogath" }, { name: "Corki", key: "Corki" },
-            { name: "Darius", key: "Darius" }, { name: "Diana", key: "Diana" }, { name: "Dr. Mundo", key: "DrMundo" },
-            { name: "Draven", key: "Draven" }, { name: "Ekko", key: "Ekko" }, { name: "Elise", key: "Elise" },
-            { name: "Evelynn", key: "Evelynn" }, { name: "Ezreal", key: "Ezreal" }, { name: "Fiddlesticks", key: "FiddleSticks" },
-            { name: "Fiora", key: "Fiora" }, { name: "Fizz", key: "Fizz" }, { name: "Galio", key: "Galio" },
-            { name: "Gangplank", key: "Gangplank" }, { name: "Garen", key: "Garen" }, { name: "Gnar", key: "Gnar" },
-            { name: "Gragas", key: "Gragas" }, { name: "Graves", key: "Graves" }, { name: "Gwen", key: "Gwen" },
-            { name: "Hecarim", key: "Hecarim" }, { name: "Heimerdinger", key: "Heimerdinger" }, { name: "Hwei", key: "Hwei" },
-            { name: "Illaoi", key: "Illaoi" }, { name: "Irelia", key: "Irelia" }, { name: "Ivern", key: "Ivern" },
-            { name: "Janna", key: "Janna" }, { name: "Jarvan IV", key: "JarvanIV" }, { name: "Jax", key: "Jax" },
-            { name: "Jayce", key: "Jayce" }, { name: "Jhin", key: "Jhin" }, { name: "Jinx", key: "Jinx" },
-            { name: "K’Sante", key: "KSante" }, { name: "Kai’Sa", key: "KaiSa" }, { name: "Kalista", key: "Kalista" },
-            { name: "Karma", key: "Karma" }, { name: "Karthus", key: "Karthus" }, { name: "Kassadin", key: "Kassadin" },
-            { name: "Katarina", key: "Katarina" }, { name: "Kayle", key: "Kayle" }, { name: "Kayn", key: "Kayn" },
-            { name: "Kennen", key: "Kennen" }, { name: "Kha’Zix", key: "Khazix" }, { name: "Kindred", key: "Kindred" },
-            { name: "Kled", key: "Kled" }, { name: "Kog’Maw", key: "KogMaw" }, { name: "LeBlanc", key: "LeBlanc" },
-            { name: "Lee Sin", key: "LeeSin" }, { name: "Leona", key: "Leona" }, { name: "Lillia", key: "Lillia" },
-            { name: "Lissandra", key: "Lissandra" }, { name: "Lucian", key: "Lucian" }, { name: "Lulu", key: "Lulu" },
-            { name: "Lux", key: "Lux" }, { name: "Malphite", key: "Malphite" }, { name: "Malzahar", key: "Malzahar" },
-            { name: "Maokai", key: "Maokai" }, { name: "Master Yi", key: "MasterYi" }, { name: "Milio", key: "Milio" },
-            { name: "Miss Fortune", key: "MissFortune" }, { name: "Mordekaiser", key: "Mordekaiser" }, { name: "Morgana", key: "Morgana" },
-            { name: "Naafiri", key: "Naafiri" }, { name: "Nami", key: "Nami" }, { name: "Nasus", key: "Nasus" },
-            { name: "Nautilus", key: "Nautilus" }, { name: "Neeko", key: "Neeko" }, { name: "Nidalee", key: "Nidalee" },
-            { name: "Nilah", key: "Nilah" }, { name: "Nocturne", key: "Nocturne" }, { name: "Nunu & Willump", key: "Nunu" },
-            { name: "Olaf", key: "Olaf" }, { name: "Orianna", key: "Orianna" }, { name: "Ornn", key: "Ornn" },
-            { name: "Pantheon", key: "Pantheon" }, { name: "Poppy", key: "Poppy" }, { name: "Pyke", key: "Pyke" },
-            { name: "Qiyana", key: "Qiyana" }, { name: "Quinn", key: "Quinn" }, { name: "Rakan", key: "Rakan" },
-            { name: "Rammus", key: "Rammus" }, { name: "Rek’Sai", key: "Reksai" }, { name: "Rell", key: "Rell" },
-            { name: "Renata Glasc", key: "RenataGlasc" }, { name: "Renekton", key: "Renekton" }, { name: "Rengar", key: "Rengar" },
-            { name: "Riven", key: "Riven" }, { name: "Rumble", key: "Rumble" }, { name: "Ryze", key: "Ryze" },
-            { name: "Samira", key: "Samira" }, { name: "Sejuani", key: "Sejuani" }, { name: "Senna", key: "Senna" },
-            { name: "Seraphine", key: "Seraphine" }, { name: "Sett", key: "Sett" }, { name: "Shaco", key: "Shaco" },
-            { name: "Shen", key: "Shen" }, { name: "Shyvana", key: "Shyvana" }, { name: "Singed", key: "Singed" },
-            { name: "Sion", key: "Sion" }, { name: "Sivir", key: "Sivir" }, { name: "Skarner", key: "Skarner" },
-            { name: "Smolder", key: "Smolder" }, { name: "Sona", key: "Sona" }, { name: "Soraka", key: "Soraka" },
-            { name: "Swain", key: "Swain" }, { name: "Sylas", key: "Sylas" }, { name: "Syndra", key: "Syndra" },
-            { name: "Tahm Kench", key: "TahmKench" }, { name: "Taliyah", key: "Taliyah" }, { name: "Talon", key: "Talon" },
-            { name: "Taric", key: "Taric" }, { name: "Teemo", key: "Teemo" }, { name: "Thresh", key: "Thresh" },
-            { name: "Tristana", key: "Tristana" }, { name: "Trundle", key: "Trundle" }, { name: "Tryndamere", key: "Tryndamere" },
-            { name: "Twisted Fate", key: "TwistedFate" }, { name: "Twitch", key: "Twitch" }, { name: "Udyr", key: "Udyr" },
-            { name: "Urgot", key: "Urgot" }, { name: "Varus", key: "Varus" }, { name: "Vayne", key: "Vayne" },
-            { name: "Veigar", key: "Veigar" }, { name: "Vel’Koz", key: "Velkoz" }, { name: "Vex", key: "Vex" },
-            { name: "Vi", key: "Vi" }, { name: "Viego", key: "Viego" }, { name: "Viktor", key: "Viktor" },
-            { name: "Vladimir", key: "Vladimir" }, { name: "Volibear", key: "Volibear" }, { name: "Warwick", key: "Warwick" },
-            { name: "Wukong", key: "MonkeyKing" }, { name: "Xayah", key: "Xayah" }, { name: "Xerath", key: "Xerath" },
-            { name: "Xin Zhao", key: "XinZhao" }, { name: "Yasuo", key: "Yasuo" }, { name: "Yone", key: "Yone" },
-            { name: "Yorick", key: "Yorick" }, { name: "Yuumi", key: "Yuumi" }, { name: "Zac", key: "Zac" },
-            { name: "Zed", key: "Zed" }, { name: "Zeri", key: "Zeri" }, { name: "Ziggs", key: "Ziggs" },
-            { name: "Zilean", key: "Zilean" }, { name: "Zoe", key: "Zoe" }, { name: "Zyra", key: "Zyra" }
-        ];
+      const singleChampions = [
+        // Keeping the original full list for single mode
+        { name: "Aatrox", key: "Aatrox" },
+        { name: "Ahri", key: "Ahri" },
+        { name: "Akali", key: "Akali" },
+        { name: "Akshan", key: "Akshan" },
+        { name: "Alistar", key: "Alistar" },
+        { name: "Amumu", key: "Amumu" },
+        { name: "Anivia", key: "Anivia" },
+        { name: "Annie", key: "Annie" },
+        { name: "Aphelios", key: "Aphelios" },
+        { name: "Ashe", key: "Ashe" },
+        { name: "Aurelion Sol", key: "AurelionSol" },
+        { name: "Aurora", key: "Aurora" },
+        { name: "Azir", key: "Azir" },
+        { name: "Bard", key: "Bard" },
+        { name: "Bel’Veth", key: "Belveth" },
+        { name: "Blitzcrank", key: "Blitzcrank" },
+        { name: "Brand", key: "Brand" },
+        { name: "Braum", key: "Braum" },
+        { name: "Briar", key: "Briar" },
+        { name: "Caitlyn", key: "Caitlyn" },
+        { name: "Camille", key: "Camille" },
+        { name: "Cassiopeia", key: "Cassiopeia" },
+        { name: "Cho’Gath", key: "Chogath" },
+        { name: "Corki", key: "Corki" },
+        { name: "Darius", key: "Darius" },
+        { name: "Diana", key: "Diana" },
+        { name: "Dr. Mundo", key: "DrMundo" },
+        { name: "Draven", key: "Draven" },
+        { name: "Ekko", key: "Ekko" },
+        { name: "Elise", key: "Elise" },
+        { name: "Evelynn", key: "Evelynn" },
+        { name: "Ezreal", key: "Ezreal" },
+        { name: "Fiddlesticks", key: "FiddleSticks" },
+        { name: "Fiora", key: "Fiora" },
+        { name: "Fizz", key: "Fizz" },
+        { name: "Galio", key: "Galio" },
+        { name: "Gangplank", key: "Gangplank" },
+        { name: "Garen", key: "Garen" },
+        { name: "Gnar", key: "Gnar" },
+        { name: "Gragas", key: "Gragas" },
+        { name: "Graves", key: "Graves" },
+        { name: "Gwen", key: "Gwen" },
+        { name: "Hecarim", key: "Hecarim" },
+        { name: "Heimerdinger", key: "Heimerdinger" },
+        { name: "Hwei", key: "Hwei" },
+        { name: "Illaoi", key: "Illaoi" },
+        { name: "Irelia", key: "Irelia" },
+        { name: "Ivern", key: "Ivern" },
+        { name: "Janna", key: "Janna" },
+        { name: "Jarvan IV", key: "JarvanIV" },
+        { name: "Jax", key: "Jax" },
+        { name: "Jayce", key: "Jayce" },
+        { name: "Jhin", key: "Jhin" },
+        { name: "Jinx", key: "Jinx" },
+        { name: "K’Sante", key: "KSante" },
+        { name: "Kai’Sa", key: "Kaisa" },
+        { name: "Kalista", key: "Kalista" }, // Corrected KaiSa key
+        { name: "Karma", key: "Karma" },
+        { name: "Karthus", key: "Karthus" },
+        { name: "Kassadin", key: "Kassadin" },
+        { name: "Katarina", key: "Katarina" },
+        { name: "Kayle", key: "Kayle" },
+        { name: "Kayn", key: "Kayn" },
+        { name: "Kennen", key: "Kennen" },
+        { name: "Kha’Zix", key: "Khazix" },
+        { name: "Kindred", key: "Kindred" },
+        { name: "Kled", key: "Kled" },
+        { name: "Kog’Maw", key: "KogMaw" },
+        { name: "LeBlanc", key: "Leblanc" }, // Corrected LeBlanc key
+        { name: "Lee Sin", key: "LeeSin" },
+        { name: "Leona", key: "Leona" },
+        { name: "Lillia", key: "Lillia" },
+        { name: "Lissandra", key: "Lissandra" },
+        { name: "Lucian", key: "Lucian" },
+        { name: "Lulu", key: "Lulu" },
+        { name: "Lux", key: "Lux" },
+        { name: "Malphite", key: "Malphite" },
+        { name: "Malzahar", key: "Malzahar" },
+        { name: "Maokai", key: "Maokai" },
+        { name: "Master Yi", key: "MasterYi" },
+        { name: "Milio", key: "Milio" },
+        { name: "Miss Fortune", key: "MissFortune" },
+        { name: "Mordekaiser", key: "Mordekaiser" },
+        { name: "Morgana", key: "Morgana" },
+        { name: "Naafiri", key: "Naafiri" },
+        { name: "Nami", key: "Nami" },
+        { name: "Nasus", key: "Nasus" },
+        { name: "Nautilus", key: "Nautilus" },
+        { name: "Neeko", key: "Neeko" },
+        { name: "Nidalee", key: "Nidalee" },
+        { name: "Nilah", key: "Nilah" },
+        { name: "Nocturne", key: "Nocturne" },
+        { name: "Nunu & Willump", key: "Nunu" },
+        { name: "Olaf", key: "Olaf" },
+        { name: "Orianna", key: "Orianna" },
+        { name: "Ornn", key: "Ornn" },
+        { name: "Pantheon", key: "Pantheon" },
+        { name: "Poppy", key: "Poppy" },
+        { name: "Pyke", key: "Pyke" },
+        { name: "Qiyana", key: "Qiyana" },
+        { name: "Quinn", key: "Quinn" },
+        { name: "Rakan", key: "Rakan" },
+        { name: "Rammus", key: "Rammus" },
+        { name: "Rek’Sai", key: "Reksai" },
+        { name: "Rell", key: "Rell" },
+        { name: "Renata Glasc", key: "Renata" },
+        { name: "Renekton", key: "Renekton" },
+        { name: "Rengar", key: "Rengar" }, // Corrected Renata key
+        { name: "Riven", key: "Riven" },
+        { name: "Rumble", key: "Rumble" },
+        { name: "Ryze", key: "Ryze" },
+        { name: "Samira", key: "Samira" },
+        { name: "Sejuani", key: "Sejuani" },
+        { name: "Senna", key: "Senna" },
+        { name: "Seraphine", key: "Seraphine" },
+        { name: "Sett", key: "Sett" },
+        { name: "Shaco", key: "Shaco" },
+        { name: "Shen", key: "Shen" },
+        { name: "Shyvana", key: "Shyvana" },
+        { name: "Singed", key: "Singed" },
+        { name: "Sion", key: "Sion" },
+        { name: "Sivir", key: "Sivir" },
+        { name: "Skarner", key: "Skarner" },
+        { name: "Smolder", key: "Smolder" },
+        { name: "Sona", key: "Sona" },
+        { name: "Soraka", key: "Soraka" },
+        { name: "Swain", key: "Swain" },
+        { name: "Sylas", key: "Sylas" },
+        { name: "Syndra", key: "Syndra" },
+        { name: "Tahm Kench", key: "TahmKench" },
+        { name: "Taliyah", key: "Taliyah" },
+        { name: "Talon", key: "Talon" },
+        { name: "Taric", key: "Taric" },
+        { name: "Teemo", key: "Teemo" },
+        { name: "Thresh", key: "Thresh" },
+        { name: "Tristana", key: "Tristana" },
+        { name: "Trundle", key: "Trundle" },
+        { name: "Tryndamere", key: "Tryndamere" },
+        { name: "Twisted Fate", key: "TwistedFate" },
+        { name: "Twitch", key: "Twitch" },
+        { name: "Udyr", key: "Udyr" },
+        { name: "Urgot", key: "Urgot" },
+        { name: "Varus", key: "Varus" },
+        { name: "Vayne", key: "Vayne" },
+        { name: "Veigar", key: "Veigar" },
+        { name: "Vel’Koz", key: "Velkoz" },
+        { name: "Vex", key: "Vex" },
+        { name: "Vi", key: "Vi" },
+        { name: "Viego", key: "Viego" },
+        { name: "Viktor", key: "Viktor" },
+        { name: "Vladimir", key: "Vladimir" },
+        { name: "Volibear", key: "Volibear" },
+        { name: "Warwick", key: "Warwick" },
+        { name: "Wukong", key: "MonkeyKing" },
+        { name: "Xayah", key: "Xayah" },
+        { name: "Xerath", key: "Xerath" },
+        { name: "Xin Zhao", key: "XinZhao" },
+        { name: "Yasuo", key: "Yasuo" },
+        { name: "Yone", key: "Yone" },
+        { name: "Yorick", key: "Yorick" },
+        { name: "Yuumi", key: "Yuumi" },
+        { name: "Zac", key: "Zac" },
+        { name: "Zed", key: "Zed" },
+        { name: "Zeri", key: "Zeri" },
+        { name: "Ziggs", key: "Ziggs" },
+        { name: "Zilean", key: "Zilean" },
+        { name: "Zoe", key: "Zoe" },
+        { name: "Zyra", key: "Zyra" },
+      ];
+      // Corrected keys based on typical Data Dragon patterns (e.g., KaiSa, LeBlanc, RenataGlasc)
+      // The original list had some inconsistencies, I've tried to align them with common usage.
+      // For Renata Glasc, ddragon uses 'Renata'. For Bel'Veth, 'Belveth'. For K'Sante, 'KSante'.
+      // For LeBlanc, it's 'Leblanc'. For Kai'Sa, it's 'Kaisa'.
+      // It's important these keys match the image URLs. The provided list was used as a base.
+      // I've updated the keys in `singleChampions` to reflect more common ddragon patterns where possible.
+      // For example, Renata Glasc key is usually 'Renata', Kai'Sa is 'Kaisa'.
+      // If the original list's keys were definitively correct for a specific ddragon version, they can be reverted.
+      // For now, I'll ensure botCombos uses keys consistent with this corrected singleChampions list or well-known ddragon keys.
 
-        const canvas = document.getElementById('wheelCanvas');
-        const ctx = canvas.getContext('2d');
-        const spinButton = document.getElementById('spinButton');
-        const selectedChampionNameDisplay = document.getElementById('selectedChampionName');
-        const currentSelectionDisplay = document.getElementById('currentSelectionDisplay'); 
-        
-        const messageModal = document.getElementById('messageModal');
-        const modalMessageText = document.getElementById('modalMessageText');
-        const modalCloseButton = document.getElementById('modalCloseButton');
+      const botCombos = [
+        {
+          displayName: "Lucian & Braum",
+          adc: { name: "Lucian", key: "Lucian" },
+          support: { name: "Braum", key: "Braum" },
+          description:
+            "Lucian's passive (Lightslinger) allows for quick application of Braum's passive (Concussive Blows), leading to fast stuns. Braum offers excellent peel and engage.",
+        },
+        {
+          displayName: "Caitlyn & Morgana",
+          adc: { name: "Caitlyn", key: "Caitlyn" },
+          support: { name: "Morgana", key: "Morgana" },
+          description:
+            "Morgana's Dark Binding roots enemies, setting them up perfectly for Caitlyn's traps (Yordle Snap Trap) and long-range damage. Black Shield protects Caitlyn from CC.",
+        },
+        {
+          displayName: "Xayah & Rakan",
+          adc: { name: "Xayah", key: "Xayah" },
+          support: { name: "Rakan", key: "Rakan" },
+          description:
+            "This duo has unique interactions. Rakan's Battle Dance has increased range to Xayah, and Xayah's Bladecaller can be triggered by Rakan. Strong engage and peel.",
+        },
+        {
+          displayName: "Kai'Sa & Nautilus",
+          adc: { name: "Kai’Sa", key: "Kaisa" },
+          support: { name: "Nautilus", key: "Nautilus" },
+          description:
+            "Nautilus provides immense crowd control with his Dredge Line and Riptide, allowing Kai'Sa to apply Plasma stacks quickly and follow up with Killer Instinct.",
+        },
+        {
+          displayName: "Ezreal & Karma",
+          adc: { name: "Ezreal", key: "Ezreal" },
+          support: { name: "Karma", key: "Karma" },
+          description:
+            "A high-poke lane. Karma's Inner Flame (empowered by Mantra) and Ezreal's Mystic Shot can harass enemies from afar. Karma's Inspire provides speed and shields.",
+        },
+        {
+          displayName: "Ashe & Zyra",
+          adc: { name: "Ashe", key: "Ashe" },
+          support: { name: "Zyra", key: "Zyra" },
+          description:
+            "Excellent poke and control. Ashe's slows (Frost Shot) combined with Zyra's plants (Deadly Spines, Grasping Roots) make it hard for enemies to approach or escape.",
+        },
+        {
+          displayName: "Jhin & Xerath",
+          adc: { name: "Jhin", key: "Jhin" },
+          support: { name: "Xerath", key: "Xerath" },
+          description:
+            "The 'Artillery' lane. Both champions have extremely long-range abilities. Xerath's stuns (Shocking Orb) set up Jhin's Deadly Flourish and Curtain Call.",
+        },
+        {
+          displayName: "Miss Fortune & Leona",
+          adc: { name: "Miss Fortune", key: "MissFortune" },
+          support: { name: "Leona", key: "Leona" },
+          description:
+            "Leona's aggressive engage (Zenith Blade, Shield of Daybreak) locks down targets for Miss Fortune's high burst damage, especially her Bullet Time ultimate.",
+        },
+        {
+          displayName: "Draven & Thresh",
+          adc: { name: "Draven", key: "Draven" },
+          support: { name: "Thresh", key: "Thresh" },
+          description:
+            "Thresh's Death Sentence and Flay provide excellent setup for Draven to catch axes and deal massive damage. Dark Passage can save Draven or bring him into fights.",
+        },
+        {
+          displayName: "Vayne & Lulu",
+          adc: { name: "Vayne", key: "Vayne" },
+          support: { name: "Lulu", key: "Lulu" },
+          description:
+            "Lulu excels at protecting and empowering Vayne. Whimsy and Help, Pix! enhance Vayne's kiting and damage, while Wild Growth provides survivability for late-game scaling.",
+        },
+        {
+          displayName: "Samira & Rell",
+          adc: { name: "Samira", key: "Samira" },
+          support: { name: "Rell", key: "Rell" },
+          description:
+            "Rell's multi-target CC (Ferromancy: Crash Down, Magnet Storm) groups enemies perfectly for Samira to build style and unleash her Inferno Trigger.",
+        },
+        {
+          displayName: "Tristana & Alistar",
+          adc: { name: "Tristana", key: "Tristana" },
+          support: { name: "Alistar", key: "Alistar" },
+          description:
+            "Alistar's Headbutt-Pulverize combo provides strong engage and CC, allowing Tristana to jump in (Rocket Jump) and burst targets with Explosive Charge.",
+        },
+        {
+          displayName: "Aphelios & Thresh",
+          adc: { name: "Aphelios", key: "Aphelios" },
+          support: { name: "Thresh", key: "Thresh" },
+          description:
+            "Thresh's versatile kit (hooks, flays, lanterns) provides both engage and peel, complementing Aphelios's varied weapon forms and damage potential.",
+        },
+        {
+          displayName: "Kalista & Renata Glasc",
+          adc: { name: "Kalista", key: "Kalista" },
+          support: { name: "Renata Glasc", key: "Renata" },
+          description:
+            "Renata's Bailout can give Kalista a second life, crucial for an aggressive ADC. Loyalty Program and Hostile Takeover offer good CC for Kalista to capitalize on.",
+        },
+        {
+          displayName: "Kog'Maw & Lulu",
+          adc: { name: "Kog’Maw", key: "KogMaw" },
+          support: { name: "Lulu", key: "Lulu" },
+          description:
+            "The classic 'Juggermaw' combo. Lulu provides Kog'Maw with attack speed (Whimsy), shields (Help, Pix!), and survivability (Wild Growth), turning him into a hyper-carry turret.",
+        },
+        {
+          displayName: "Jinx & Blitzcrank",
+          adc: { name: "Jinx", key: "Jinx" },
+          support: { name: "Blitzcrank", key: "Blitzcrank" },
+          description:
+            "Blitzcrank's Rocket Grab pulls an enemy into Jinx's Flame Chompers, leading to easy kills and enabling Jinx's Get Excited! passive for snowball potential.",
+        },
+        {
+          displayName: "Sivir & Yuumi",
+          adc: { name: "Sivir", key: "Sivir" },
+          support: { name: "Yuumi", key: "Yuumi" },
+          description:
+            "Yuumi provides Sivir with sustain, poke, and movement speed, making Sivir very safe. Sivir's On The Hunt combined with Yuumi's Zoomies creates incredible team-wide mobility.",
+        },
+        {
+          displayName: "Varus & Tahm Kench",
+          adc: { name: "Varus", key: "Varus" },
+          support: { name: "Tahm Kench", key: "TahmKench" },
+          description:
+            "Tahm Kench offers unparalleled protection for Varus with Devour, allowing Varus to safely stack Blight and poke. Tahm's Tongue Lash provides CC.",
+        },
+        {
+          displayName: "Senna & Tahm Kench",
+          adc: { name: "Senna", key: "Senna" },
+          support: { name: "Tahm Kench", key: "TahmKench" },
+          description:
+            "The 'Fasting Senna' strategy. Tahm Kench farms while Senna collects souls. Tahm provides peel, and Senna scales into a powerful carry with utility.",
+        },
+        {
+          displayName: "Zeri & Yuumi",
+          adc: { name: "Zeri", key: "Zeri" },
+          support: { name: "Yuumi", key: "Yuumi" },
+          description:
+            "Yuumi enhances Zeri's high mobility and damage output, making her incredibly slippery and hard to kill while she zips around teamfights.",
+        },
+        {
+          displayName: "Lucian & Nami",
+          adc: { name: "Lucian", key: "Lucian" },
+          support: { name: "Nami", key: "Nami" },
+          description:
+            "Tidecaller’s Blessing double-procs Lucian’s Lightslinger for burst.",
+        },
+        {
+          displayName: "Twitch & Yuumi",
+          adc: { name: "Twitch", key: "Twitch" },
+          support: { name: "Yuumi", key: "Yuumi" },
+          description:
+            "Stealth engage + Zoomies = classic rat-cat hyper-carry.",
+        },
+        {
+          displayName: "Kog'Maw & Janna",
+          adc: { name: "Kog'Maw", key: "KogMaw" },
+          support: { name: "Janna", key: "Janna" },
+          description:
+            "Peel, shields and Monsoon keep the artillery turret alive.",
+        },
+        {
+          displayName: "Vayne & Taric",
+          adc: { name: "Vayne", key: "Vayne" },
+          support: { name: "Taric", key: "Taric" },
+          description:
+            "Condemn chains into Dazzle; Cosmic Radiance enables fearless dives.",
+        },
+        {
+          displayName: "Aphelios & Braum",
+          adc: { name: "Aphelios", key: "Aphelios" },
+          support: { name: "Braum", key: "Braum" },
+          description: "Moonlight stacks Concussive Blows in record time.",
+        },
+        {
+          displayName: "Ezreal & Soraka",
+          adc: { name: "Ezreal", key: "Ezreal" },
+          support: { name: "Soraka", key: "Soraka" },
+          description:
+            "Infinite poke sustained by constant heals and silences.",
+        },
+        {
+          displayName: "Senna & Swain",
+          adc: { name: "Senna", key: "Senna" },
+          support: { name: "Swain", key: "Swain" },
+          description: "Fasting souls + Nevermove root drain-tanks lanes.",
+        },
+        {
+          displayName: "Nilah & Yuumi",
+          adc: { name: "Nilah", key: "Nilah" },
+          support: { name: "Yuumi", key: "Yuumi" },
+          description:
+            "Shared heals + Final Chapter turns Nilah’s ult into a wombo.",
+        },
+        {
+          displayName: "Zeri & Karma",
+          adc: { name: "Zeri", key: "Zeri" },
+          support: { name: "Karma", key: "Karma" },
+          description:
+            "Mantra-shield turbo-charges Zeri’s kiting and ult resets.",
+        },
+        {
+          displayName: "Smolder & Milio",
+          adc: { name: "Smolder", key: "Smolder" },
+          support: { name: "Milio", key: "Milio" },
+          description:
+            "Cozy Campfire amplifies Q-burns; Breath saves the baby dragon.",
+        },
+        {
+          displayName: "Jhin & Nami",
+          adc: { name: "Jhin", key: "Jhin" },
+          support: { name: "Nami", key: "Nami" },
+          description:
+            "Aqua Prison or E slow ⇒ Deadly Flourish root ⇒ Curtain Call.",
+        },
+        {
+          displayName: "Caitlyn & Lux",
+          adc: { name: "Caitlyn", key: "Caitlyn" },
+          support: { name: "Lux", key: "Lux" },
+          description:
+            "Light Binding → Yordle Trap headshot → Final Spark snipe.",
+        },
+        {
+          displayName: "Varus & Zyra",
+          adc: { name: "Varus", key: "Varus" },
+          support: { name: "Zyra", key: "Zyra" },
+          description: "Double poke plants force all-in or surrender tower.",
+        },
+        {
+          displayName: "Ashe & Brand",
+          adc: { name: "Ashe", key: "Ashe" },
+          support: { name: "Brand", key: "Brand" },
+          description: "Perma-slow sets up Brand’s stun and Blaze explosions.",
+        },
+        {
+          displayName: "Draven & Pyke",
+          adc: { name: "Draven", key: "Draven" },
+          support: { name: "Pyke", key: "Pyke" },
+          description:
+            "Hooks guarantee axe pickups; shared execute gold snowballs.",
+        },
+        {
+          displayName: "Miss Fortune & Amumu",
+          adc: { name: "Miss Fortune", key: "MissFortune" },
+          support: { name: "Amumu", key: "Amumu" },
+          description: "Curse of the Sad Bullet Time – timeless  wombo.",
+        },
+        {
+          displayName: "Tristana & Pantheon",
+          adc: { name: "Tristana", key: "Tristana" },
+          support: { name: "Pantheon", key: "Pantheon" },
+          description:
+            "Level-2 all-in with Spearshot + Bomb reset tower-dives.",
+        },
+        {
+          displayName: "Kalista & Taric",
+          adc: { name: "Kalista", key: "Kalista" },
+          support: { name: "Taric", key: "Taric" },
+          description:
+            "Fate’s Call delivers point-blank Cosmic Radiance engage.",
+        },
+        {
+          displayName: "Kai'Sa & Alistar",
+          adc: { name: "Kai’Sa", key: "Kaisa" },
+          support: { name: "Alistar", key: "Alistar" },
+          description:
+            "Headbutt-Pulverize lets Kai’Sa stack Plasma then dive with R.",
+        },
+        {
+          displayName: "Xayah & Neeko",
+          adc: { name: "Xayah", key: "Xayah" },
+          support: { name: "Neeko", key: "Neeko" },
+          description:
+            "Feather recall plus Pop Blossom disguise – pick or be picked.",
+        },
+        {
+          displayName: "Samira & Alistar",
+          adc: { name: "Samira", key: "Samira" },
+          support: { name: "Alistar", key: "Alistar" },
+          description:
+            "Samira dashes off Pulverize knock-ups straight into Inferno Trigger.",
+        },
+        {
+          displayName: "Karthus & Senna",
+          adc: { name: "Karthus", key: "Karthus" },
+          support: { name: "Senna", key: "Senna" },
+          description: "Soul-collecting scaler + global Requiem clean-ups.",
+        },
+        {
+          displayName: "Veigar & Alistar",
+          adc: { name: "Veigar", key: "Veigar" },
+          support: { name: "Alistar", key: "Alistar" },
+          description:
+            "Event Horizon cage into Headbutt-Pulverize insta-burst.",
+        },
+        {
+          displayName: "Ziggs & Swain",
+          adc: { name: "Ziggs", key: "Ziggs" },
+          support: { name: "Swain", key: "Swain" },
+          description:
+            "Nevermove yanks into Satchel mines; turret demolition squad.",
+        },
+        {
+          displayName: "Sivir & Janna",
+          adc: { name: "Sivir", key: "Sivir" },
+          support: { name: "Janna", key: "Janna" },
+          description:
+            "Eye of the Storm steroid plus Spell Shield keep wave-clear safe.",
+        },
+        {
+          displayName: "Ezreal & Sona",
+          adc: { name: "Ezreal", key: "Ezreal" },
+          support: { name: "Sona", key: "Sona" },
+          description:
+            "Q-poke + Hymn of Valor chip-outs until Crescendo-Trueshot wombo.",
+        },
+        {
+          displayName: "Twitch & Renata Glasc",
+          adc: { name: "Twitch", key: "Twitch" },
+          support: { name: "Renata Glasc", key: "Renata" },
+          description: "Bailout revives the rat for Spray ’n Pray pentas.",
+        },
+        {
+          displayName: "Lucian & Morgana",
+          adc: { name: "Lucian", key: "Lucian" },
+          support: { name: "Morgana", key: "Morgana" },
+          description: "Black Shield frees Lucian to dash in fearlessly.",
+        },
+        {
+          displayName: "Yasuo & Gragas",
+          adc: { name: "Yasuo", key: "Yasuo" },
+          support: { name: "Gragas", key: "Gragas" },
+          description:
+            "Body-Slam knock-ups feed Last Breath; surprisingly lethal bot cheese.",
+        },
+        {
+          displayName: "Yasuo & Alistar",
+          adc: { name: "Yasuo", key: "Yasuo" },
+          support: { name: "Alistar", key: "Alistar" },
+          description: "Pulverize → instant Last Breath; perma-CC lane.",
+        },
+        {
+          displayName: "Swain & Pantheon",
+          adc: { name: "Swain", key: "Swain" },
+          support: { name: "Pantheon", key: "Pantheon" },
+          description:
+            "Point-click stun drags into Swain’s claw for brutal kill pressure.",
+        },
+        {
+          displayName: "Smolder & Thresh",
+          adc: { name: "Smolder", key: "Smolder" },
+          support: { name: "Thresh", key: "Thresh" },
+          description: "Lantern disengage keeps the hatchling stacking safely.",
+        },
+        {
+          displayName: "Nilah & Nautilus",
+          adc: { name: "Nilah", key: "Nilah" },
+          support: { name: "Nautilus", key: "Nautilus" },
+          description: "Hook + knock-up extend Nilah’s spin-to-win.",
+        },
+        {
+          displayName: "Aphelios & Lulu",
+          adc: { name: "Aphelios", key: "Aphelios" },
+          support: { name: "Lulu", key: "Lulu" },
+          description: "Pix + Ardent makes Severum & Calibrum absurd.",
+        },
+        {
+          displayName: "Jinx & Leona",
+          adc: { name: "Jinx", key: "Jinx" },
+          support: { name: "Leona", key: "Leona" },
+          description: "Zenith Blade → Chompers root → Get Excited snowball.",
+        },
+        {
+          displayName: "Jinx & Morgana",
+          adc: { name: "Jinx", key: "Jinx" },
+          support: { name: "Morgana", key: "Morgana" },
+          description: "Binding into Chompers keeps foes snared for days.",
+        },
+        {
+          displayName: "Graves & Swain",
+          adc: { name: "Graves", key: "Graves" },
+          support: { name: "Swain", key: "Swain" },
+          description:
+            "Smoke Screen slow plus pull-through burst – off-meta bully.",
+        },
+        {
+          displayName: "Mordekaiser & Taric",
+          adc: { name: "Mordekaiser", key: "Mordekaiser" },
+          support: { name: "Taric", key: "Taric" },
+          description: "Realm of Death + invulnerability memes in 2 v 2.",
+        },
+        {
+          displayName: "Rengar & Ivern",
+          adc: { name: "Rengar", key: "Rengar" },
+          support: { name: "Ivern", key: "Ivern" },
+          description: "Brushmaker turns kitty into lane-jump-scare assassin.",
+        },
+        {
+          displayName: "Sion & Darius",
+          adc: { name: "Sion", key: "Sion" },
+          support: { name: "Darius", key: "Darius" },
+          description:
+            "Cheese hook-pull into Decimate / Q – hilarious kill lane.",
+        },
+        {
+          displayName: "Ziggs & Vel'Koz",
+          adc: { name: "Ziggs", key: "Ziggs" },
+          support: { name: "Vel’Koz", key: "Velkoz" },
+          description: "Double artillery sieges towers from screen-away.",
+        },
+        {
+          displayName: "Brand & Leona",
+          adc: { name: "Brand", key: "Brand" },
+          support: { name: "Leona", key: "Leona" },
+          description: "Solar Flare + Pyroclasm melts grouped enemies.",
+        },
+        {
+          displayName: "Swain & Jarvan IV",
+          adc: { name: "Swain", key: "Swain" },
+          support: { name: "Jarvan IV", key: "JarvanIV" },
+          description: "Cataclysm locks foes inside Swain ult drain.",
+        },
+        {
+          displayName: "Veigar & Poppy",
+          adc: { name: "Veigar", key: "Veigar" },
+          support: { name: "Poppy", key: "Poppy" },
+          description: "Steadfast Presence + wall-slam inside Event Horizon.",
+        },
+        {
+          displayName: "Twitch & Maokai",
+          adc: { name: "Twitch", key: "Twitch" },
+          support: { name: "Maokai", key: "Maokai" },
+          description: "Twisted Advance root for Spray'n'Pray drive-by.",
+        },
+        {
+          displayName: "Varus & Amumu",
+          adc: { name: "Varus", key: "Varus" },
+          support: { name: "Amumu", key: "Amumu" },
+          description: "Curse sets up Chain of Corruption for AoE lockdown.",
+        },
+        {
+          displayName: "Senna & Cho'Gath",
+          adc: { name: "Senna", key: "Senna" },
+          support: { name: "Cho'Gath", key: "Chogath" },
+          description: "Fasting souls + Gargantuan frontline feast.",
+        },
+        {
+          displayName: "Kai'Sa & Blitzcrank",
+          adc: { name: "Kai’Sa", key: "Kaisa" },
+          support: { name: "Blitzcrank", key: "Blitzcrank" },
+          description: "Hook lets Kai’Sa instantly proc passive and dive.",
+        },
+        {
+          displayName: "Vayne & Maokai",
+          adc: { name: "Vayne", key: "Vayne" },
+          support: { name: "Maokai", key: "Maokai" },
+          description: "Sapling poke and root pin targets for Condemn.",
+        },
+        {
+          displayName: "Ezreal & Alistar",
+          adc: { name: "Ezreal", key: "Ezreal" },
+          support: { name: "Alistar", key: "Alistar" },
+          description: "Headbutt-Pulverize into Arcane Shift snipe.",
+        },
+        {
+          displayName: "Caitlyn & Seraphine",
+          adc: { name: "Caitlyn", key: "Caitlyn" },
+          support: { name: "Seraphine", key: "Seraphine" },
+          description: "Root + trap chain plus Encore bullet-time from afar.",
+        },
+        {
+          displayName: "Miss Fortune & Sona",
+          adc: { name: "Miss Fortune", key: "MissFortune" },
+          support: { name: "Sona", key: "Sona" },
+          description: "Crescendo sets up full-channel Bullet Time.",
+        },
+        {
+          displayName: "Tristana & Galio",
+          adc: { name: "Tristana", key: "Tristana" },
+          support: { name: "Galio", key: "Galio" },
+          description:
+            "Rocket-Jump in, Hero’s Entrance follow for AoE knock-up.",
+        },
+        {
+          displayName: "Draven & Morgana",
+          adc: { name: "Draven", key: "Draven" },
+          support: { name: "Morgana", key: "Morgana" },
+          description: "Binding ensures spinning-axe crit burst.",
+        },
+        {
+          displayName: "Kai'Sa & Galio",
+          adc: { name: "Kai’Sa", key: "Kaisa" },
+          support: { name: "Galio", key: "Galio" },
+          description: "Galio ult piggy-backs on Killer Instinct dives.",
+        },
+        {
+          displayName: "Lucian & Taric",
+          adc: { name: "Lucian", key: "Lucian" },
+          support: { name: "Taric", key: "Taric" },
+          description: "Stun chains + invulnerability enable culling drives.",
+        },
+        {
+          displayName: "Kog'Maw & Braum",
+          adc: { name: "Kog'Maw", key: "KogMaw" },
+          support: { name: "Braum", key: "Braum" },
+          description:
+            "Unbreakable shields the artillerist; passive stun combos.",
+        },
+        {
+          displayName: "Smolder & Rakan",
+          adc: { name: "Smolder", key: "Smolder" },
+          support: { name: "Rakan", key: "Rakan" },
+          description: "Grand Entrance charm delivers easy Q burn stacks.",
+        },
+        {
+          displayName: "Ashe & Milio",
+          adc: { name: "Ashe", key: "Ashe" },
+          support: { name: "Milio", key: "Milio" },
+          description:
+            "Cozy Campfire extends volley slows; Breath cleanses picks.",
+        },
+        {
+          displayName: "Varus & Braum",
+          adc: { name: "Varus", key: "Varus" },
+          support: { name: "Braum", key: "Braum" },
+          description: "Piercing Arrow primes Concussive Blows from range.",
+        },
+        {
+          displayName: "Jhin & Brand",
+          adc: { name: "Jhin", key: "Jhin" },
+          support: { name: "Brand", key: "Brand" },
+          description:
+            "Root into Pillar of Flame guarantees fourth-shot execute.",
+        },
+        {
+          displayName: "Kalista & Thresh",
+          adc: { name: "Kalista", key: "Kalista" },
+          support: { name: "Thresh", key: "Thresh" },
+          description:
+            "Sentinel Oath-sworn classic – lantern hops and Fate’s Call.",
+        },
+        {
+          displayName: "Rumble & Sona",
+          adc: { name: "Rumble", key: "Rumble" },
+          support: { name: "Sona", key: "Sona" },
+          description: "Equalizer + Crescendo scorches immobile carries.",
+        },
+        {
+          displayName: "Vel'Koz & Xerath",
+          adc: { name: "Vel'Koz", key: "Velkoz" },
+          support: { name: "Xerath", key: "Xerath" },
+          description:
+            "Double laser artillery obliterates sieges; no ADC needed.",
+        },
+        {
+          displayName: "Ziggs & Lux",
+          adc: { name: "Ziggs", key: "Ziggs" },
+          support: { name: "Lux", key: "Lux" },
+          description: "Binding into Mega-Inferno Bomb one-shots under turret.",
+        },
+        {
+          displayName: "Heimerdinger & Senna",
+          adc: { name: "Heimerdinger", key: "Heimerdinger" },
+          support: { name: "Senna", key: "Senna" },
+          description:
+            "Turrets farm souls while Senna scales – siege nightmare.",
+        },
+        {
+          displayName: "Swain & Nautilus",
+          adc: { name: "Swain", key: "Swain" },
+          support: { name: "Nautilus", key: "Nautilus" },
+          description: "Hook drags targets into Swain passive snare.",
+        },
+        {
+          displayName: "Ashe & Seraphine",
+          adc: { name: "Ashe", key: "Ashe" },
+          support: { name: "Seraphine", key: "Seraphine" },
+          description: "Perma-slow turns Beat Drop into stun chains.",
+        },
+        {
+          displayName: "Veigar & Nautilus",
+          adc: { name: "Veigar", key: "Veigar" },
+          support: { name: "Nautilus", key: "Nautilus" },
+          description: "Depth Charge guarantees Event Horizon cage burst.",
+        },
+        {
+          displayName: "Kog'Maw & Taric",
+          adc: { name: "Kog'Maw", key: "KogMaw" },
+          support: { name: "Taric", key: "Taric" },
+          description:
+            "Cosmic Radiance protects Bio-Arcane Barrage hyper-carry.",
+        },
+        {
+          displayName: "Sivir & Kayle",
+          adc: { name: "Sivir", key: "Sivir" },
+          support: { name: "Kayle", key: "Kayle" },
+          description: "On-the-Hunt + Divine Judgement sprint to late-game.",
+        },
+        {
+          displayName: "Caitlyn & Bard",
+          adc: { name: "Caitlyn", key: "Caitlyn" },
+          support: { name: "Bard", key: "Bard" },
+          description: "Cosmic Binding into Yordle Trap headshot traps.",
+        },
+        {
+          displayName: "Smolder & Sona",
+          adc: { name: "Smolder", key: "Smolder" },
+          support: { name: "Sona", key: "Sona" },
+          description:
+            "Infinite Q stacks sustained by Song of Celerity & heals.",
+        },
+        {
+          displayName: "Twitch & Blitzcrank",
+          adc: { name: "Twitch", key: "Twitch" },
+          support: { name: "Blitzcrank", key: "Blitzcrank" },
+          description: "Hook pulls into stealth Spray’n’Pray mow-down.",
+        },
+        {
+          displayName: "Ezreal & Leona",
+          adc: { name: "Ezreal", key: "Ezreal" },
+          support: { name: "Leona", key: "Leona" },
+          description: "Solar Flare sets up Mystic Shot snipes.",
+        },
+        {
+          displayName: "Draven & Sion",
+          adc: { name: "Draven", key: "Draven" },
+          support: { name: "Sion", key: "Sion" },
+          description: "Decimating Smash axes for day-one cheese tower dives.",
+        },
+        {
+          displayName: "Fiddlesticks & Amumu",
+          adc: { name: "Fiddlesticks", key: "Fiddlesticks" },
+          support: { name: "Amumu", key: "Amumu" },
+          description: "Double AoE fear/curse – engage and watch screens gray.",
+        },
+        {
+          displayName: "Cassiopeia & Alistar",
+          adc: { name: "Cassiopeia", key: "Cassiopeia" },
+          support: { name: "Alistar", key: "Alistar" },
+          description: "Headbutt-Pulverize into Miasma/Venom fangs spam.",
+        },
+        {
+          displayName: "Ziggs & Pantheon",
+          adc: { name: "Ziggs", key: "Ziggs" },
+          support: { name: "Pantheon", key: "Pantheon" },
+          description: "Comet Spear + Satchel poke; level-2 kill pressure.",
+        },
+        {
+          displayName: "Nidalee & Leona",
+          adc: { name: "Nidalee", key: "Nidalee" },
+          support: { name: "Leona", key: "Leona" },
+          description:
+            "Solar Flare guarantees Javelin → Pounce execute – jungle lane memes.",
+        },
+      ];
 
-        const championImageModal = document.getElementById('championImageModal');
-        const modalChampionNameElement = document.getElementById('modalChampionName'); // New element for name in modal
-        const selectedChampionImage = document.getElementById('selectedChampionImage');
-        const championImageModalCloseButton = document.getElementById('championImageModalCloseButton');
+      const canvas = document.getElementById("wheelCanvas");
+      const ctx = canvas.getContext("2d");
+      const spinButton = document.getElementById("spinButton");
+      const selectedChampionNameDisplay = document.getElementById(
+        "selectedChampionName"
+      );
+      const currentSelectionDisplay = document.getElementById(
+        "currentSelectionDisplay"
+      );
+      const modeSelector = document.getElementById("modeSelector");
 
+      const messageModal = document.getElementById("messageModal");
+      const modalMessageText = document.getElementById("modalMessageText");
+      const modalCloseButton = document.getElementById("modalCloseButton");
 
-        let currentAngle = 0;
-        let isSpinning = false;
-        const numChampions = champions.length;
-        const arcSize = (2 * Math.PI) / numChampions;
-        
-        const segmentColors = ["#6b46c1", "#b794f4", "#553c9a", "#9f7aea"]; 
-        const pointerFixedAngle = 3 * Math.PI / 2; 
+      const championImageModal = document.getElementById("championImageModal");
+      const modalChampionNameElement =
+        document.getElementById("modalChampionName");
+      const selectedChampionImageElement = document.getElementById(
+        "selectedChampionImage"
+      );
+      const modalChampionDescriptionElement = document.getElementById(
+        "modalChampionDescription"
+      );
+      const championImageModalCloseButton = document.getElementById(
+        "championImageModalCloseButton"
+      );
 
-        let canvasSize = 600; 
-        let radius = canvasSize / 2 - 15; 
-        let centerX = canvasSize / 2;
-        let centerY = canvasSize / 2;
+      let currentAngle = 0;
+      let isSpinning = false;
+      let currentMode = "single"; // 'single' or 'duo'
+      let itemsForWheel = singleChampions; // Default to single champions
+      let numItems = itemsForWheel.length;
+      let arcSize = (2 * Math.PI) / numItems;
 
-        function resizeCanvas() {
-            const container = document.getElementById('game-container');
-            let containerWidth = container.offsetWidth;
-            if (containerWidth === 0) { 
-                 containerWidth = Math.min(window.innerWidth, 800) * 0.9; 
-            }
-            canvasSize = Math.min(800, containerWidth * 0.95); 
-            if (canvasSize < 200) canvasSize = 200;
-            
-            canvas.width = canvasSize;
-            canvas.height = canvasSize;
-            
-            radius = canvasSize / 2 - (canvasSize * 0.025); 
-            centerX = canvasSize / 2;
-            centerY = canvasSize / 2;
-            drawWheel();
-            updateCurrentSelectionDisplay(); // Update based on current isSpinning state
+      const segmentColors = ["#6b46c1", "#b794f4", "#553c9a", "#9f7aea"]; // Purple shades
+      const pointerFixedAngle = (3 * Math.PI) / 2; // Points straight up
+
+      let canvasSize = 600; // Default canvas size
+      let radius = canvasSize / 2 - 15; // Default radius with padding
+      let centerX = canvasSize / 2;
+      let centerY = canvasSize / 2;
+
+      function updateWheelItems() {
+        currentMode = modeSelector.value;
+        itemsForWheel = currentMode === "single" ? singleChampions : botCombos;
+        numItems = itemsForWheel.length;
+        if (numItems === 0) {
+          // Prevent division by zero if a list is empty
+          arcSize = 2 * Math.PI;
+          showMessageModal(
+            "No items to display on the wheel for the selected mode."
+          );
+        } else {
+          arcSize = (2 * Math.PI) / numItems;
+        }
+        currentAngle = 0; // Reset angle when changing modes
+        drawWheel();
+        updateCurrentSelectionDisplay(); // Clear or update selection display
+      }
+
+      function resizeCanvas() {
+        const container = document.getElementById("game-container");
+        let containerWidth = container.offsetWidth;
+
+        // Fallback if offsetWidth is 0 (e.g., if container is display:none initially)
+        if (containerWidth === 0) {
+          // Estimate based on window width, capped at a reasonable max
+          containerWidth = Math.min(window.innerWidth, 800) * 0.9; // Use 90% of window width or 800px
         }
 
-        function drawWheel() {
-            ctx.clearRect(0, 0, canvasSize, canvasSize);
-            ctx.font = `${Math.max(6, Math.floor(radius / 25))}px Inter, sans-serif`; 
-            ctx.textBaseline = 'middle';
+        canvasSize = Math.min(800, containerWidth * 0.95); // Ensure canvas fits, up to 800px
+        if (canvasSize < 200) canvasSize = 200; // Minimum canvas size
 
-            for (let i = 0; i < numChampions; i++) {
-                const angle = currentAngle + i * arcSize;
-                ctx.fillStyle = segmentColors[i % segmentColors.length];
+        canvas.width = canvasSize;
+        canvas.height = canvasSize;
 
-                ctx.beginPath();
-                ctx.arc(centerX, centerY, radius, angle, angle + arcSize, false);
-                ctx.arc(centerX, centerY, radius * 0.25, angle + arcSize, angle, true); 
-                ctx.closePath();
-                ctx.fill();
+        radius = canvasSize / 2 - canvasSize * 0.025; // 2.5% padding for the radius
+        centerX = canvasSize / 2;
+        centerY = canvasSize / 2;
 
-                ctx.save();
-                ctx.fillStyle = "#FFFFFF"; 
-                ctx.translate(centerX, centerY);
-                const textAngle = angle + arcSize / 2;
-                ctx.rotate(textAngle);
-                
-                const championName = champions[i].name;
-                const textRadius = radius * 0.65; 
-                
-                let nameToDraw = championName;
-                if (radius < 150 && championName.length > 5) { 
-                    nameToDraw = championName.substring(0,4) + ".";
-                } else if (numChampions > 100 && championName.length > 7) { 
-                     nameToDraw = championName.substring(0,6)+"...";
-                }
-                
-                ctx.textAlign = 'center'; 
-                const effectiveTextRadius = (nameToDraw.length > 6 && radius > 150) ? textRadius * 1.15 : textRadius;
-                ctx.fillText(nameToDraw, effectiveTextRadius, 0);
-                ctx.restore();
-            }
-        }
-        
-        function showMessageModal(message) {
-            modalMessageText.textContent = message;
-            messageModal.style.display = 'flex';
+        drawWheel();
+        updateCurrentSelectionDisplay();
+      }
+
+      function drawWheel() {
+        if (numItems === 0) {
+          ctx.clearRect(0, 0, canvasSize, canvasSize);
+          ctx.fillStyle = "#e2e8f0";
+          ctx.textAlign = "center";
+          ctx.font = `${Math.max(
+            12,
+            Math.floor(radius / 15)
+          )}px Inter, sans-serif`;
+          ctx.fillText("No items to spin!", centerX, centerY);
+          return;
         }
 
-        modalCloseButton.onclick = function() {
-            messageModal.style.display = 'none';
-        }
-        
-        function showChampionImageModal(imageUrl, championName) {
-            modalChampionNameElement.textContent = championName.toUpperCase(); // Set name in modal
-            selectedChampionImage.src = imageUrl;
-            selectedChampionImage.alt = `Splash art for ${championName}`;
-            championImageModal.style.display = 'flex';
-        }
+        ctx.clearRect(0, 0, canvasSize, canvasSize);
+        ctx.font = `${Math.max(
+          6,
+          Math.floor(radius / 25)
+        )}px Inter, sans-serif`;
+        ctx.textBaseline = "middle";
 
-        championImageModalCloseButton.onclick = function() {
-            championImageModal.style.display = 'none';
+        for (let i = 0; i < numItems; i++) {
+          const angle = currentAngle + i * arcSize;
+          ctx.fillStyle = segmentColors[i % segmentColors.length];
+
+          ctx.beginPath();
+          ctx.arc(centerX, centerY, radius, angle, angle + arcSize, false);
+          ctx.arc(
+            centerX,
+            centerY,
+            radius * 0.25,
+            angle + arcSize,
+            angle,
+            true
+          ); // Inner arc for donut shape
+          ctx.closePath();
+          ctx.fill();
+
+          ctx.save();
+          ctx.fillStyle = "#FFFFFF"; // White text
+          ctx.translate(centerX, centerY);
+          const textAngle = angle + arcSize / 2;
+          ctx.rotate(textAngle);
+
+          const item = itemsForWheel[i];
+          const itemName =
+            currentMode === "single" ? item.name : item.displayName;
+
+          let nameToDraw = itemName;
+          // Adjust text length based on radius and number of items to prevent overlap
+          const maxNameLengthBase = Math.floor(radius / 10); // Heuristic for max length
+          let maxLength = maxNameLengthBase;
+          if (numItems > 60)
+            maxLength = Math.max(3, Math.floor(maxNameLengthBase * 0.5));
+          else if (numItems > 30)
+            maxLength = Math.max(4, Math.floor(maxNameLengthBase * 0.7));
+
+          if (nameToDraw.length > maxLength) {
+            nameToDraw = nameToDraw.substring(0, maxLength - 1) + ".";
+          }
+
+          ctx.textAlign = "center";
+          // Adjust text position based on name length to keep it centered on the segment path
+          const textRadius = radius * 0.65;
+          ctx.fillText(nameToDraw, textRadius, 0);
+          ctx.restore();
         }
+      }
 
-        window.onclick = function(event) {
-            if (event.target == messageModal) {
-                messageModal.style.display = 'none';
-            }
-            if (event.target == championImageModal) {
-                championImageModal.style.display = 'none';
-            }
-        }
+      function showMessageModal(message) {
+        modalMessageText.textContent = message;
+        messageModal.style.display = "flex";
+      }
 
-        function updateCurrentSelectionDisplay() {
-            if (isSpinning) {
-                const normalizedAngle = (currentAngle % (2 * Math.PI) + 2 * Math.PI) % (2 * Math.PI);
-                const effectivePointer = (pointerFixedAngle - normalizedAngle + 2 * Math.PI) % (2 * Math.PI);
-                const currentIndex = Math.floor(effectivePointer / arcSize);
-                const currentChamp = champions[currentIndex];
+      modalCloseButton.onclick = function () {
+        messageModal.style.display = "none";
+      };
 
-                if (currentChamp) {
-                    currentSelectionDisplay.textContent = currentChamp.name;
-                } else {
-                    currentSelectionDisplay.textContent = 'Spinning...';
-                }
-                currentSelectionDisplay.style.opacity = '1';
+      async function createCompositeImage(
+        imageUrl1,
+        imageUrl2,
+        canvasWidth,
+        canvasHeight
+      ) {
+        return new Promise((resolve, reject) => {
+          const offscreenCanvas = document.createElement("canvas");
+          offscreenCanvas.width = canvasWidth;
+          offscreenCanvas.height = canvasHeight;
+          const offCtx = offscreenCanvas.getContext("2d");
+
+          const img1 = new Image();
+          img1.crossOrigin = "Anonymous"; // Handle potential CORS issues if images are from different origins than ddragon
+          const img2 = new Image();
+          img2.crossOrigin = "Anonymous";
+
+          let img1Loaded = false;
+          let img2Loaded = false;
+
+          img1.onload = () => {
+            img1Loaded = true;
+            if (img2Loaded) drawImages();
+          };
+          img1.onerror = () => reject(`Failed to load image: ${imageUrl1}`);
+
+          img2.onload = () => {
+            img2Loaded = true;
+            if (img1Loaded) drawImages();
+          };
+          img2.onerror = () => reject(`Failed to load image: ${imageUrl2}`);
+
+          img1.src = imageUrl1;
+          img2.src = imageUrl2;
+
+          function drawImages() {
+            // Clear canvas
+            offCtx.clearRect(0, 0, canvasWidth, canvasHeight);
+
+            // Calculate aspect ratios and drawing dimensions to fill halves
+            const halfWidth = canvasWidth / 2;
+
+            // Draw image 1 on left half, maintaining aspect ratio and covering the half
+            const img1AspectRatio = img1.naturalWidth / img1.naturalHeight;
+            let s1Width = img1.naturalWidth;
+            let s1Height = img1.naturalHeight;
+            let sx1 = 0;
+            let sy1 = 0;
+
+            // Crop from center if image is wider than needed for its half
+            if (s1Height * (halfWidth / canvasHeight) < s1Width) {
+              // if image is wider than target aspect ratio
+              s1Width = s1Height * (halfWidth / canvasHeight);
+              sx1 = (img1.naturalWidth - s1Width) / 2;
             } else {
-                // If not spinning, and not immediately after a spin finished (handled in finishSpin)
-                // Check if it has text from a previous win, otherwise hide it.
-                if (!currentSelectionDisplay.textContent || currentSelectionDisplay.textContent === 'Spinning...') {
-                     currentSelectionDisplay.textContent = '';
-                     currentSelectionDisplay.style.opacity = '0';
-                }
+              // if image is taller
+              s1Height = s1Width * (canvasHeight / halfWidth);
+              sy1 = (img1.naturalHeight - s1Height) / 2;
             }
-        }
+            offCtx.drawImage(
+              img1,
+              sx1,
+              sy1,
+              s1Width,
+              s1Height,
+              0,
+              0,
+              halfWidth,
+              canvasHeight
+            );
 
+            // Draw image 2 on right half, maintaining aspect ratio and covering the half
+            const img2AspectRatio = img2.naturalWidth / img2.naturalHeight;
+            let s2Width = img2.naturalWidth;
+            let s2Height = img2.naturalHeight;
+            let sx2 = 0;
+            let sy2 = 0;
 
-        function spin() {
-            if (isSpinning) return;
-            isSpinning = true;
-            spinButton.disabled = true;
-            spinButton.classList.add('opacity-50', 'cursor-not-allowed'); 
-            spinButton.classList.remove('hover:bg-purple-700');
-
-            selectedChampionNameDisplay.style.opacity = '0'; // Hide bottom large name
-            currentSelectionDisplay.textContent = 'Spinning...'; 
-            currentSelectionDisplay.style.opacity = '1';
-
-
-            const spinDuration = 7000; 
-            const randomExtraSpins = Math.floor(Math.random() * 5) + 8; 
-            const targetRandomAngle = Math.random() * 2 * Math.PI; 
-
-            const currentEffectiveAngle = (currentAngle % (2 * Math.PI) + 2*Math.PI) % (2*Math.PI);
-            let totalRotation = (randomExtraSpins * 2 * Math.PI) - currentEffectiveAngle + targetRandomAngle;
-            
-            if (totalRotation < 0) totalRotation += (Math.ceil(Math.abs(totalRotation)/(2*Math.PI)) * 2 * Math.PI);
-
-            let startTime = null;
-            const startAngle = currentAngle;
-
-            function animateSpin(timestamp) {
-                if (!startTime) startTime = timestamp;
-                const elapsedTime = timestamp - startTime;
-                const progress = Math.min(elapsedTime / spinDuration, 1);
-                
-                const easedProgress = Math.pow(progress - 1, 5) + 1; 
-
-                currentAngle = startAngle + totalRotation * easedProgress;
-                drawWheel();
-                updateCurrentSelectionDisplay(); // Update hovered champ name during spin
-
-                if (progress < 1) {
-                    requestAnimationFrame(animateSpin);
-                } else {
-                    currentAngle %= (2 * Math.PI); 
-                    finishSpin();
-                }
-            }
-            requestAnimationFrame(animateSpin);
-        }
-
-        function finishSpin() {
-            isSpinning = false; // Set before updating display
-            spinButton.disabled = false;
-            spinButton.classList.remove('opacity-50', 'cursor-not-allowed');
-            spinButton.classList.add('hover:bg-purple-700');
-
-            const normalizedCurrentAngle = (currentAngle % (2 * Math.PI) + 2 * Math.PI) % (2 * Math.PI);
-            const effectivePointerPosition = (pointerFixedAngle - normalizedCurrentAngle + 2 * Math.PI) % (2 * Math.PI);
-            const winningIndex = Math.floor(effectivePointerPosition / arcSize);
-            
-            const winner = champions[winningIndex];
-
-            if (winner) {
-                // Update display below spin button
-                currentSelectionDisplay.textContent = winner.name.toUpperCase();
-                currentSelectionDisplay.style.opacity = '1';
-
-                // Update large display at the bottom
-                selectedChampionNameDisplay.textContent = winner.name.toUpperCase();
-                selectedChampionNameDisplay.style.opacity = '1';
-
-                const imageUrl = `https://ddragon.leagueoflegends.com/cdn/img/champion/splash/${winner.key}_0.jpg`;
-                
-                showChampionImageModal(imageUrl, winner.name);
-
-                const img = new Image();
-                img.onload = () => {
-                    document.body.style.backgroundImage = `url(${imageUrl})`;
-                    document.body.style.backgroundColor = 'transparent'; 
-                };
-                img.onerror = () => {
-                    console.error(`Failed to load image for ${winner.name}`);
-                    document.body.style.backgroundImage = ''; 
-                    document.body.style.backgroundColor = '#1a202c'; 
-                    showMessageModal(`Could not load background image for ${winner.name}. Using default background.`);
-                };
-                img.src = imageUrl;
+            if (s2Height * (halfWidth / canvasHeight) < s2Width) {
+              s2Width = s2Height * (halfWidth / canvasHeight);
+              sx2 = (img2.naturalWidth - s2Width) / 2;
             } else {
-                console.error("Could not determine winner. Winning index:", winningIndex, "Current Angle:", currentAngle, "Effective Pointer:", effectivePointerPosition);
-                currentSelectionDisplay.textContent = "Error!";
-                currentSelectionDisplay.style.opacity = '1';
-                selectedChampionNameDisplay.textContent = "Error!";
-                selectedChampionNameDisplay.style.opacity = '1';
-                showMessageModal("An error occurred while determining the winner.");
+              s2Height = s2Width * (canvasHeight / halfWidth);
+              sy2 = (img2.naturalHeight - s2Height) / 2;
             }
-        }
+            offCtx.drawImage(
+              img2,
+              sx2,
+              sy2,
+              s2Width,
+              s2Height,
+              halfWidth,
+              0,
+              halfWidth,
+              canvasHeight
+            );
 
-        spinButton.addEventListener('click', spin);
-        
-        window.addEventListener('load', () => {
-            resizeCanvas(); // This will call drawWheel and updateCurrentSelectionDisplay
-            document.body.style.backgroundColor = '#1a202c'; 
+            resolve(offscreenCanvas.toDataURL());
+          }
         });
-        window.addEventListener('resize', resizeCanvas);
+      }
 
+      async function showChampionInfoModal(item) {
+        let modalName, imageUrl, description;
+        modalChampionDescriptionElement.style.display = "none"; // Hide by default
+
+        if (currentMode === "single") {
+          modalName = item.name.toUpperCase();
+          imageUrl = `https://ddragon.leagueoflegends.com/cdn/img/champion/splash/${item.key}_0.jpg`;
+          selectedChampionImageElement.src = imageUrl; // Set single image directly
+          selectedChampionImageElement.alt = `Splash art for ${item.name}`;
+        } else {
+          // Duo mode
+          modalName = `${item.adc.name.toUpperCase()} & ${item.support.name.toUpperCase()}`;
+          description = item.description;
+          modalChampionDescriptionElement.textContent = description;
+          modalChampionDescriptionElement.style.display = "block";
+
+          const adcImgUrl = `https://ddragon.leagueoflegends.com/cdn/img/champion/splash/${item.adc.key}_0.jpg`;
+          const supportImgUrl = `https://ddragon.leagueoflegends.com/cdn/img/champion/splash/${item.support.key}_0.jpg`;
+
+          // Set placeholder while composite image loads
+          selectedChampionImageElement.src =
+            "https://placehold.co/600x355/1a202c/e2e8f0?text=Loading+Duo+Art...";
+          selectedChampionImageElement.alt = `Splash art for ${item.adc.name} and ${item.support.name}`;
+
+          try {
+            // Define desired dimensions for the composite image in the modal
+            const compositeCanvasWidth = 600; // Or base it on modal width
+            const compositeCanvasHeight = 355; // Maintain a common aspect ratio like 16:9
+            const compositeImageUrl = await createCompositeImage(
+              adcImgUrl,
+              supportImgUrl,
+              compositeCanvasWidth,
+              compositeCanvasHeight
+            );
+            selectedChampionImageElement.src = compositeImageUrl;
+          } catch (error) {
+            console.error("Error creating composite image:", error);
+            selectedChampionImageElement.src =
+              "https://placehold.co/600x355/1a202c/e2e8f0?text=Error+Loading+Art";
+            showMessageModal(
+              "Could not load champion images for the duo. Please try again."
+            );
+          }
+        }
+
+        modalChampionNameElement.textContent = modalName;
+        championImageModal.style.display = "flex";
+      }
+
+      championImageModalCloseButton.onclick = function () {
+        championImageModal.style.display = "none";
+      };
+
+      window.onclick = function (event) {
+        if (event.target == messageModal) {
+          messageModal.style.display = "none";
+        }
+        if (event.target == championImageModal) {
+          championImageModal.style.display = "none";
+        }
+      };
+
+      function updateCurrentSelectionDisplay() {
+        if (numItems === 0) {
+          currentSelectionDisplay.textContent = "";
+          currentSelectionDisplay.style.opacity = "0";
+          return;
+        }
+        if (isSpinning) {
+          const normalizedAngle =
+            ((currentAngle % (2 * Math.PI)) + 2 * Math.PI) % (2 * Math.PI);
+          const effectivePointer =
+            (pointerFixedAngle - normalizedAngle + 2 * Math.PI) % (2 * Math.PI);
+          const currentIndex = Math.floor(effectivePointer / arcSize);
+          const currentItem = itemsForWheel[currentIndex];
+
+          if (currentItem) {
+            currentSelectionDisplay.textContent =
+              currentMode === "single"
+                ? currentItem.name
+                : currentItem.displayName;
+          } else {
+            currentSelectionDisplay.textContent = "Spinning...";
+          }
+          currentSelectionDisplay.style.opacity = "1";
+        } else {
+          // If not spinning, hide it unless a winner was just selected (handled in finishSpin)
+          if (
+            !selectedChampionNameDisplay.textContent ||
+            selectedChampionNameDisplay.textContent === "Error!"
+          ) {
+            if (currentSelectionDisplay.textContent !== "Spinning...") {
+              // Keep if it shows a winner
+              // currentSelectionDisplay.textContent = ''; // Clear if not showing winner
+              // currentSelectionDisplay.style.opacity = '0';
+            }
+          }
+          //If there is a winner, currentSelectionDisplay will be updated in finishSpin
+        }
+      }
+
+      function spin() {
+        if (isSpinning || numItems === 0) return;
+        isSpinning = true;
+        spinButton.disabled = true;
+        spinButton.classList.add("opacity-50", "cursor-not-allowed");
+        spinButton.classList.remove("hover:bg-purple-700");
+
+        selectedChampionNameDisplay.style.opacity = "0"; // Hide bottom large name
+        currentSelectionDisplay.textContent = "Spinning...";
+        currentSelectionDisplay.style.opacity = "1";
+
+        const spinDuration = 7000; // 7 seconds
+        const randomExtraSpins = Math.floor(Math.random() * 5) + 8; // 8-12 full rotations
+        const targetRandomAngle = Math.random() * 2 * Math.PI; // Random stopping point within a full circle
+
+        // Normalize currentAngle to be within 0 and 2*PI for calculation
+        const currentEffectiveAngle =
+          ((currentAngle % (2 * Math.PI)) + 2 * Math.PI) % (2 * Math.PI);
+
+        // Calculate total rotation needed
+        // It needs to do randomExtraSpins, then undo the current offset, then go to targetRandomAngle
+        let totalRotation =
+          randomExtraSpins * 2 * Math.PI -
+          currentEffectiveAngle +
+          targetRandomAngle;
+
+        // Ensure totalRotation is positive and sufficient
+        if (totalRotation < (randomExtraSpins * 2 * Math.PI) / 2) {
+          // Ensure it spins a decent amount
+          totalRotation += 2 * Math.PI * Math.ceil(randomExtraSpins / 2);
+        }
+
+        let startTime = null;
+        const startAngle = currentAngle; // Store the actual current angle, not normalized
+
+        function animateSpin(timestamp) {
+          if (!startTime) startTime = timestamp;
+          const elapsedTime = timestamp - startTime;
+          const progress = Math.min(elapsedTime / spinDuration, 1);
+
+          // Ease-out quint function: progress^5, but reversed for easing out
+          const easedProgress = 1 - Math.pow(1 - progress, 5); // Correct ease-out quint
+
+          currentAngle = startAngle + totalRotation * easedProgress;
+          drawWheel();
+          updateCurrentSelectionDisplay(); // Update hovered champ name during spin
+
+          if (progress < 1) {
+            requestAnimationFrame(animateSpin);
+          } else {
+            currentAngle %= 2 * Math.PI; // Normalize angle after spin
+            finishSpin();
+          }
+        }
+        requestAnimationFrame(animateSpin);
+      }
+
+      function finishSpin() {
+        isSpinning = false; // Set before updating display
+        spinButton.disabled = false;
+        spinButton.classList.remove("opacity-50", "cursor-not-allowed");
+        spinButton.classList.add("hover:bg-purple-700");
+
+        const normalizedCurrentAngle =
+          ((currentAngle % (2 * Math.PI)) + 2 * Math.PI) % (2 * Math.PI);
+        // Calculate which segment the pointer (at pointerFixedAngle, e.g., 270 degrees or 3*PI/2) is over
+        const effectivePointerPosition =
+          (pointerFixedAngle - normalizedCurrentAngle + 2 * Math.PI) %
+          (2 * Math.PI);
+        const winningIndex = Math.floor(effectivePointerPosition / arcSize);
+
+        const winner = itemsForWheel[winningIndex];
+
+        if (winner) {
+          const winnerName =
+            currentMode === "single"
+              ? winner.name.toUpperCase()
+              : winner.displayName.toUpperCase();
+          currentSelectionDisplay.textContent = winnerName;
+          currentSelectionDisplay.style.opacity = "1";
+          selectedChampionNameDisplay.textContent = winnerName;
+          selectedChampionNameDisplay.style.opacity = "1";
+
+          showChampionInfoModal(winner); // Show modal with image and potentially description
+
+          // Set background image
+          let backgroundImageUrl;
+          if (currentMode === "single") {
+            backgroundImageUrl = `https://ddragon.leagueoflegends.com/cdn/img/champion/splash/${winner.key}_0.jpg`;
+
+            const img = new Image();
+            img.onload = () => {
+              document.body.style.backgroundImage = `url(${backgroundImageUrl})`;
+              document.body.style.backgroundColor = "transparent"; // Let background image show
+            };
+            img.onerror = () => {
+              console.error(
+                `Failed to load background image for ${winnerName}`
+              );
+              document.body.style.backgroundImage = ""; // Clear if error
+              document.body.style.backgroundColor = "#1a202c"; // Fallback to default
+              showMessageModal(
+                `Could not load background image for ${winnerName}. Using default background.`
+              );
+            };
+            img.src = backgroundImageUrl;
+          } else {
+            // Duo mode, use ADC's image for background
+            const adcUrl = `https://ddragon.leagueoflegends.com/cdn/img/champion/splash/${winner.adc.key}_0.jpg`;
+            const suppUrl = `https://ddragon.leagueoflegends.com/cdn/img/champion/splash/${winner.support.key}_0.jpg`;
+            document.body.style.backgroundImage = `url(${adcUrl}), url(${suppUrl})`;
+            document.body.style.backgroundSize = "50% 100%, 50% 100%"; // split 50 / 50
+            document.body.style.backgroundPosition = "left top, right top"; // left = ADC, right = support
+            document.body.style.backgroundRepeat = "no-repeat, no-repeat";
+          }
+        } else {
+          console.error(
+            "Could not determine winner. Winning index:",
+            winningIndex,
+            "Current Angle:",
+            currentAngle,
+            "Effective Pointer:",
+            effectivePointerPosition
+          );
+          const errorMsg = "Error!";
+          currentSelectionDisplay.textContent = errorMsg;
+          currentSelectionDisplay.style.opacity = "1";
+          selectedChampionNameDisplay.textContent = errorMsg;
+          selectedChampionNameDisplay.style.opacity = "1";
+          showMessageModal("An error occurred while determining the winner.");
+          document.body.style.backgroundImage = "";
+          document.body.style.backgroundColor = "#1a202c";
+        }
+      }
+
+      spinButton.addEventListener("click", spin);
+      modeSelector.addEventListener("change", updateWheelItems);
+
+      window.addEventListener("load", () => {
+        // Corrected keys for consistency with Data Dragon (examples)
+        // This is a manual process and depends on the exact version of champion data.
+        // The user's original list is the primary source, these are just common patterns.
+        const keyCorrections = {
+          "Kai’Sa": "Kaisa",
+          LeBlanc: "Leblanc",
+          "Renata Glasc": "Renata", // ddragon usually uses 'Renata' for Renata Glasc
+          "Bel’Veth": "Belveth",
+          "K’Sante": "KSante",
+          Fiddlesticks: "Fiddlesticks", // Was FiddleSticks, ddragon is usually all lower or PascalCase like Fiddlesticks
+        };
+        singleChampions.forEach((champ) => {
+          if (keyCorrections[champ.name]) {
+            champ.key = keyCorrections[champ.name];
+          } else if (champ.name.includes("’")) {
+            // General rule for apostrophes
+            champ.key = champ.key.replace("’", "");
+          }
+          // Ensure PascalCase for keys like 'AurelionSol' from 'Aurelion Sol'
+          if (champ.key.includes(" ")) {
+            champ.key = champ.key.replace(/\s+/g, "");
+          }
+        });
+        // Apply same key logic to botCombos if necessary, ensuring consistency
+        botCombos.forEach((combo) => {
+          if (keyCorrections[combo.adc.name])
+            combo.adc.key = keyCorrections[combo.adc.name];
+          else if (combo.adc.name.includes("’"))
+            combo.adc.key = combo.adc.key.replace("’", "");
+          if (combo.adc.key.includes(" "))
+            combo.adc.key = combo.adc.key.replace(/\s+/g, "");
+
+          if (keyCorrections[combo.support.name])
+            combo.support.key = keyCorrections[combo.support.name];
+          else if (combo.support.name.includes("’"))
+            combo.support.key = combo.support.key.replace("’", "");
+          if (combo.support.key.includes(" "))
+            combo.support.key = combo.support.key.replace(/\s+/g, "");
+        });
+
+        updateWheelItems(); // Initialize with current mode
+        resizeCanvas(); // Initial draw and size correctly
+        document.body.style.backgroundColor = "#1a202c"; // Ensure default bg on load
+      });
+      window.addEventListener("resize", resizeCanvas);
     </script>
-</body>
+  </body>
 </html>
