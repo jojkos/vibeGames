@@ -494,7 +494,7 @@
 
       let gameState = "menu";
       let countdownValue = 3;
-      let gameTimerValue = 30; // Seconds
+      let gameTimerValue = 60; // Seconds
       let gameTimerInterval = null;
       let countdownInterval = null;
       let scoreSavedThisSession = false;
@@ -1173,7 +1173,7 @@
       function startGame() {
         gameState = "playing";
         initGameLogic();
-        gameTimerValue = 30;
+        gameTimerValue = 60;
         if (gameTimerInterval) clearInterval(gameTimerInterval);
         gameTimerInterval = null;
 
@@ -1761,7 +1761,7 @@
         taggedDogInfo = null;
         successMessages = [];
         heartAnimations = [];
-        gameTimerValue = 30;
+        gameTimerValue = 60;
       }
 
       let animationFrameId;
