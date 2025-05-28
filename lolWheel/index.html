@@ -1532,8 +1532,11 @@
 
             const img = new Image();
             img.onload = () => {
-              document.body.style.backgroundImage = `url(${backgroundImageUrl})`;
-              document.body.style.backgroundColor = "transparent"; // Let background image show
+                 document.body.style.backgroundImage   = `url(${backgroundImageUrl})`;
+                  document.body.style.backgroundSize    = "cover";      // ← reset
+                  document.body.style.backgroundPosition= "center top"; // ← reset
+                  document.body.style.backgroundRepeat  = "no-repeat";  // ← reset
+                  document.body.style.backgroundColor   = "transparent";
             };
             img.onerror = () => {
               console.error(
