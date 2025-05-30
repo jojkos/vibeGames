@@ -396,10 +396,8 @@
 </head>
 
 <body>
-    <h1 class="game-title">Pug Banger Fiesta</h1>
-
     <div id="menuScreen" class="screen-overlay">
-        <img src="https://i.postimg.cc/TYTXPPDJ/logo-Without-Bg.png" alt="Game Logo" id="menuLogo" />
+        <img src="./assets/logoWithoutBg.png" alt="Game Logo" id="menuLogo" />
         <button class="menu-button" id="btnHraj">Hraj</button>
         <button class="menu-button" id="btnZebricekMenu">Žebříček</button>
         <button class="menu-button btn-3d" id="btnNavod">Návod</button>
@@ -650,8 +648,8 @@
         }
         playerImg.onload = imageLoaded;
         femaleDogImg.onload = imageLoaded;
-        playerImg.src = "https://i.postimg.cc/1mC0gcq3/pug.png";
-        femaleDogImg.src = "https://i.postimg.cc/vBk60hr7/female-Pug.png";
+        playerImg.src = "./assets/pug.png";
+        femaleDogImg.src = "./assets/femalePug.png";
         playerImg.onerror = () => {
             console.error("Player img fail.");
             imageLoaded();
