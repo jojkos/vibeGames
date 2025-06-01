@@ -1121,10 +1121,8 @@
             const collectionPath = `artifacts/${window.appIdGlobal}/public/data/pugTaggerScores`;
             console.log(`Fetching leaderboard from: ${collectionPath}`);
             try {
-                const q = window.firebase.query(
-                    window.firebase.collection(window.db, collectionPath),
-                    window.firebase.limit(10)
-                );
+                // Fetch all documents without limiting to 10
+                const q = window.firebase.collection(window.db, collectionPath);
                 const querySnapshot = await window.firebase.getDocs(q);
 
                 let scores = [];
@@ -1133,8 +1131,6 @@
                 });
 
                 scores.sort((a, b) => b.score - a.score || (a.timestamp && b.timestamp ? a.timestamp.seconds - b.timestamp.seconds : 0));
-                scores = scores.slice(0, 10);
-
 
                 if (scores.length === 0) {
                     leaderboardLoadingTextEl.textContent = "Žádné výsledky k zobrazení.";
