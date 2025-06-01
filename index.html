@@ -22,11 +22,17 @@
             font-family: 'Inter', sans-serif;
             background: radial-gradient(ellipse at top, var(--bg-1) 0%, var(--bg-2) 25%, var(--bg-3) 60%, var(--bg-4) 100%);
             color: #e0e0e0;
-            overflow-x: hidden;
-            overflow-y: hidden; /* Keep this to prevent scrollbars from temporary large elements */
-            perspective: 1000px;
-            height: 100vh;
+            overflow-x: hidden; /* Prevent horizontal scroll */
+            overflow-y: auto;   /* Allow vertical scroll if content exceeds viewport height */
+            /* perspective: 1000px; MOVED to #app-main-content */
             margin: 0; /* Ensure no default margin */
+            /* Tailwind classes like min-h-screen, flex, flex-col, items-center, justify-center are applied in the body tag */
+        }
+
+        #app-main-content { /* NEW: Wrapper for content that needs perspective */
+            perspective: 1000px;
+            position: relative; /* Establishes a stacking context for children like header/main if they use z-index */
+            /* Tailwind classes w-full, flex, flex-col, items-center are applied directly in HTML */
         }
         
         .orbitron-font {
@@ -66,9 +72,7 @@
             left: 100%;
         }
         
-        /* CSS :hover state for card - JS will enhance this on mousemove */
         .card-3d:hover {
-            /* Default hover transform, JS will override with more dynamic rotation */
             transform: translateY(-20px) translateZ(10px) scale(1.02); 
             box-shadow: 
                 0 25px 50px rgba(0, 0, 0, 0.3),
@@ -77,16 +81,15 @@
                 inset 0 1px 0 rgba(255, 255, 255, 0.1);
         }
         
-        /* Particles animating in from bottom */
         .floating-element {
-            position: absolute; /* Relative to parallax-layer */
+            position: absolute; 
             pointer-events: none;
             border-radius: 50%;
             filter: blur(1px);
             animation: float linear infinite;
         }
         
-        @keyframes float { /* For particles animating in */
+        @keyframes float { 
             0% {
                 transform: translateY(100vh) rotate(0deg);
                 opacity: 0;
@@ -98,14 +101,13 @@
                 opacity: 1;
             }
             100% {
-                transform: translateY(-100px) rotate(360deg); /* Relative to parent container */
+                transform: translateY(-100px) rotate(360deg); 
                 opacity: 0;
             }
         }
 
-        /* Particles immediately visible and wobbling */
         .immediate-floating-element {
-            position: fixed; /* Relative to viewport */
+            position: fixed; 
             pointer-events: none;
             border-radius: 50%;
             filter: blur(1px);
@@ -120,7 +122,6 @@
             100% { transform: translate(0px, 0px) rotate(0deg); }
         }
         
-        /* Mouse cursor effect */
         .cursor-glow {
             position: fixed;
             width: 20px;
@@ -129,23 +130,19 @@
             border-radius: 50%;
             pointer-events: none;
             z-index: 9999;
-            transition: transform 0.1s ease, opacity 0.2s ease; /* Added opacity transition */
+            transition: transform 0.1s ease, opacity 0.2s ease;
             mix-blend-mode: screen;
         }
         
-        /* Parallax layers */
         .parallax-layer {
             position: fixed;
             top: 0;
             left: 0;
-            width: 100%; /* Changed from 120% to simplify particle positioning logic */
-            height: 100%;/* Changed from 120% */
+            width: 100%; 
+            height: 100%;
             pointer-events: none;
-            /* Centering the layer if it was larger than viewport:
-            transform: translate(-10%, -10%); /* If width/height were 120% to center it */
         }
         
-        /* Page entrance animations */
         @keyframes slideInDown {
             from { opacity: 0; transform: translate3d(0, -60px, 0) rotateX(-15deg); }
             to { opacity: 1; transform: translate3d(0, 0, 0) rotateX(0deg); }
@@ -159,11 +156,10 @@
         .animate-slideInDown { animation: slideInDown 1s cubic-bezier(0.23, 1, 0.32, 1) forwards; }
         .animate-slideInUp { animation: slideInUp 1s cubic-bezier(0.23, 1, 0.32, 1) forwards; opacity: 0; }
         
-        /* Staggered animations */
-        .game-card:nth-child(1) { animation-delay: 0.2s; }
-        .game-card:nth-child(2) { animation-delay: 0.4s; }
-        .game-card:nth-child(3) { animation-delay: 0.6s; }
-        .game-card:nth-child(4) { animation-delay: 0.8s; }
+        .game-card.animate-slideInUp:nth-child(1) { animation-delay: 0.2s; }
+        .game-card.animate-slideInUp:nth-child(2) { animation-delay: 0.4s; }
+        .game-card.animate-slideInUp:nth-child(3) { animation-delay: 0.6s; }
+        .game-card.animate-slideInUp:nth-child(4) { animation-delay: 0.8s; }
         
         .coffee-link {
             position: fixed;
@@ -186,7 +182,6 @@
             box-shadow: 0 15px 30px rgba(255, 221, 0, 0.4);
         }
         
-        /* Mesh gradient background */
         .mesh-gradient {
             position: fixed;
             top: 0;
@@ -207,7 +202,6 @@
             50% { filter: hue-rotate(20deg); }
         }
         
-        /* Interactive glow effect */
         .interactive-glow {
             position: fixed;
             width: 600px;
@@ -216,7 +210,7 @@
             border-radius: 50%;
             pointer-events: none;
             z-index: -1;
-            transition: all 0.3s ease;
+            transition: transform 0.3s ease; /* More specific transition */
             filter: blur(40px);
         }
     </style>
@@ -225,90 +219,89 @@
     <div class="mesh-gradient"></div>
     <div class="interactive-glow" id="interactiveGlow"></div>
     <div class="cursor-glow" id="cursorGlow"></div>
-    
-    <div class="parallax-layer" id="floatingElementsContainer"></div>
-    
-    <header class="text-center mb-10 sm:mb-16 animate-slideInDown z-10 relative">
-        <h1 class="orbitron-font text-5xl sm:text-6xl md:text-8xl font-bold text-glow mb-4">
-            JOJKO'S GAMES
-        </h1>
-        <div class="w-24 h-1 bg-gradient-to-r from-transparent via-sky-400 to-transparent mx-auto mb-6"></div>
-        <p class="text-lg sm:text-xl text-sky-300/80 font-light tracking-wide">
-            Your portal to awesome gaming adventures
-        </p>
-    </header>
-
-    <main class="w-full max-w-5xl z-10 relative">
-        <h2 class="orbitron-font text-3xl sm:text-4xl md:text-5xl font-semibold text-center mb-12 text-sky-400/90 animate-slideInUp" style="animation-delay:0.1s">
-            Choose Your Destiny
-        </h2>
-        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-2 gap-8 sm:gap-10">
-            <a href="pokemonShooter/index.html" class="game-card block card-3d p-8 rounded-2xl animate-slideInUp group">
-                <div class="relative z-10">
-                    <h3 class="orbitron-font text-2xl sm:text-3xl font-bold text-sky-300 mb-3 group-hover:text-sky-200 transition-colors duration-300">
-                        Pokemon Shooter
-                    </h3>
-                    <p class="text-gray-400 mb-6 opacity-80 group-hover:opacity-100 transition-opacity duration-300">
-                        Epic battles await in this action-packed adventure
-                    </p>
-                    <span class="inline-flex items-center bg-gradient-to-r from-sky-500 to-blue-600 text-white text-sm font-semibold px-6 py-3 rounded-lg hover:from-sky-400 hover:to-blue-500 transition-all duration-300 group-hover:shadow-lg group-hover:shadow-sky-500/25">
-                        Play Now →
-                    </span>
-                </div>
-            </a>
-            
-            <a href="tralalaGame/index.html" class="game-card block card-3d p-8 rounded-2xl animate-slideInUp group">
-                <div class="relative z-10">
-                    <h3 class="orbitron-font text-2xl sm:text-3xl font-bold text-sky-300 mb-3 group-hover:text-sky-200 transition-colors duration-300">
-                        Tralala Clicker
-                    </h3>
-                    <p class="text-gray-400 mb-6 opacity-80 group-hover:opacity-100 transition-opacity duration-300">
-                        Click your way to victory in this addictive game
-                    </p>
-                    <span class="inline-flex items-center bg-gradient-to-r from-sky-500 to-blue-600 text-white text-sm font-semibold px-6 py-3 rounded-lg hover:from-sky-400 hover:to-blue-500 transition-all duration-300 group-hover:shadow-lg group-hover:shadow-sky-500/25">
-                        Play Now →
-                    </span>
-                </div>
-            </a>
-            
-            <a href="pugFiesta/index.html" class="game-card block card-3d p-8 rounded-2xl animate-slideInUp group">
-                <div class="relative z-10">
-                    <h3 class="orbitron-font text-2xl sm:text-3xl font-bold text-sky-300 mb-3 group-hover:text-sky-200 transition-colors duration-300">
-                        Pug Fiesta
-                    </h3>
-                    <p class="text-gray-400 mb-6 opacity-80 group-hover:opacity-100 transition-opacity duration-300">
-                        Join the cutest party with adorable pugs
-                    </p>
-                    <span class="inline-flex items-center bg-gradient-to-r from-sky-500 to-blue-600 text-white text-sm font-semibold px-6 py-3 rounded-lg hover:from-sky-400 hover:to-blue-500 transition-all duration-300 group-hover:shadow-lg group-hover:shadow-sky-500/25">
-                        Play Now →
-                    </span>
-                </div>
-            </a>
-            
-            <a href="lolWheel/index.html" class="game-card block card-3d p-8 rounded-2xl animate-slideInUp group">
-                <div class="relative z-10">
-                    <h3 class="orbitron-font text-2xl sm:text-3xl font-bold text-sky-300 mb-3 group-hover:text-sky-200 transition-colors duration-300">
-                        LoL Wheel
-                    </h3>
-                    <p class="text-gray-400 mb-6 opacity-80 group-hover:opacity-100 transition-opacity duration-300">
-                        Spin the wheel of League of Legends destiny
-                    </p>
-                    <span class="inline-flex items-center bg-gradient-to-r from-sky-500 to-blue-600 text-white text-sm font-semibold px-6 py-3 rounded-lg hover:from-sky-400 hover:to-blue-500 transition-all duration-300 group-hover:shadow-lg group-hover:shadow-sky-500/25">
-                        Play Now →
-                    </span>
-                </div>
-            </a>
+    <div class="parallax-layer" id="floatingElementsContainer">
         </div>
-    </main>
-
     <a href="https://buymeacoffee.com/jojkos" target="_blank" rel="noopener noreferrer" class="coffee-link">
         ☕ Buy Me a Coffee
     </a>
 
-    <script>
+    <div id="app-main-content" class="w-full flex flex-col items-center">
+        <header class="text-center mb-10 sm:mb-16 animate-slideInDown z-10 relative">
+            <h1 class="orbitron-font text-5xl sm:text-6xl md:text-8xl font-bold text-glow mb-4">
+                JOJKO'S GAMES
+            </h1>
+            <div class="w-24 h-1 bg-gradient-to-r from-transparent via-sky-400 to-transparent mx-auto mb-6"></div>
+            <p class="text-lg sm:text-xl text-sky-300/80 font-light tracking-wide">
+                Your portal to awesome gaming adventures
+            </p>
+        </header>
+
+        <main class="w-full max-w-5xl z-10 relative">
+            <h2 class="orbitron-font text-3xl sm:text-4xl md:text-5xl font-semibold text-center mb-12 text-sky-400/90 animate-slideInUp" style="animation-delay:0.1s">
+                Choose Your Destiny
+            </h2>
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-2 gap-8 sm:gap-10">
+                <a href="pokemonShooter/index.html" class="game-card block card-3d p-8 rounded-2xl animate-slideInUp group">
+                    <div class="relative z-10">
+                        <h3 class="orbitron-font text-2xl sm:text-3xl font-bold text-sky-300 mb-3 group-hover:text-sky-200 transition-colors duration-300">
+                            Pokemon Shooter
+                        </h3>
+                        <p class="text-gray-400 mb-6 opacity-80 group-hover:opacity-100 transition-opacity duration-300">
+                            Epic battles await in this action-packed adventure
+                        </p>
+                        <span class="inline-flex items-center bg-gradient-to-r from-sky-500 to-blue-600 text-white text-sm font-semibold px-6 py-3 rounded-lg hover:from-sky-400 hover:to-blue-500 transition-all duration-300 group-hover:shadow-lg group-hover:shadow-sky-500/25">
+                            Play Now →
+                        </span>
+                    </div>
+                </a>
+                
+                <a href="tralalaGame/index.html" class="game-card block card-3d p-8 rounded-2xl animate-slideInUp group">
+                    <div class="relative z-10">
+                        <h3 class="orbitron-font text-2xl sm:text-3xl font-bold text-sky-300 mb-3 group-hover:text-sky-200 transition-colors duration-300">
+                            Tralala Clicker
+                        </h3>
+                        <p class="text-gray-400 mb-6 opacity-80 group-hover:opacity-100 transition-opacity duration-300">
+                            Click your way to victory in this addictive game
+                        </p>
+                        <span class="inline-flex items-center bg-gradient-to-r from-sky-500 to-blue-600 text-white text-sm font-semibold px-6 py-3 rounded-lg hover:from-sky-400 hover:to-blue-500 transition-all duration-300 group-hover:shadow-lg group-hover:shadow-sky-500/25">
+                            Play Now →
+                        </span>
+                    </div>
+                </a>
+                
+                <a href="pugFiesta/index.html" class="game-card block card-3d p-8 rounded-2xl animate-slideInUp group">
+                    <div class="relative z-10">
+                        <h3 class="orbitron-font text-2xl sm:text-3xl font-bold text-sky-300 mb-3 group-hover:text-sky-200 transition-colors duration-300">
+                            Pug Fiesta
+                        </h3>
+                        <p class="text-gray-400 mb-6 opacity-80 group-hover:opacity-100 transition-opacity duration-300">
+                            Join the cutest party with adorable pugs
+                        </p>
+                        <span class="inline-flex items-center bg-gradient-to-r from-sky-500 to-blue-600 text-white text-sm font-semibold px-6 py-3 rounded-lg hover:from-sky-400 hover:to-blue-500 transition-all duration-300 group-hover:shadow-lg group-hover:shadow-sky-500/25">
+                            Play Now →
+                        </span>
+                    </div>
+                </a>
+                
+                <a href="lolWheel/index.html" class="game-card block card-3d p-8 rounded-2xl animate-slideInUp group">
+                    <div class="relative z-10">
+                        <h3 class="orbitron-font text-2xl sm:text-3xl font-bold text-sky-300 mb-3 group-hover:text-sky-200 transition-colors duration-300">
+                            LoL Wheel
+                        </h3>
+                        <p class="text-gray-400 mb-6 opacity-80 group-hover:opacity-100 transition-opacity duration-300">
+                            Spin the wheel of League of Legends destiny
+                        </p>
+                        <span class="inline-flex items-center bg-gradient-to-r from-sky-500 to-blue-600 text-white text-sm font-semibold px-6 py-3 rounded-lg hover:from-sky-400 hover:to-blue-500 transition-all duration-300 group-hover:shadow-lg group-hover:shadow-sky-500/25">
+                            Play Now →
+                        </span>
+                    </div>
+                </a>
+            </div>
+        </main>
+    </div> <script>
         const cursorGlow = document.getElementById('cursorGlow');
         const interactiveGlow = document.getElementById('interactiveGlow');
-        const floatingElementsContainer = document.getElementById('floatingElementsContainer'); // Renamed for clarity
+        const floatingElementsContainer = document.getElementById('floatingElementsContainer');
         
         let mouseX = 0, mouseY = 0;
         let glowX = 0, glowY = 0;
@@ -317,29 +310,30 @@
             mouseX = e.clientX;
             mouseY = e.clientY;
             
-            cursorGlow.style.left = (mouseX - 10) + 'px';
-            cursorGlow.style.top = (mouseY - 10) + 'px';
+            if (cursorGlow) { 
+                cursorGlow.style.transform = `translate(${mouseX - 10}px, ${mouseY - 10}px)`;
+            }
         });
         
         function updateInteractiveGlow() {
-            glowX += (mouseX - glowX) * 0.1;
-            glowY += (mouseY - glowY) * 0.1;
-            interactiveGlow.style.left = (glowX - 300) + 'px';
-            interactiveGlow.style.top = (glowY - 300) + 'px';
-            requestAnimationFrame(updateInteractiveGlow);
+            if (interactiveGlow) { 
+                glowX += (mouseX - glowX) * 0.1; 
+                glowY += (mouseY - glowY) * 0.1; 
+                interactiveGlow.style.transform = `translate(${glowX - 300}px, ${glowY - 300}px)`;
+            }
+            requestAnimationFrame(updateInteractiveGlow); 
         }
-        if (interactiveGlow) updateInteractiveGlow(); // Check if element exists
+        if (interactiveGlow) requestAnimationFrame(updateInteractiveGlow); 
         
-        // Card 3D interactions
-        const hoverTranslateY = -20; // More pronounced upward movement
-        const hoverTranslateZ = 15;  // Slight pop forward for 3D effect
-        const tiltIntensity = 10;    // Reduced from 8 for slightly more tilt
+        const hoverTranslateY = -20; 
+        const hoverTranslateZ = 15;  
+        const tiltIntensity = 10;    
 
         document.querySelectorAll('.card-3d').forEach(card => {
             card.addEventListener('mousemove', (e) => {
                 const rect = card.getBoundingClientRect();
-                const x = e.clientX - rect.left;
-                const y = e.clientY - rect.top;
+                const x = e.clientX - rect.left; 
+                const y = e.clientY - rect.top;  
                 const centerX = rect.width / 2;
                 const centerY = rect.height / 2;
                 const rotateX = (y - centerY) / tiltIntensity; 
@@ -354,90 +348,86 @@
             });
             
             card.addEventListener('mouseleave', () => {
-                // Reset to a stable non-rotated, non-translated state, allowing CSS transition back
                 card.style.transform = 'translate3d(0,0,0) rotateX(0deg) rotateY(0deg) scale(1)';
             });
         });
         
-        // Create particles that animate in from bottom
         function createFloatingElement() {
-            if (!floatingElementsContainer) return;
+            if (!floatingElementsContainer) return; 
+
             const element = document.createElement('div');
             element.className = 'floating-element';
             
-            const size = Math.random() * 8 + 2;
-            const opacity = Math.random() * 0.6 + 0.2;
-            const duration = Math.random() * 20 + 15; // Duration for the float animation
+            const size = Math.random() * 8 + 2; 
+            const duration = Math.random() * 20 + 15; 
             const colors = ['#38bdf8', '#3b82f6', '#8b5cf6', '#06b6d4'];
-            const color = colors[Math.floor(Math.random() * colors.length)];
+            const color = colors[Math.floor(Math.random() * colors.length)]; 
             
             element.style.width = size + 'px';
             element.style.height = size + 'px';
-            // Positioned relative to floatingElementsContainer (which is 100% viewport width/height)
             element.style.left = Math.random() * 100 + '%'; 
             element.style.background = color;
-            element.style.opacity = 0; // Start transparent for animation
+            element.style.opacity = 0; 
             element.style.animationDuration = duration + 's';
-            element.style.animationDelay = Math.random() * 5 + 's'; // Random start for staggering
+            element.style.animationDelay = Math.random() * 5 + 's'; 
             
             floatingElementsContainer.appendChild(element);
             
-            // Remove after animation completes + a buffer
+            const totalAnimationTime = duration + parseFloat(element.style.animationDelay || 0);
             setTimeout(() => {
                 if (element.parentNode) element.remove();
-            }, (duration + parseFloat(element.style.animationDelay || 0) + 1) * 1000); // Adjusted timeout
+            }, (totalAnimationTime + 1) * 1000); 
         }
         
-        // Create immediately visible, wobbling particles
         function createImmediateFloatingElement() {
-            if (!floatingElementsContainer) return;
+            if (!floatingElementsContainer) return; 
+
             const element = document.createElement('div');
-            element.className = 'immediate-floating-element'; // Uses new CSS class and animation
+            element.className = 'immediate-floating-element';
             
-            const size = Math.random() * 6 + 2; // Slightly smaller for base layer
-            const initialOpacity = Math.random() * 0.4 + 0.1; // More subtle base layer
-            const wobbleDuration = Math.random() * 15 + 10; // Duration for wobble
-            const colors = ['#38bdf8', '#3b82f6', '#8b5cf6', '#06b6d4', '#a78bfa']; // Added more subtle color
+            const size = Math.random() * 6 + 2; 
+            const initialOpacity = Math.random() * 0.4 + 0.1; 
+            const wobbleDuration = Math.random() * 15 + 10; 
+            const colors = ['#38bdf8', '#3b82f6', '#8b5cf6', '#06b6d4', '#a78bfa'];
             const color = colors[Math.floor(Math.random() * colors.length)];
             
             element.style.width = size + 'px';
             element.style.height = size + 'px';
-            element.style.left = Math.random() * 100 + 'vw'; // Positioned relative to viewport width
-            element.style.top = Math.random() * 100 + 'vh';  // Positioned relative to viewport height
+            element.style.left = Math.random() * 100 + 'vw'; 
+            element.style.top = Math.random() * 100 + 'vh';  
             element.style.background = color;
             element.style.opacity = initialOpacity;
             element.style.animationDuration = wobbleDuration + 's';
-            // Start at a random point in the wobble animation cycle
             element.style.animationDelay = -(Math.random() * wobbleDuration) + 's'; 
             
             floatingElementsContainer.appendChild(element);
-            // These particles are persistent and do not remove themselves
         }
         
         document.addEventListener('DOMContentLoaded', () => {
             if (floatingElementsContainer) {
-                for (let i = 0; i < 35; i++) { // Increased number of immediate particles
+                for (let i = 0; i < 35; i++) { 
                     createImmediateFloatingElement();
                 }
             }
-            // Start generating animating-in particles after a short delay
             setTimeout(() => {
-                 if (floatingElementsContainer) setInterval(createFloatingElement, 1000); // Slower interval
+                 if (floatingElementsContainer) {
+                    setInterval(createFloatingElement, 1000); 
+                 }
             }, 500);
         });
         
-        // Parallax effect for background elements container
         document.addEventListener('mousemove', (e) => {
-            const x = (e.clientX / window.innerWidth - 0.5) * 2; // Range -1 to 1
-            const y = (e.clientY / window.innerHeight - 0.5) * 2; // Range -1 to 1
+            const x = (e.clientX / window.innerWidth - 0.5) * 2; 
+            const y = (e.clientY / window.innerHeight - 0.5) * 2; 
             
             if (floatingElementsContainer) {
-                floatingElementsContainer.style.transform = `translate(${x * 15}px, ${y * 15}px)`; // Reduced parallax intensity
+                floatingElementsContainer.style.transform = `translate(${x * 15}px, ${y * 15}px)`;
             }
             
             const meshGradient = document.querySelector('.mesh-gradient');
             if (meshGradient) {
-                meshGradient.style.transform = `translate(${x * 5}px, ${y * 5}px)`;
+                // Apply parallax to mesh gradient using its existing transform for translation
+                 meshGradient.style.transform = `translate(${x * 5}px, ${y * 5}px) rotate(0deg)`; // Keep rotate if it was part of an animation not covered by keyframes
             }
         });
         
