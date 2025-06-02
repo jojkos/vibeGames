@@ -1,1731 +1,2635 @@
 <!DOCTYPE html>
 <html lang="en">
-
-<head>
+  <head>
     <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"
+    />
     <title>Pug Banger Fiesta</title>
-    <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet" />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap"
+      rel="stylesheet"
+    />
     <script src="https://cdnjs.cloudflare.com/ajax/libs/tone/14.8.49/Tone.min.js"></script>
     <script type="module">
-        // Firebase App (the core Firebase SDK) is always required and must be listed first
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
-        // Add SDKs for Firebase products that you want to use
-        import {
-            getAuth,
-            signInAnonymously,
-            signInWithCustomToken,
-            onAuthStateChanged,
-        } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
-        import {
-            getFirestore,
-            collection,
-            addDoc,
-            query,
-            limit,
-            getDocs,
-            Timestamp,
-            setLogLevel,
-            serverTimestamp,
-            doc,
-            getDoc,
-            onSnapshot,
-        } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+      // Firebase App (the core Firebase SDK) is always required and must be listed first
+      import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+      // Add SDKs for Firebase products that you want to use
+      import {
+        getAuth,
+        signInAnonymously,
+        signInWithCustomToken,
+        onAuthStateChanged,
+      } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+      import {
+        getFirestore,
+        collection,
+        addDoc,
+        query,
+        limit,
+        getDocs,
+        Timestamp,
+        setLogLevel,
+        serverTimestamp,
+        doc,
+        getDoc,
+        onSnapshot,
+      } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
-        // --- Firebase Initialization ---
-        const appId =
-            typeof __app_id !== "undefined" ? __app_id : "pug-tagger-default-app";
+      // --- Firebase Initialization ---
+      const appId =
+        typeof __app_id !== "undefined" ? __app_id : "pug-tagger-default-app";
 
-        const firebaseConfigString = typeof __firebase_config !== "undefined"
-            ? __firebase_config
-            : JSON.stringify({
-                apiKey: "AIzaSyAG-fkocVppD9PUKw2Y0HU0q0mSG3B3jZo",
-                authDomain: "brainrotclickerleaderboard.firebaseapp.com",
-                projectId: "brainrotclickerleaderboard",
-                storageBucket: "brainrotclickerleaderboard.appspot.com",
-                messagingSenderId: "621809902994",
-                appId: "1:621809902994:web:4ddc238f0be3d857978d4b",
+      const firebaseConfigString =
+        typeof __firebase_config !== "undefined"
+          ? __firebase_config
+          : JSON.stringify({
+              apiKey: "AIzaSyAG-fkocVppD9PUKw2Y0HU0q0mSG3B3jZo", // Replace with your actual config if needed for local testing
+              authDomain: "brainrotclickerleaderboard.firebaseapp.com",
+              projectId: "brainrotclickerleaderboard",
+              storageBucket: "brainrotclickerleaderboard.appspot.com",
+              messagingSenderId: "621809902994",
+              appId: "1:621809902994:web:4ddc238f0be3d857978d4b",
             });
 
-        const firebaseConfig = JSON.parse(firebaseConfigString);
+      const firebaseConfig = JSON.parse(firebaseConfigString);
 
-        let fbApp;
-        let fbAuth;
-        let db;
-        let currentUserId = null;
-        let isAuthReady = false;
+      let fbApp;
+      let fbAuth;
+      let db;
+      let currentUserId = null;
+      let isAuthReady = false;
 
+      try {
+        fbApp = initializeApp(firebaseConfig);
+        fbAuth = getAuth(fbApp);
+        db = getFirestore(fbApp);
+        setLogLevel("debug");
+        console.log("Firebase initialized. App ID:", appId);
 
-        try {
-            fbApp = initializeApp(firebaseConfig);
-            fbAuth = getAuth(fbApp);
-            db = getFirestore(fbApp);
-            setLogLevel("debug");
-            console.log("Firebase initialized. App ID:", appId);
-
-            if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
-                signInWithCustomToken(fbAuth, __initial_auth_token)
-                    .then((userCredential) => {
-                        currentUserId = userCredential.user.uid;
-                        isAuthReady = true;
-                        console.log("User signed in with custom token:", currentUserId);
-                    })
-                    .catch((error) => {
-                        console.error("Error signing in with custom token, falling back to anonymous:", error);
-                        signInAnonymously(fbAuth)
-                            .then((userCredential) => {
-                                currentUserId = userCredential.user.uid;
-                                isAuthReady = true;
-                                console.log("Signed in anonymously after custom token fail:", currentUserId);
-                            })
-                            .catch((anonError) => {
-                                console.error("Error signing in anonymously:", anonError);
-                                currentUserId = `fallbackUser_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`;
-                                isAuthReady = true;
-                            });
-                    });
-            } else {
-                signInAnonymously(fbAuth)
-                    .then((userCredential) => {
-                        currentUserId = userCredential.user.uid;
-                        isAuthReady = true;
-                        console.log("Signed in anonymously:", currentUserId);
-                    })
-                    .catch((error) => {
-                        console.error("Error signing in anonymously:", error);
-                        currentUserId = `fallbackUser_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`;
-                        isAuthReady = true;
-                    });
-            }
-
-            onAuthStateChanged(fbAuth, (user) => {
-                if (user) {
-                    if (!currentUserId || currentUserId !== user.uid) {
-                        currentUserId = user.uid;
-                        console.log("Auth state changed, user signed in:", currentUserId);
-                    }
-                    isAuthReady = true;
-                } else {
-                    console.log("Auth state changed, user signed out.");
-                    isAuthReady = true;
-                    currentUserId = null;
-                }
+        if (
+          typeof __initial_auth_token !== "undefined" &&
+          __initial_auth_token
+        ) {
+          signInWithCustomToken(fbAuth, __initial_auth_token)
+            .then((userCredential) => {
+              currentUserId = userCredential.user.uid;
+              isAuthReady = true;
+              console.log("User signed in with custom token:", currentUserId);
+            })
+            .catch((error) => {
+              console.error(
+                "Error signing in with custom token, falling back to anonymous:",
+                error
+              );
+              signInAnonymously(fbAuth)
+                .then((userCredential) => {
+                  currentUserId = userCredential.user.uid;
+                  isAuthReady = true;
+                  console.log(
+                    "Signed in anonymously after custom token fail:",
+                    currentUserId
+                  );
+                })
+                .catch((anonError) => {
+                  console.error("Error signing in anonymously:", anonError);
+                  currentUserId = `fallbackUser_${Date.now()}_${Math.random()
+                    .toString(36)
+                    .substring(2, 7)}`;
+                  isAuthReady = true;
+                });
             });
-
-        } catch (error) {
-            console.error("Error initializing Firebase:", error);
-            db = null;
-            fbAuth = null;
-            currentUserId = `fallbackUser_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`;
-            isAuthReady = true;
+        } else {
+          signInAnonymously(fbAuth)
+            .then((userCredential) => {
+              currentUserId = userCredential.user.uid;
+              isAuthReady = true;
+              console.log("Signed in anonymously:", currentUserId);
+            })
+            .catch((error) => {
+              console.error("Error signing in anonymously:", error);
+              currentUserId = `fallbackUser_${Date.now()}_${Math.random()
+                .toString(36)
+                .substring(2, 7)}`;
+              isAuthReady = true;
+            });
         }
 
-        window.fbApp = fbApp;
-        window.fbAuth = fbAuth;
-        window.db = db;
-        window.firebase = {
-            collection,
-            addDoc,
-            query,
-            limit,
-            getDocs,
-            Timestamp,
-            serverTimestamp,
-            doc,
-            onSnapshot
-        };
-        window.appIdGlobal = appId;
-        window.getFirebaseUserId = () => currentUserId;
-        window.isFirebaseAuthReady = () => isAuthReady;
+        onAuthStateChanged(fbAuth, (user) => {
+          if (user) {
+            if (!currentUserId || currentUserId !== user.uid) {
+              currentUserId = user.uid;
+              console.log("Auth state changed, user signed in:", currentUserId);
+            }
+            isAuthReady = true;
+          } else {
+            console.log("Auth state changed, user signed out.");
+            isAuthReady = true;
+            currentUserId = null;
+          }
+        });
+      } catch (error) {
+        console.error("Error initializing Firebase:", error);
+        db = null;
+        fbAuth = null;
+        currentUserId = `fallbackUser_${Date.now()}_${Math.random()
+          .toString(36)
+          .substring(2, 7)}`;
+        isAuthReady = true;
+      }
 
+      window.fbApp = fbApp;
+      window.fbAuth = fbAuth;
+      window.db = db;
+      window.firebase = {
+        // Expose specific firestore functions
+        collection,
+        addDoc,
+        query,
+        limit,
+        getDocs,
+        Timestamp,
+        serverTimestamp,
+        doc,
+        onSnapshot,
+      };
+      window.appIdGlobal = appId;
+      window.getFirebaseUserId = () => currentUserId;
+      window.isFirebaseAuthReady = () => isAuthReady;
     </script>
     <style>
-        body {
-            margin: 0;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            height: 100vh;
-            width: 100vw;
-            background-color: #2c2c2c;
-            font-family: "Press Start 2P", cursive;
-            color: #fff;
-            overflow: hidden;
-            -webkit-tap-highlight-color: transparent;
+      body {
+        margin: 0;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        height: 100vh;
+        width: 100vw;
+        background-color: #2c2c2c;
+        font-family: "Press Start 2P", cursive;
+        color: #fff;
+        overflow: hidden;
+        -webkit-tap-highlight-color: transparent;
+      }
+
+      h1.game-title {
+        margin: 10px 0;
+        font-size: 1.5em;
+        color: #ffd700;
+        text-shadow: 2px 2px #000;
+        text-align: center;
+        position: relative;
+        z-index: 10;
+      }
+
+      #gameContainer {
+        width: 100%;
+        flex-grow: 1;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        position: relative;
+      }
+
+      canvas {
+        border: 2px solid #000;
+        background-color: #78c850;
+        image-rendering: pixelated;
+        image-rendering: -moz-crisp-edges;
+        image-rendering: crisp-edges;
+        box-shadow: 0 0 10px rgba(0, 0, 0, 0.5);
+        max-width: 100%;
+        max-height: 100%;
+        aspect-ratio: 4 / 3;
+        display: none; /* Initially hidden */
+      }
+
+      .screen-overlay {
+        display: none; /* Hidden by default, shown by JS */
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+        width: 100%;
+        height: 100%;
+        position: absolute;
+        top: 0;
+        left: 0;
+        background-color: rgba(44, 44, 44, 0.95);
+        z-index: 200;
+        padding: 20px;
+        box-sizing: border-box;
+        text-align: center;
+      }
+
+      #menuScreen {
+        display: flex; /* Show menu screen by default */
+      }
+
+      #menuLogo {
+        width: 300px;
+        height: auto;
+        margin-bottom: -45px;
+        animation: pulseLogo 2s infinite ease-in-out;
+        pointer-events: none;
+      }
+
+      @keyframes pulseLogo {
+        0% {
+          transform: scale(1);
         }
-
-        h1.game-title {
-            margin: 10px 0;
-            font-size: 1.5em;
-            color: #ffd700;
-            text-shadow: 2px 2px #000;
-            text-align: center;
-            position: relative;
-            z-index: 10;
+        50% {
+          transform: scale(1.05);
         }
-
-        #gameContainer {
-            width: 100%;
-            flex-grow: 1;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            position: relative;
+        100% {
+          transform: scale(1);
         }
+      }
 
-        canvas {
-            border: 2px solid #000;
-            background-color: #78c850;
-            image-rendering: pixelated;
-            image-rendering: -moz-crisp-edges;
-            image-rendering: crisp-edges;
-            box-shadow: 0 0 10px rgba(0, 0, 0, 0.5);
-            max-width: 100%;
-            max-height: 100%;
-            aspect-ratio: 4 / 3;
-            display: none;
-        }
+      .menu-button,
+      .action-button {
+        font-family: "Press Start 2P", cursive;
+        font-size: 1em;
+        color: #ffd700;
+        background-color: rgba(80, 80, 80, 0.7);
+        border: 2px solid #ffd700;
+        padding: 12px 25px;
+        margin: 8px;
+        border-radius: 8px;
+        cursor: pointer;
+        text-shadow: 1px 1px #000;
+        transition: background-color 0.2s, transform 0.1s;
+      }
 
-        .screen-overlay {
-            display: none;
-            flex-direction: column;
-            justify-content: center;
-            align-items: center;
-            width: 100%;
-            height: 100%;
-            position: absolute;
-            top: 0;
-            left: 0;
-            background-color: rgba(44, 44, 44, 0.95);
-            z-index: 200;
-            padding: 20px;
-            box-sizing: border-box;
-            text-align: center;
-        }
+      .menu-button:hover,
+      .action-button:hover {
+        background-color: rgba(100, 100, 100, 0.9);
+        transform: scale(1.05);
+      }
 
-        #menuScreen {
-            display: flex;
-        }
+      .btn-3d {
+        background-color: #f39c12;
+        border: none;
+        border-bottom: 4px solid #c0392b;
+        color: white;
+        text-shadow: 0 -1px 0 #7f2319;
+      }
+      .btn-3d:hover {
+        background-color: #e67e22;
+        border-bottom-color: #a32d20;
+      }
+      .btn-3d:active {
+        transform: translateY(2px) scale(1.05);
+        border-bottom-width: 2px;
+      }
 
-        #menuLogo {
-            width: 300px;
-            height: auto;
-            margin-bottom: 30px;
-            animation: pulseLogo 2s infinite ease-in-out;
-        }
+      #languageSelector {
+        margin-top: 15px;
+        margin-bottom: 10px;
+        display: flex;
+        justify-content: center;
+      }
+      .lang-button {
+        font-size: 0.8em;
+        padding: 8px 15px;
+        margin: 0 5px;
+      }
+      .lang-button.active {
+        background-color: #ffd700;
+        color: #2c2c2c;
+        border-color: #2c2c2c;
+      }
 
-        @keyframes pulseLogo {
-            0% {
-                transform: scale(1);
-            }
+      #leaderboardContent,
+      #navodContentContainer {
+        /* Changed ID for clarity */
+        width: 80%;
+        max-width: 500px;
+        max-height: 70%;
+        overflow-y: auto;
+        background-color: rgba(0, 0, 0, 0.5);
+        padding: 15px;
+        border-radius: 8px;
+        border: 2px solid #ffd700;
+        margin-bottom: 20px;
+      }
 
-            50% {
-                transform: scale(1.05);
-            }
+      #leaderboardContent h2,
+      #navodContent_cz h2,
+      #navodContent_en h2 {
+        text-align: center;
+        margin-top: 0;
+        color: #ffd700;
+      }
 
-            100% {
-                transform: scale(1);
-            }
-        }
+      #leaderboardList {
+        list-style: none;
+        padding: 0;
+        margin: 0;
+      }
+      #leaderboardList li {
+        display: flex;
+        justify-content: space-between;
+        padding: 8px 5px;
+        border-bottom: 1px dashed rgba(255, 255, 255, 0.3);
+        font-size: 0.9em;
+      }
+      #leaderboardList li:last-child {
+        border-bottom: none;
+      }
+      #leaderboardList .rank {
+        min-width: 30px;
+        text-align: right;
+        margin-right: 10px;
+      }
+      #leaderboardList .name {
+        flex-grow: 1;
+      }
+      #leaderboardList .score {
+        font-weight: bold;
+      }
 
-        .menu-button,
-        .action-button {
-            font-family: "Press Start 2P", cursive;
-            font-size: 1em;
-            color: #ffd700;
-            background-color: rgba(80, 80, 80, 0.7);
-            border: 2px solid #ffd700;
-            padding: 12px 25px;
-            margin: 8px;
-            border-radius: 8px;
-            cursor: pointer;
-            text-shadow: 1px 1px #000;
-            transition: background-color 0.2s, transform 0.1s;
-        }
+      .loading-text {
+        text-align: center;
+        font-size: 1em;
+        margin: 20px;
+      }
 
-        .menu-button:hover,
-        .action-button:hover {
-            background-color: rgba(100, 100, 100, 0.9);
-            transform: scale(1.05);
-        }
+      #navodContent_cz p,
+      #navodContent_cz ul,
+      #navodContent_en p,
+      #navodContent_en ul {
+        margin-bottom: 10px;
+        line-height: 1.6;
+        font-size: 0.9em;
+      }
+      #navodContent_cz strong,
+      #navodContent_en strong {
+        color: #ffd700;
+      }
+      #navodContent_cz ul,
+      #navodContent_en ul {
+        padding-left: 20px;
+      }
 
-        .btn-3d {
-            background-color: #f39c12;
-            border: none;
-            border-bottom: 4px solid #c0392b;
-            color: white;
-            text-shadow: 0 -1px 0 #7f2319;
-        }
+      #gameOverScreen h2 {
+        font-size: 2em;
+        color: #ff0000;
+        margin-bottom: 20px;
+      }
+      #gameOverScreen p {
+        font-size: 1.2em;
+        color: #ffd700;
+        margin-bottom: 30px;
+      }
+      #gameOverButtonsContainer {
+        display: flex;
+        justify-content: center;
+        flex-wrap: wrap;
+      }
 
-        .btn-3d:hover {
-            background-color: #e67e22;
-            border-bottom-color: #a32d20;
-        }
+      #controlsContainer {
+        display: none; /* Hidden by default */
+        width: 100%;
+        position: absolute;
+        bottom: 0;
+        left: 0;
+        padding: 20px;
+        box-sizing: border-box;
+        justify-content: space-between;
+        align-items: flex-end;
+        pointer-events: none; /* Container itself doesn't block */
+        z-index: 5;
+      }
+      #joystickBase {
+        width: 120px;
+        height: 120px;
+        background-color: rgba(80, 80, 80, 0.5);
+        border-radius: 50%;
+        position: relative;
+        border: 2px solid rgba(255, 255, 255, 0.3);
+        pointer-events: auto; /* Joystick is interactive */
+      }
+      #joystickKnob {
+        width: 60px;
+        height: 60px;
+        background-color: rgba(150, 150, 150, 0.8);
+        border-radius: 50%;
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        border: 2px solid rgba(255, 255, 255, 0.6);
+      }
+      #actionButtons {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        pointer-events: auto; /* Buttons are interactive */
+      }
+      #btnDash {
+        width: 80px;
+        height: 80px;
+        font-size: 0.9em;
+        padding: 5px;
+        text-align: center;
+        background-color: rgba(255, 80, 80, 0.7);
+        border: 2px solid rgba(255, 255, 255, 0.7);
+        color: white;
+        font-family: "Press Start 2P", cursive;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        cursor: pointer;
+        border-radius: 15px;
+        transition: background-color 0.1s;
+        box-shadow: 0 2px 5px rgba(0, 0, 0, 0.3);
+      }
+      #btnDash:active {
+        background-color: rgba(255, 120, 120, 0.9);
+      }
 
-        .btn-3d:active {
-            transform: translateY(2px) scale(1.05);
-            border-bottom-width: 2px;
-        }
+      .modal-overlay {
+        display: none;
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background-color: rgba(0, 0, 0, 0.7);
+        justify-content: center;
+        align-items: center;
+        z-index: 1000;
+      }
+      .modal-content {
+        background-color: #3e3e3e;
+        padding: 25px;
+        border-radius: 10px;
+        border: 2px solid #ffd700;
+        text-align: center;
+        box-shadow: 0 5px 15px rgba(0, 0, 0, 0.5);
+        width: 80%;
+        max-width: 400px;
+      }
+      .modal-content p {
+        margin-bottom: 20px;
+        font-size: 1em;
+        color: #fff;
+      }
+      .modal-content input[type="text"] {
+        width: calc(100% - 20px);
+        padding: 10px;
+        margin-bottom: 20px;
+        border-radius: 5px;
+        border: 1px solid #ffd700;
+        background-color: #555;
+        color: #fff;
+        font-family: "Press Start 2P", cursive;
+      }
+      .modal-buttons button {
+        margin: 0 10px;
+      }
 
-
-        #leaderboardContent,
-        #navodContent {
-            width: 80%;
-            max-width: 500px;
-            max-height: 70%;
-            overflow-y: auto;
-            background-color: rgba(0, 0, 0, 0.5);
-            padding: 15px;
-            border-radius: 8px;
-            border: 2px solid #ffd700;
-            margin-bottom: 20px;
-        }
-
-        #leaderboardContent h2,
-        #navodContent h2 {
-            text-align: center;
-            margin-top: 0;
-            color: #ffd700;
-        }
-
-        #leaderboardList {
-            list-style: none;
-            padding: 0;
-            margin: 0;
-        }
-
-        #leaderboardList li {
-            display: flex;
-            justify-content: space-between;
-            padding: 8px 5px;
-            border-bottom: 1px dashed rgba(255, 255, 255, 0.3);
-            font-size: 0.9em;
-        }
-
-        #leaderboardList li:last-child {
-            border-bottom: none;
-        }
-
-        #leaderboardList .rank {
-            min-width: 30px;
-            text-align: right;
-            margin-right: 10px;
-        }
-
-        #leaderboardList .name {
-            flex-grow: 1;
-        }
-
-        #leaderboardList .score {
-            font-weight: bold;
-        }
-
-        .loading-text {
-            text-align: center;
-            font-size: 1em;
-            margin: 20px;
-        }
-
-        #navodContent p,
-        #navodContent ul {
-            margin-bottom: 10px;
-            line-height: 1.6;
-            font-size: 0.9em;
-        }
-
-        #navodContent strong {
-            color: #ffd700;
-        }
-
-        #navodContent ul {
-            padding-left: 20px;
-        }
-
-
-        #gameOverScreen h2 {
-            font-size: 2em;
-            color: #ff0000;
-            margin-bottom: 20px;
-        }
-
-        #gameOverScreen p {
-            font-size: 1.2em;
-            color: #ffd700;
-            margin-bottom: 30px;
-        }
-
-        #gameOverButtonsContainer {
-            display: flex;
-            justify-content: center;
-            flex-wrap: wrap;
-        }
-
-        #controlsContainer {
-            display: none;
-            width: 100%;
-            position: absolute;
-            bottom: 0;
-            left: 0;
-            padding: 20px;
-            box-sizing: border-box;
-            justify-content: space-between;
-            align-items: flex-end;
-            pointer-events: none;
-            z-index: 5;
-        }
-
-        #joystickBase {
-            width: 120px;
-            height: 120px;
-            background-color: rgba(80, 80, 80, 0.5);
-            border-radius: 50%;
-            position: relative;
-            border: 2px solid rgba(255, 255, 255, 0.3);
-            pointer-events: auto;
-        }
-
-        #joystickKnob {
-            width: 60px;
-            height: 60px;
-            background-color: rgba(150, 150, 150, 0.8);
-            border-radius: 50%;
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            border: 2px solid rgba(255, 255, 255, 0.6);
-        }
-
-        #actionButtons {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            pointer-events: auto;
-        }
-
-        #btnDash {
-            width: 80px;
-            height: 80px;
-            font-size: 0.9em;
-            padding: 5px;
-            text-align: center;
-            background-color: rgba(255, 80, 80, 0.7);
-            border: 2px solid rgba(255, 255, 255, 0.7);
-            color: white;
-            font-family: "Press Start 2P", cursive;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            cursor: pointer;
-            border-radius: 15px;
-            transition: background-color 0.1s;
-            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.3);
-        }
-
-        #btnDash:active {
-            background-color: rgba(255, 120, 120, 0.9);
-        }
-
-        .modal-overlay {
-            display: none;
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background-color: rgba(0, 0, 0, 0.7);
-            justify-content: center;
-            align-items: center;
-            z-index: 1000;
-        }
-
-        .modal-content {
-            background-color: #3e3e3e;
-            padding: 25px;
-            border-radius: 10px;
-            border: 2px solid #ffd700;
-            text-align: center;
-            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.5);
-            width: 80%;
-            max-width: 400px;
-        }
-
-        .modal-content p {
-            margin-bottom: 20px;
-            font-size: 1em;
-            color: #fff;
-        }
-
-        .modal-content input[type="text"] {
-            width: calc(100% - 20px);
-            padding: 10px;
-            margin-bottom: 20px;
-            border-radius: 5px;
-            border: 1px solid #ffd700;
-            background-color: #555;
-            color: #fff;
-            font-family: "Press Start 2P", cursive;
-        }
-
-        .modal-buttons button {
-            margin: 0 10px;
-        }
-
-        #buyMeACoffeeButtonContainer {
-            position: fixed;
-            left: 15px;
-            bottom: 15px;
-            z-index: 210;
-            display: none;
-        }
-
-        #buyMeACoffeeButtonContainer img {
-            width: 180px;
-            height: auto;
-            border-radius: 8px;
-            box-shadow: 2px 2px 5px rgba(0, 0, 0, 0.5);
-        }
+      #buyMeACoffeeButtonContainer {
+        position: fixed;
+        left: 15px;
+        bottom: 15px;
+        z-index: 210; /* Above overlays but below modals */
+        display: none; /* Shown with menu */
+      }
+      #buyMeACoffeeButtonContainer img {
+        width: 180px;
+        height: auto;
+        border-radius: 8px;
+        box-shadow: 2px 2px 5px rgba(0, 0, 0, 0.5);
+      }
     </style>
-</head>
-
-<body>
-    <h1 class="game-title">Pug Banger Fiesta</h1>
+  </head>
+  <body>
+    <h1 class="game-title" id="gameTitle">Pug Banger Fiesta</h1>
 
     <div id="menuScreen" class="screen-overlay">
-        <!-- inside #menuScreen, just above the buttons -->
-        <label style="margin:8px;color:#ffd700;font-size:.9em">
-            Barva dresu:
-            <input type="color" id="dressColorPicker" value="#FFFFFF" style="vertical-align:middle">
-        </label>
-        <img src="assets/logoWithoutBg.png" alt="Game Logo" id="menuLogo"
-            onerror="this.onerror=null; this.src='https://placehold.co/300x150/2c2c2c/ffd700?text=Logo+Error&font=press-start-2p';" />
-        <button class="menu-button" id="btnHraj">Hraj</button>
-        <button class="menu-button" id="btnZebricekMenu">Žebříček</button>
-        <button class="menu-button btn-3d" id="btnNavod">Návod</button>
+      <img
+        src="assets/logoWithoutBg.png"
+        alt="Game Logo"
+        id="menuLogo"
+        onerror="this.onerror=null; this.src='https://placehold.co/300x150/2c2c2c/ffd700?text=Logo+Error&font=press-start-2p';"
+      />
+      <button class="menu-button" id="btnHraj">Hraj</button>
+      <button class="menu-button" id="btnZebricekMenu">Žebříček</button>
+      <button class="menu-button btn-3d" id="btnNavod">Návod</button>
+      <label
+        style="
+          margin: 8px;
+          color: #ffd700;
+          font-size: 0.9em;
+          display: flex;
+          align-items: center;
+        "
+      >
+        <span id="dressColorLabelText">Barva dresu:</span>
+        <input
+          type="color"
+          id="dressColorPicker"
+          value="#FFFFFF"
+          style="vertical-align: middle"
+          list="predefinedColors"
+        />
+        <datalist id="predefinedColors">
+          <option>#FFFFFF</option>
+          <option>#8f05d5</option>
+          <option>#f99320</option>
+          <option>#ff69df</option>
+          <option>#d92828</option>
+          <option>#fff93d</option>
+        </datalist>
+      </label>
+      <div id="languageSelector">
+        <button class="menu-button lang-button" data-lang="cz" id="btnLangCZ">
+          CZ
+        </button>
+        <button class="menu-button lang-button" data-lang="en" id="btnLangEN">
+          EN
+        </button>
+      </div>
     </div>
 
     <div id="navodScreen" class="screen-overlay">
-        <div id="navodContent">
-            <h2>Návod ke hře</h2>
-            <p><strong>Cíl:</strong> Tvým úkolem je jako správný mopsík "označkovat" co nejvíce psích slečen v omezeném
-                čase!</p>
-            <p><strong>Ovládání (PC):</strong></p>
-            <ul>
-                <li><strong>W, A, S, D:</strong> Pohyb</li>
-                <li><strong>Mezerník:</strong> Rychlý úprk (dash) pro označkování</li>
-            </ul>
-            <p><strong>Ovládání (Mobil):</strong></p>
-            <ul>
-                <li><strong>Joystick (vlevo dole):</strong> Pohyb</li>
-                <li><strong>Tlačítko DASH (vpravo dole):</strong> Rychlý úprk (dash) pro označkování</li>
-            </ul>
-            <p>Hodně štěstí, mopsí šampione!</p>
+      <div id="navodContentContainer">
+        <div id="navodContent_cz">
+          <h2 id="navodTitle_cz">Návod ke hře</h2>
+          <p>
+            <strong>Cíl:</strong> Tvým úkolem je jako správný mopsík
+            "označkovat" co nejvíce psích slečen v omezeném čase!
+          </p>
+          <p><strong>Ovládání (PC):</strong></p>
+          <ul>
+            <li><strong>W, A, S, D:</strong> Pohyb</li>
+            <li>
+              <strong>Mezerník:</strong> Rychlý úprk (dash) pro označkování
+            </li>
+          </ul>
+          <p><strong>Ovládání (Mobil):</strong></p>
+          <ul>
+            <li><strong>Joystick (vlevo dole):</strong> Pohyb</li>
+            <li>
+              <strong>Tlačítko DASH (vpravo dole):</strong> Rychlý úprk (dash)
+              pro označkování
+            </li>
+          </ul>
+          <p>Hodně štěstí, mopsí šampione!</p>
         </div>
-        <button class="action-button" id="btnNavodToMenu">Zavřít</button>
+        <div id="navodContent_en" style="display: none">
+          <h2 id="navodTitle_en">Game Instructions</h2>
+          <p>
+            <strong>Objective:</strong> Your task, as a proper pug, is to "tag"
+            as many female dogs as possible within the time limit!
+          </p>
+          <p><strong>Controls (PC):</strong></p>
+          <ul>
+            <li><strong>W, A, S, D:</strong> Movement</li>
+            <li><strong>Spacebar:</strong> Quick dash to tag</li>
+          </ul>
+          <p><strong>Controls (Mobile):</strong></p>
+          <ul>
+            <li><strong>Joystick (bottom left):</strong> Movement</li>
+            <li>
+              <strong>DASH Button (bottom right):</strong> Quick dash to tag
+            </li>
+          </ul>
+          <p>Good luck, pug champion!</p>
+        </div>
+      </div>
+      <button class="action-button" id="btnNavodToMenu">Zavřít</button>
     </div>
 
     <div id="leaderboardScreen" class="screen-overlay">
-        <div id="leaderboardContent">
-            <h2>Žebříček</h2>
-            <ul id="leaderboardList"></ul>
-            <p id="leaderboardLoadingText" class="loading-text">Načítání...</p>
-        </div>
-        <button class="action-button" id="btnLeaderboardToMenu">Menu</button>
+      <div id="leaderboardContent">
+        <h2 id="leaderboardTitle">Žebříček</h2>
+        <ul id="leaderboardList"></ul>
+        <p id="leaderboardLoadingText" class="loading-text">Načítání...</p>
+      </div>
+      <button class="action-button" id="btnLeaderboardToMenu">Menu</button>
     </div>
 
     <div id="gameOverScreen" class="screen-overlay">
-        <h2>Konec Hry!</h2>
-        <p id="gameOverScore">Skóre: 0</p>
-        <div id="gameOverButtonsContainer">
-            <button class="action-button" id="btnSaveScoreGameOver">Uložit skóre</button>
-            <button class="action-button" id="btnZebricekGameOver">Žebříček</button>
-            <button class="action-button" id="btnGameOverToMenu">Menu</button>
-        </div>
+      <h2 id="gameOverTitle">Konec Hry!</h2>
+      <p id="gameOverScore">Skóre: 0</p>
+      <div id="gameOverButtonsContainer">
+        <button class="action-button" id="btnSaveScoreGameOver">
+          Uložit skóre
+        </button>
+        <button class="action-button" id="btnZebricekGameOver">Žebříček</button>
+        <button class="action-button" id="btnGameOverToMenu">Menu</button>
+      </div>
     </div>
 
     <div id="gameContainer">
-        <canvas id="gameCanvas"></canvas>
+      <canvas id="gameCanvas"></canvas>
     </div>
 
     <div id="controlsContainer">
-        <div id="joystickBase">
-            <div id="joystickKnob"></div>
-        </div>
-        <div id="actionButtons">
-            <div id="btnDash">DASH</div>
-        </div>
+      <div id="joystickBase">
+        <div id="joystickKnob"></div>
+      </div>
+      <div id="actionButtons">
+        <div id="btnDash">DASH</div>
+      </div>
     </div>
 
     <div id="buyMeACoffeeButtonContainer">
-        <a href="https://buymeacoffee.com/jojkos" target="_blank" rel="noopener noreferrer">
-            <img src="https://cdn.buymeacoffee.com/buttons/v2/default-yellow.png" alt="Buy Me A Coffee" />
-        </a>
+      <a
+        href="https://buymeacoffee.com/jojkos"
+        target="_blank"
+        rel="noopener noreferrer"
+      >
+        <img
+          src="https://cdn.buymeacoffee.com/buttons/v2/default-yellow.png"
+          alt="Buy Me A Coffee"
+        />
+      </a>
     </div>
 
     <div id="customModal" class="modal-overlay">
-        <div class="modal-content">
-            <p id="modalMessage">Message</p>
-            <input type="text" id="modalInput" style="display:none;" placeholder="Zadej jméno (max 10)">
-            <div class="modal-buttons">
-                <button class="action-button" id="modalConfirmBtn">OK</button>
-                <button class="action-button" id="modalCancelBtn" style="display:none;">Zrušit</button>
-            </div>
+      <div class="modal-content">
+        <p id="modalMessage">Message</p>
+        <input
+          type="text"
+          id="modalInput"
+          style="display: none"
+          placeholder="Zadej jméno (max 10)"
+        />
+        <div class="modal-buttons">
+          <button class="action-button" id="modalConfirmBtn">OK</button>
+          <button
+            class="action-button"
+            id="modalCancelBtn"
+            style="display: none"
+          >
+            Zrušit
+          </button>
         </div>
+      </div>
     </div>
 
-
     <script type="module">
-        const canvas = document.getElementById("gameCanvas");
-        const ctx = canvas.getContext("2d");
+      const canvas = document.getElementById("gameCanvas");
+      const ctx = canvas.getContext("2d");
 
-        // Screen elements
-        const menuScreen = document.getElementById("menuScreen");
-        const navodScreen = document.getElementById("navodScreen");
-        const leaderboardScreen = document.getElementById("leaderboardScreen");
-        const gameOverScreen = document.getElementById("gameOverScreen");
+      // Screen elements
+      const menuScreen = document.getElementById("menuScreen");
+      const navodScreen = document.getElementById("navodScreen");
+      const leaderboardScreen = document.getElementById("leaderboardScreen");
+      const gameOverScreen = document.getElementById("gameOverScreen");
+      const gameTitleEl = document.getElementById("gameTitle");
 
-        // Button elements
-        const btnHraj = document.getElementById("btnHraj");
-        const btnZebricekMenu = document.getElementById("btnZebricekMenu");
-        const btnNavod = document.getElementById("btnNavod");
-        const btnNavodToMenu = document.getElementById("btnNavodToMenu");
-        const btnLeaderboardToMenu = document.getElementById("btnLeaderboardToMenu");
-        const btnSaveScoreGameOver = document.getElementById("btnSaveScoreGameOver");
-        const btnZebricekGameOver = document.getElementById("btnZebricekGameOver");
-        const btnGameOverToMenu = document.getElementById("btnGameOverToMenu");
+      // Button elements
+      const btnHraj = document.getElementById("btnHraj");
+      const btnZebricekMenu = document.getElementById("btnZebricekMenu");
+      const btnNavod = document.getElementById("btnNavod");
+      const btnNavodToMenu = document.getElementById("btnNavodToMenu");
+      const btnLeaderboardToMenu = document.getElementById(
+        "btnLeaderboardToMenu"
+      );
+      const btnSaveScoreGameOver = document.getElementById(
+        "btnSaveScoreGameOver"
+      );
+      const btnZebricekGameOver = document.getElementById(
+        "btnZebricekGameOver"
+      );
+      const btnGameOverToMenu = document.getElementById("btnGameOverToMenu");
+      const btnLangCZ = document.getElementById("btnLangCZ");
+      const btnLangEN = document.getElementById("btnLangEN");
 
-        // Buy Me A Coffee
-        const buyMeACoffeeContainer = document.getElementById("buyMeACoffeeButtonContainer");
+      // Buy Me A Coffee
+      const buyMeACoffeeContainer = document.getElementById(
+        "buyMeACoffeeButtonContainer"
+      );
 
-        // Leaderboard elements
-        const leaderboardListEl = document.getElementById("leaderboardList");
-        const leaderboardLoadingTextEl = document.getElementById("leaderboardLoadingText");
-        const gameOverScoreEl = document.getElementById("gameOverScore");
+      // Leaderboard elements
+      const leaderboardListEl = document.getElementById("leaderboardList");
+      const leaderboardLoadingTextEl = document.getElementById(
+        "leaderboardLoadingText"
+      );
+      const gameOverScoreEl = document.getElementById("gameOverScore");
+      const leaderboardTitleEl = document.getElementById("leaderboardTitle");
 
-        // Touch controls
-        const controlsContainer = document.getElementById("controlsContainer");
-        const joystickBase = document.getElementById("joystickBase");
-        const joystickKnob = document.getElementById("joystickKnob");
-        const btnDashElement = document.getElementById("btnDash"); // Renamed to avoid conflict with btnDash variable if any
+      // Navod elements
+      const navodContentCz = document.getElementById("navodContent_cz");
+      const navodContentEn = document.getElementById("navodContent_en");
+      const navodTitleCz = document.getElementById("navodTitle_cz");
+      const navodTitleEn = document.getElementById("navodTitle_en");
 
-        // Modal elements
-        const customModal = document.getElementById("customModal");
-        const modalMessage = document.getElementById("modalMessage");
-        const modalInput = document.getElementById("modalInput");
-        const modalConfirmBtn = document.getElementById("modalConfirmBtn");
-        const modalCancelBtn = document.getElementById("modalCancelBtn");
-        let modalConfirmCallback = null;
-        let modalCancelCallback = null;
+      // Touch controls
+      const controlsContainer = document.getElementById("controlsContainer");
+      const joystickBase = document.getElementById("joystickBase");
+      const joystickKnob = document.getElementById("joystickKnob");
+      const btnDashElement = document.getElementById("btnDash");
 
-        // Game state variables
-        let gameState = "menu";
-        let countdownValue = 3;
-        let gameTimerValue = 60;
-        let countdownInterval = null;
-        let scoreSavedThisSession = false;
-        let lastTime = 0;
+      // Modal elements
+      const customModal = document.getElementById("customModal");
+      const modalMessage = document.getElementById("modalMessage");
+      const modalInput = document.getElementById("modalInput");
+      const modalConfirmBtn = document.getElementById("modalConfirmBtn");
+      const modalCancelBtn = document.getElementById("modalCancelBtn");
+      let modalConfirmCallback = null;
+      let modalCancelCallback = null;
 
-        // Image assets
-        const playerImg = new Image();
-        const femaleDogImg = new Image();
-        let imagesToLoad = 2;
-        const PUG_ASSET_URL = "assets/pugWithDress.png";
-        const FEMALE_PUG_ASSET_URL = "assets/femalePug.png";
+      // Game state variables
+      let gameState = "menu";
+      let countdownValue = 3;
+      let gameTimerValue = 60;
+      let countdownInterval = null;
+      let scoreSavedThisSession = false;
+      let lastTime = 0;
 
-        const PLACEHOLDER_PLAYER_URL = "https://placehold.co/32x30/8B4513/FFFFFF?text=Pug&font=arial";
-        const PLACEHOLDER_FEMALE_URL = "https://placehold.co/32x32/FFC0CB/000000?text=Pup&font=arial";
+      // Language and Translations
+      let currentLanguage = "cz"; // Default language
+      const translations = {
+        gameTitle: { cz: "Pug Banger Fiesta", en: "Pug Banger Fiesta" },
+        playButton: { cz: "Hraj", en: "Play" },
+        leaderboardButton: { cz: "Žebříček", en: "Leaderboard" },
+        instructionsButton: { cz: "Návod", en: "Instructions" },
+        dressColorLabel: { cz: "Barva dresu:", en: "Dress Color:" },
+        navodTitle: { cz: "Návod ke hře", en: "Game Instructions" },
+        closeButton: { cz: "Zavřít", en: "Close" },
+        leaderboardTitle: { cz: "Žebříček", en: "Leaderboard" },
+        loadingText: { cz: "Načítání...", en: "Loading..." },
+        menuButton: { cz: "Menu", en: "Menu" },
+        noResultsText: {
+          cz: "Žádné výsledky k zobrazení.",
+          en: "No results to display.",
+        },
+        leaderboardErrorText: {
+          cz: "Chyba načítání žebříčku.",
+          en: "Error loading leaderboard.",
+        },
+        gameOverTitle: { cz: "Konec Hry!", en: "Game Over!" },
+        scoreLabel: { cz: "Skóre: ", en: "Score: " },
+        saveScoreButton: { cz: "Uložit skóre", en: "Save Score" },
+        savedButton: { cz: "Uloženo!", en: "Saved!" },
+        nameInputPlaceholder: {
+          cz: "Zadej jméno (max 10)",
+          en: "Enter name (max 10)",
+        },
+        confirmButton: { cz: "Uložit", en: "Save" }, // For prompt
+        okButton: { cz: "OK", en: "OK" }, // For alert
+        cancelButton: { cz: "Zrušit", en: "Cancel" },
+        scoreAlreadySaved: {
+          cz: "Skóre již bylo uloženo!",
+          en: "Score already saved!",
+        },
+        scoreSavedSuccess: { cz: "Skóre uloženo!", en: "Score saved!" },
+        nameEmptyError: {
+          cz: "Jméno nesmí být prázdné!",
+          en: "Name cannot be empty!",
+        },
+        dbError: {
+          cz: "Databáze není dostupná nebo uživatel není přihlášen. Skóre nebylo uloženo.",
+          en: "Database not available or user not signed in. Score not saved.",
+        },
+        dbSaveError: {
+          cz: "Chyba při ukládání skóre: ",
+          en: "Error saving score: ",
+        }, // Append error message
+        countdownGo: { cz: "TRHEJ!", en: "GO!" },
+        canvasTimeLabel: { cz: "Čas: ", en: "Time: " },
+        canvasScoreLabel: { cz: "Skóre: ", en: "Score: " },
+        dashButton: { cz: "DASH", en: "DASH" }, // DASH is often kept as is in games
+        singleTagResults: {
+          cz: [
+            "štěká, ale nekouše",
+            "Haf haf, a je po ptákách!",
+            "utrhnem se ze řetězu",
+            "o jé!",
+            "má naštěkáno do boudy!",
+            "silnější pes mrdá",
+            "beng beng beng, jak rej koranteng",
+            "vrtí ocasem, ta to chce",
+            "to je psina",
+            "dáme pac, příště zas",
+            "viděl jsem, štěknul jsem, prcnul jsem",
+            "hlídej si ocas, jdu na věc",
+            "rozjedem to na plný tlapky",
+            "mrskej se ty čubičko",
+            "štěňata se sama neudělaj!",
+            "štěknem si",
+            "epes rádes",
+          ],
+          en: [
+            "Barks but doesn't bite",
+            "Woof woof, game over birds!",
+            "Let's break the chain",
+            "Oh dear!",
+            "She's got bark in her kennel!",
+            "Stronger dog f***s",
+            "Bang bang bang, like a king's rang",
+            "Wags her tail, she wants it",
+            "That's doggone funny",
+            "Paw five, next time again",
+            "I saw, I barked, I banged",
+            "Watch your tail, I'm on it",
+            "Full paws ahead!",
+            "Wiggle it, bitch!",
+            "Puppies don't make themselves!",
+            "Let's bark it out",
+            "Epic style",
+          ],
+        },
+        multiTagResults: {
+          cz: {
+            2: "čubčí trojka",
+            3: "tři čubičky v řadě",
+            4: "čtyři čubičky, to je síla",
+            5: "pět čubiček, to je mazec",
+          },
+          en: {
+            2: "Double Dog Dare!",
+            3: "Triple Threat!",
+            4: "Quadruple Catch!",
+            5: "PENTA-DOMINATION!",
+          },
+        },
+        comboGeneric: { cz: "Kombo x", en: "Combo x" },
+      };
 
+      // Image assets
+      const playerImg = new Image();
+      const femaleDogImg = new Image();
+      let imagesToLoad = 2;
+      const PUG_ASSET_URL = "assets/pug.png";
+      const FEMALE_PUG_ASSET_URL = "assets/femalePug.png";
 
-        // Audio system
-        let tagSoundSynth, failSoundSynth, backgroundMusicLoop, musicSynth;
-        const synth = window.speechSynthesis;
-        let musicStarted = false;
-        let audioInitialized = false;
+      const PLACEHOLDER_PLAYER_URL =
+        "https://placehold.co/32x30/8B4513/FFFFFF?text=Pug&font=arial";
+      const PLACEHOLDER_FEMALE_URL =
+        "https://placehold.co/32x32/FFC0CB/000000?text=Pup&font=arial";
 
-        // --- Custom Modal Functions ---
-        function showCustomAlert(message, callback) {
-            modalMessage.textContent = message;
-            modalInput.style.display = "none";
-            modalCancelBtn.style.display = "none";
-            modalConfirmBtn.textContent = "OK";
-            customModal.style.display = "flex";
-            modalConfirmCallback = () => {
-                customModal.style.display = "none";
-                if (callback) callback();
-            };
-            modalCancelCallback = null;
+      // Audio system
+      let tagSoundSynth, failSoundSynth, backgroundMusicLoop, musicSynth;
+      const synth = window.speechSynthesis;
+      let musicStarted = false;
+      let audioInitialized = false;
+
+      // --- Update UI Language ---
+      function updateLanguageUI() {
+        gameTitleEl.textContent = translations.gameTitle[currentLanguage];
+        btnHraj.textContent = translations.playButton[currentLanguage];
+        btnZebricekMenu.textContent =
+          translations.leaderboardButton[currentLanguage];
+        btnNavod.textContent = translations.instructionsButton[currentLanguage];
+        document.getElementById("dressColorLabelText").textContent =
+          translations.dressColorLabel[currentLanguage];
+
+        // Navod Screen
+        navodTitleCz.textContent = translations.navodTitle["cz"]; // always set specific lang for these titles
+        navodTitleEn.textContent = translations.navodTitle["en"];
+        navodContentCz.style.display =
+          currentLanguage === "cz" ? "block" : "none";
+        navodContentEn.style.display =
+          currentLanguage === "en" ? "block" : "none";
+        btnNavodToMenu.textContent = translations.closeButton[currentLanguage];
+
+        // Leaderboard Screen
+        leaderboardTitleEl.textContent =
+          translations.leaderboardTitle[currentLanguage];
+        leaderboardLoadingTextEl.textContent =
+          translations.loadingText[currentLanguage]; // Update if visible
+        btnLeaderboardToMenu.textContent =
+          translations.menuButton[currentLanguage];
+
+        // Game Over Screen
+        document.getElementById("gameOverTitle").textContent =
+          translations.gameOverTitle[currentLanguage];
+        // gameOverScoreEl is updated in endGame()
+        btnSaveScoreGameOver.textContent = scoreSavedThisSession
+          ? translations.savedButton[currentLanguage]
+          : translations.saveScoreButton[currentLanguage];
+        btnZebricekGameOver.textContent =
+          translations.leaderboardButton[currentLanguage];
+        btnGameOverToMenu.textContent =
+          translations.menuButton[currentLanguage];
+
+        // Modal
+        modalInput.placeholder =
+          translations.nameInputPlaceholder[currentLanguage];
+        // Modal button text is set dynamically in showCustomAlert/Prompt
+
+        // Mobile controls
+        btnDashElement.textContent = translations.dashButton[currentLanguage];
+
+        // Update active language button style
+        btnLangCZ.classList.toggle("active", currentLanguage === "cz");
+        btnLangEN.classList.toggle("active", currentLanguage === "en");
+      }
+
+      // --- Custom Modal Functions ---
+      function showCustomAlert(messageKey, callback) {
+        // messageKey is now a key from translations
+        modalMessage.textContent = translations[messageKey]
+          ? translations[messageKey][currentLanguage]
+          : messageKey; // Fallback to raw message if key not found
+        modalInput.style.display = "none";
+        modalCancelBtn.style.display = "none";
+        modalConfirmBtn.textContent = translations.okButton[currentLanguage];
+        customModal.style.display = "flex";
+        modalConfirmCallback = () => {
+          customModal.style.display = "none";
+          if (callback) callback();
+        };
+        modalCancelCallback = null;
+      }
+
+      function showCustomPrompt(
+        messageKey,
+        defaultValue,
+        confirmCallback,
+        cancelCallback
+      ) {
+        // messageKey is now a key
+        modalMessage.textContent = translations[messageKey]
+          ? translations[messageKey][currentLanguage]
+          : messageKey;
+        modalInput.style.display = "block";
+        modalInput.value = defaultValue || "";
+        modalInput.placeholder =
+          translations.nameInputPlaceholder[currentLanguage];
+        modalConfirmBtn.textContent =
+          translations.confirmButton[currentLanguage];
+        modalCancelBtn.style.display = "inline-block";
+        modalCancelBtn.textContent = translations.cancelButton[currentLanguage];
+        customModal.style.display = "flex";
+
+        modalConfirmCallback = () => {
+          customModal.style.display = "none";
+          if (confirmCallback) confirmCallback(modalInput.value);
+        };
+        modalCancelCallback = () => {
+          customModal.style.display = "none";
+          if (cancelCallback) cancelCallback();
+        };
+      }
+
+      modalConfirmBtn.addEventListener("click", () => {
+        if (modalConfirmCallback) modalConfirmCallback();
+      });
+      modalCancelBtn.addEventListener("click", () => {
+        if (modalCancelCallback) modalCancelCallback();
+      });
+
+      // --- Canvas and Game Setup ---
+      function resizeCanvas() {
+        const gameContainer = document.getElementById("gameContainer");
+        const cW = gameContainer.offsetWidth;
+        const cH = gameContainer.offsetHeight;
+
+        const ratio = 4 / 3;
+        let nW = cW,
+          nH = cW / ratio;
+
+        if (nH > cH || cW === 0) {
+          // If height is constrained or width is zero
+          nH = cH;
+          nW = cH * ratio;
+        }
+        if (nH === 0 && cW > 0) {
+          // If height is zero but width is not (e.g. during initial layout)
+          nW = cW;
+          nH = nW / ratio;
         }
 
-        function showCustomPrompt(message, defaultValue, confirmCallback, cancelCallback) {
-            modalMessage.textContent = message;
-            modalInput.style.display = "block";
-            modalInput.value = defaultValue || "";
-            modalInput.placeholder = "Zadej jméno (max 10)";
-            modalConfirmBtn.textContent = "Uložit";
-            modalCancelBtn.style.display = "inline-block";
-            modalCancelBtn.textContent = "Zrušit";
-            customModal.style.display = "flex";
+        canvas.width = Math.max(1, Math.floor(nW)); // Ensure canvas has at least 1x1 dimensions
+        canvas.height = Math.max(1, Math.floor(nH));
+        ctx.imageSmoothingEnabled = false; // For pixel art
+      }
+      window.addEventListener("resize", resizeCanvas);
 
-            modalConfirmCallback = () => {
-                customModal.style.display = "none";
-                if (confirmCallback) confirmCallback(modalInput.value);
-            };
-            modalCancelCallback = () => {
-                customModal.style.display = "none";
-                if (cancelCallback) cancelCallback();
-            };
-        }
+      // --- Audio Initialization and Playback ---
+      if (typeof Tone !== "undefined") {
+        tagSoundSynth = new Tone.Synth({
+          oscillator: { type: "sine" },
+          envelope: { attack: 0.005, decay: 0.1, sustain: 0.05, release: 0.1 },
+        }).toDestination();
+        failSoundSynth = new Tone.Synth({
+          oscillator: { type: "square" },
+          envelope: { attack: 0.01, decay: 0.2, sustain: 0, release: 0.1 },
+          volume: -10,
+        }).toDestination();
+        musicSynth = new Tone.Synth({
+          oscillator: { type: "triangle8" },
+          envelope: { attack: 0.01, decay: 0.2, sustain: 0.1, release: 0.3 },
+          volume: -15,
+        }).toDestination();
+        const musicNotes = [
+          "C4",
+          "E4",
+          "G4",
+          "C5",
+          "A4",
+          "G4",
+          "E4",
+          "C4",
+          "D4",
+          "F4",
+          "A4",
+          "D5",
+          "B4",
+          "A4",
+          "F4",
+          "D4",
+          "E4",
+          "G4",
+          "B4",
+          "E5",
+          "C5",
+          "B4",
+          "G4",
+          "E4",
+          "F4",
+          "A4",
+          "C5",
+          "F5",
+          "D5",
+          "C5",
+          "A4",
+          "F4",
+        ];
+        let noteIndex = 0;
+        backgroundMusicLoop = new Tone.Loop((t) => {
+          musicSynth.triggerAttackRelease(
+            musicNotes[noteIndex++ % musicNotes.length],
+            "8n",
+            t
+          );
+        }, "4n");
+        Tone.Transport.bpm.value = 130;
+      } else {
+        console.warn(
+          "Tone.js not loaded. Sound effects and music will be unavailable."
+        );
+      }
 
-        modalConfirmBtn.addEventListener("click", () => {
-            if (modalConfirmCallback) modalConfirmCallback();
-        });
-        modalCancelBtn.addEventListener("click", () => {
-            if (modalCancelCallback) modalCancelCallback();
-        });
+      function playTagSound() {
+        if (tagSoundSynth && Tone.context.state === "running")
+          tagSoundSynth.triggerAttackRelease("G5", "32n", Tone.now());
+      }
+      function playFailSound() {
+        if (failSoundSynth && Tone.context.state === "running")
+          failSoundSynth.triggerAttackRelease("C2", "16n", Tone.now());
+      }
 
-
-        // --- Canvas and Game Setup ---
-        function resizeCanvas() {
-            const gameContainer = document.getElementById("gameContainer");
-            const cW = gameContainer.offsetWidth;
-            const cH = gameContainer.offsetHeight;
-
-            const ratio = 4 / 3;
-            let nW = cW, nH = cW / ratio;
-
-            if (nH > cH || cW === 0) {
-                nH = cH;
-                nW = cH * ratio;
-            }
-            if (nH === 0 && cW > 0) {
-                nW = cW;
-                nH = nW / ratio;
-            }
-
-            canvas.width = Math.max(1, Math.floor(nW));
-            canvas.height = Math.max(1, Math.floor(nH));
-            ctx.imageSmoothingEnabled = false;
-        }
-        window.addEventListener("resize", resizeCanvas);
-
-
-        // --- Audio Initialization and Playback ---
-        if (typeof Tone !== "undefined") {
-            tagSoundSynth = new Tone.Synth({ oscillator: { type: "sine" }, envelope: { attack: 0.005, decay: 0.1, sustain: 0.05, release: 0.1 } }).toDestination();
-            failSoundSynth = new Tone.Synth({ oscillator: { type: "square" }, envelope: { attack: 0.01, decay: 0.2, sustain: 0, release: 0.1 }, volume: -10 }).toDestination();
-            musicSynth = new Tone.Synth({ oscillator: { type: "triangle8" }, envelope: { attack: 0.01, decay: 0.2, sustain: 0.1, release: 0.3 }, volume: -15 }).toDestination();
-            const musicNotes = ["C4", "E4", "G4", "C5", "A4", "G4", "E4", "C4", "D4", "F4", "A4", "D5", "B4", "A4", "F4", "D4", "E4", "G4", "B4", "E5", "C5", "B4", "G4", "E4", "F4", "A4", "C5", "F5", "D5", "C5", "A4", "F4"];
-            let noteIndex = 0;
-            backgroundMusicLoop = new Tone.Loop(t => {
-                musicSynth.triggerAttackRelease(musicNotes[noteIndex++ % musicNotes.length], "8n", t);
-            }, "4n");
-            Tone.Transport.bpm.value = 130;
+      function playSilentUtterance() {
+        if (
+          synth &&
+          audioInitialized &&
+          synth.getVoices &&
+          synth.getVoices().length > 0
+        ) {
+          if (synth.speaking) {
+            console.log("TTS already speaking, skipping silent utterance.");
+            return;
+          }
+          const emptyUtterance = new SpeechSynthesisUtterance(" ");
+          emptyUtterance.volume = 0;
+          emptyUtterance.rate = 10;
+          emptyUtterance.pitch = 0;
+          const voices = synth.getVoices();
+          if (voices.length > 0) emptyUtterance.voice = voices[0];
+          synth.speak(emptyUtterance);
+          console.log(
+            "Played silent utterance to potentially initialize TTS on mobile."
+          );
         } else {
-            console.warn("Tone.js not loaded. Sound effects and music will be unavailable.");
+          // console.warn("Cannot play silent utterance: TTS not ready or no voices.");
         }
+      }
 
-        function playTagSound() { if (tagSoundSynth && Tone.context.state === "running") tagSoundSynth.triggerAttackRelease("G5", "32n", Tone.now()); }
-        function playFailSound() { if (failSoundSynth && Tone.context.state === "running") failSoundSynth.triggerAttackRelease("C2", "16n", Tone.now()); }
+      function speakText(text) {
+        // Text should be pre-translated
+        if (
+          synth &&
+          text &&
+          audioInitialized &&
+          synth.getVoices &&
+          synth.getVoices().length > 0
+        ) {
+          if (synth.speaking) {
+            synth.cancel();
+          }
+          const u = new SpeechSynthesisUtterance(text);
+          let voiceToUse = null;
+          const voices = synth.getVoices();
 
-        function playSilentUtterance() {
-            if (synth && audioInitialized && synth.getVoices && synth.getVoices().length > 0) {
-                // Check if speech is already in progress to avoid interrupting actual speech
-                if (synth.speaking) {
-                    console.log("TTS already speaking, skipping silent utterance.");
-                    return;
-                }
-                const emptyUtterance = new SpeechSynthesisUtterance(" "); // A single space or empty string
-                emptyUtterance.volume = 0; // Ensure it's silent
-                emptyUtterance.rate = 10; // Speak fast
-                emptyUtterance.pitch = 0; // Low pitch
+          if (currentLanguage === "cz") {
+            voiceToUse =
+              voices.find((voice) => voice.lang === "cs-CZ") ||
+              voices.find((voice) => voice.lang.startsWith("cs"));
+            u.lang = voiceToUse ? voiceToUse.lang : "cs-CZ";
+          } else {
+            // 'en'
+            voiceToUse =
+              voices.find((voice) => voice.lang === "en-US") ||
+              voices.find((voice) => voice.lang === "en-GB") ||
+              voices.find((voice) => voice.lang.startsWith("en"));
+            u.lang = voiceToUse ? voiceToUse.lang : "en-US";
+          }
 
-                // Attempt to find any available voice to ensure it's set
-                const voices = synth.getVoices();
-                if (voices.length > 0) {
-                    emptyUtterance.voice = voices[0]; // Use the first available voice
-                }
-
-                synth.speak(emptyUtterance);
-                console.log("Played silent utterance to potentially initialize TTS on mobile.");
-            } else {
-                console.warn("Cannot play silent utterance: TTS not ready or no voices.");
-            }
+          if (voiceToUse) {
+            u.voice = voiceToUse;
+          } else {
+            console.warn(
+              `No specific voice found for lang: ${u.lang}. Using default.`
+            );
+          }
+          u.pitch = 1.2;
+          u.rate = 1.1;
+          synth.speak(u);
+        } else if (synth && !audioInitialized) {
+          console.warn(
+            "Speech synthesis called before audio system fully initialized or no voices available."
+          );
         }
+      }
 
-        function speakText(text) {
-            if (synth && text && audioInitialized && synth.getVoices && synth.getVoices().length > 0) {
-                if (synth.speaking) { // Cancel previous speech if any, to prevent overlap
-                    synth.cancel();
-                }
-                const u = new SpeechSynthesisUtterance(text);
-                const czechVoice = synth.getVoices().find(voice => voice.lang === 'cs-CZ');
-                if (czechVoice) {
-                    u.voice = czechVoice;
-                    u.lang = 'cs-CZ';
-                } else {
-                    u.lang = 'cs-CZ';
-                }
-                u.pitch = 1.2; u.rate = 1.1;
-                synth.speak(u);
-            } else if (synth && !audioInitialized) {
-                console.warn("Speech synthesis called before audio system fully initialized or no voices available.");
-            }
+      function initAudioSystemOnce() {
+        if (audioInitialized) return;
+        if (Tone && Tone.context.state !== "running") {
+          Tone.start()
+            .then(() => {
+              console.log("Tone.js audio context started.");
+              audioInitialized = true;
+              if (synth && typeof synth.getVoices === "function") {
+                synth.getVoices(); // Pre-warm voices
+                setTimeout(playSilentUtterance, 100);
+              }
+            })
+            .catch((e) =>
+              console.error("Tone.js audio context start error:", e)
+            );
+        } else if (Tone && Tone.context.state === "running") {
+          audioInitialized = true;
+          if (synth && typeof synth.getVoices === "function") {
+            synth.getVoices();
+            setTimeout(playSilentUtterance, 100);
+          }
+        } else {
+          // Tone not available or already running
+          audioInitialized = true; // Mark as initialized for TTS
+          console.warn(
+            "Tone.js not available, audio system minimally initialized for TTS."
+          );
+          if (synth && typeof synth.getVoices === "function") {
+            synth.getVoices();
+            setTimeout(playSilentUtterance, 100);
+          }
         }
+      }
+      // Try to initialize audio on first user interaction
+      document.body.addEventListener("click", initAudioSystemOnce, {
+        once: true,
+      });
+      document.body.addEventListener("touchstart", initAudioSystemOnce, {
+        once: true,
+      });
 
-        function initAudioSystemOnce() {
-            if (audioInitialized) return;
-            if (Tone && Tone.context.state !== "running") {
-                Tone.start().then(() => {
-                    console.log("Tone.js audio context started.");
-                    audioInitialized = true;
-                    if (synth && typeof synth.getVoices === 'function') {
-                        synth.getVoices();
-                        // After Tone.start() and voices are potentially loaded, try to play a silent utterance
-                        // This is a common trick for mobile browser audio unblocking
-                        setTimeout(playSilentUtterance, 100); // Small delay
-                    }
-                }).catch(e => console.error("Tone.js audio context start error:", e));
-            } else if (Tone && Tone.context.state === "running") {
-                audioInitialized = true;
-                if (synth && typeof synth.getVoices === 'function') {
-                    synth.getVoices();
-                    setTimeout(playSilentUtterance, 100);
-                }
-            } else {
-                audioInitialized = true;
-                console.warn("Tone.js not available, audio system minimally initialized.");
-                if (synth && typeof synth.getVoices === 'function') {
-                    synth.getVoices(); // Still try to get voices
-                    setTimeout(playSilentUtterance, 100);
-                }
-            }
+      // --- Image Loading ---
+      function imageLoaded() {
+        imagesToLoad--;
+        if (imagesToLoad === 0) {
+          console.log("All critical images loaded/failed.");
+          resizeCanvas(); // Resize once images are loaded (for correct aspect ratio if needed)
+          showMenu(); // Show menu after images (and initial resize)
+          updateLanguageUI(); // Apply initial language settings
         }
-        document.body.addEventListener('click', initAudioSystemOnce, { once: true });
-        document.body.addEventListener('touchstart', initAudioSystemOnce, { once: true });
+      }
+      playerImg.onload = imageLoaded;
+      femaleDogImg.onload = imageLoaded;
 
+      playerImg.onerror = () => {
+        console.error(
+          "Player image (" +
+            PUG_ASSET_URL +
+            ") failed to load. Using placeholder."
+        );
+        playerImg.src = PLACEHOLDER_PLAYER_URL; // This will trigger onload again for the placeholder
+      };
+      femaleDogImg.onerror = () => {
+        console.error(
+          "Female dog image (" +
+            FEMALE_PUG_ASSET_URL +
+            ") failed to load. Using placeholder."
+        );
+        femaleDogImg.src = PLACEHOLDER_FEMALE_URL; // This will trigger onload again
+      };
 
-        // --- Image Loading ---
-        function imageLoaded() {
-            imagesToLoad--;
-            if (imagesToLoad === 0) {
-                console.log("All critical images loaded/failed.");
-                resizeCanvas();
-                showMenu();
-            }
+      playerImg.src = PUG_ASSET_URL;
+      femaleDogImg.src = FEMALE_PUG_ASSET_URL;
+
+      const dressImg = new Image();
+      const DRESS_ASSET_URL = "assets/dress.png";
+      dressImg.onload = imageLoaded;
+      dressImg.onerror = () => {
+        console.error("Dress image failed, using blank.");
+        imagesToLoad--; // Decrement as this image is optional for core game logic
+        if (imagesToLoad === 0 && gameState === "menu") {
+          // If it was the last one
+          resizeCanvas();
+          showMenu();
+          updateLanguageUI();
         }
-        playerImg.onload = imageLoaded;
-        femaleDogImg.onload = imageLoaded;
+      };
+      dressImg.src = DRESS_ASSET_URL;
+      imagesToLoad++; // Increment for the dress image
 
-        playerImg.onerror = () => {
-            console.error("Player image (" + PUG_ASSET_URL + ") failed to load. Using placeholder.");
-            playerImg.src = PLACEHOLDER_PLAYER_URL;
+      let dressTint = "#FFFFFF";
+      document
+        .getElementById("dressColorPicker")
+        .addEventListener("input", (e) => (dressTint = e.target.value));
+
+      // --- Game Constants and Variables ---
+      const SPRITE_SCALE_BASE = 1.5;
+      let currentSpriteScale = SPRITE_SCALE_BASE;
+      const PLAYER_BASE_WIDTH = 32,
+        PLAYER_BASE_HEIGHT = 30;
+      const FEMALE_DOG_BASE_WIDTH = 32,
+        FEMALE_DOG_BASE_HEIGHT = 32;
+      const PLAYER_SPEED_BASE = 200;
+      const FEMALE_DOG_SPEED_BASE = 120;
+      let playerSpeed = PLAYER_SPEED_BASE;
+      let femaleDogSpeed = FEMALE_DOG_SPEED_BASE;
+
+      const DASH_SPEED_MULTIPLIER = 2.5;
+      const DASH_DURATION = 0.25;
+      const FLEE_RADIUS_BASE = 150;
+      let fleeRadius = FLEE_RADIUS_BASE;
+      const MAX_FEMALE_DOGS = 5;
+      const FEMALE_DOG_SPAWN_COOLDOWN = 2.0;
+      const TAG_LOCK_DURATION = 0.33;
+      const TAG_ANIMATION_TOTAL_DURATION = 0.83;
+      const SUCCESS_TEXT_DURATION = 1.5;
+      const PARTICLE_DURATION = 0.5;
+      const MISS_LUNGE_DURATION = 0.2;
+      const HEART_ANIM_DURATION = 1.16;
+
+      let player,
+        femaleDogs = [],
+        score = 0,
+        keys = {};
+      let femaleDogSpawnTimer = 0,
+        taggedDogInfo = null;
+      let successMessages = [],
+        heartAnimations = [],
+        backgroundFlowers = [];
+
+      // --- Entity Creation ---
+      function createPlayer() {
+        const sw = PLAYER_BASE_WIDTH * currentSpriteScale;
+        const sh = PLAYER_BASE_HEIGHT * currentSpriteScale;
+        return {
+          x: canvas.width / 2 - sw / 2,
+          y: canvas.height / 2 - sh / 2,
+          width: sw,
+          height: sh,
+          speed: playerSpeed,
+          dx: 0,
+          dy: 0,
+          isDashing: false,
+          dashTimer: 0,
+          currentDashSpeed: 0,
+          trail: [],
+          maxTrailLength: 4,
+          isCurrentlyTagging: false,
+          tagLockTimer: 0,
+          isMissLungeAnimating: false,
+          missLungeTimer: 0,
+          facingDirection: 1,
         };
-        femaleDogImg.onerror = () => {
-            console.error("Female dog image (" + FEMALE_PUG_ASSET_URL + ") failed to load. Using placeholder.");
-            femaleDogImg.src = PLACEHOLDER_FEMALE_URL;
+      }
+      function createFemaleDog() {
+        const p = canvas.width * 0.05; // padding from edges
+        const sw = FEMALE_DOG_BASE_WIDTH * currentSpriteScale;
+        const sh = FEMALE_DOG_BASE_HEIGHT * currentSpriteScale;
+        return {
+          x: Math.random() * (canvas.width - sw - 2 * p) + p,
+          y: Math.random() * (canvas.height - sh - 2 * p) + p,
+          width: sw,
+          height: sh,
+          speed: femaleDogSpeed,
+          dx: (Math.random() - 0.5) * 2,
+          dy: (Math.random() - 0.5) * 2, // Normalized random direction
+          moveTimer: Math.random() * 2 + 1, // Change direction every 1-3 seconds
+          facingDirection: Math.random() < 0.5 ? -1 : 1,
         };
-
-        playerImg.src = PUG_ASSET_URL;
-        femaleDogImg.src = FEMALE_PUG_ASSET_URL;
-
-        // ↓ under the other image assets
-        const dressImg = new Image();
-        const DRESS_ASSET_URL = "assets/dress2.png";
-        dressImg.onload = imageLoaded;
-        dressImg.onerror = () => {
-            console.error("Dress image failed, using blank.");
-            imagesToLoad--;                         // keep loader working
+      }
+      function createParticle(x, y) {
+        return {
+          x: x,
+          y: y,
+          size: Math.random() * 5 + 2,
+          speedX: (Math.random() - 0.5) * 120,
+          speedY: (Math.random() - 0.5) * 120 - 60,
+          alpha: 1,
+          duration: PARTICLE_DURATION,
+          color: `hsl(${Math.random() * 60 + 200},100%,70%)`,
         };
-        dressImg.src = DRESS_ASSET_URL;
-        imagesToLoad++;                            // one extra asset
+      }
+      function createFlower() {
+        const petalColors = [
+          "#FFEB3B",
+          "#FFC107",
+          "#FFF176",
+          "#FF80AB",
+          "#F8BBD0",
+          "#E1BEE7",
+          "#81D4FA",
+          "#B3E5FC",
+        ];
+        const x = Math.random() * canvas.width;
+        const y = Math.random() * (canvas.height * 0.8) + canvas.height * 0.2; // Lower 80% of canvas
+        const stemHeight =
+          Math.random() * (canvas.height / 20) + canvas.height / 30;
+        const centerRadius =
+          Math.random() * (canvas.width / 200) + canvas.width / 250;
+        const petalRadius =
+          Math.random() * (canvas.width / 150) + canvas.width / 200;
+        const numPetals = Math.floor(Math.random() * 3) + 5; // 5-7 petals
+        return {
+          x,
+          y,
+          stemHeight,
+          centerRadius,
+          petalRadius,
+          numPetals,
+          petalColor:
+            petalColors[Math.floor(Math.random() * petalColors.length)],
+          stemColor: "#4CAF50",
+        };
+      }
 
+      // --- Input Handling (Keyboard & Touch) ---
+      document.addEventListener("keydown", (e) => {
+        keys[e.key.toLowerCase()] = true;
+        initAudioSystemOnce();
+      });
+      document.addEventListener("keyup", (e) => {
+        keys[e.key.toLowerCase()] = false;
+      });
 
-        let dressTint = "#FFFFFF";
-        document.getElementById("dressColorPicker")
-            .addEventListener("input", e => dressTint = e.target.value);
+      let joystickActive = false,
+        joystickBaseRectState,
+        joystickRadiusState,
+        knobRadiusState,
+        maxKnobDisplacementState,
+        currentJoystickTouchId = null;
 
-        // --- Game Constants and Variables ---
-        const SPRITE_SCALE_BASE = 1.5;
-        let currentSpriteScale = SPRITE_SCALE_BASE;
-        const PLAYER_BASE_WIDTH = 32, PLAYER_BASE_HEIGHT = 30;
-        const FEMALE_DOG_BASE_WIDTH = 32, FEMALE_DOG_BASE_HEIGHT = 32;
-        const PLAYER_SPEED_BASE = 200;
-        const FEMALE_DOG_SPEED_BASE = 120;
-        let playerSpeed = PLAYER_SPEED_BASE;
-        let femaleDogSpeed = FEMALE_DOG_SPEED_BASE;
+      function updateJoystickPositionAndKeys(currentX, currentY) {
+        if (!joystickBaseRectState || joystickRadiusState <= 0) return;
+        const baseCenterX = joystickBaseRectState.left + joystickRadiusState;
+        const baseCenterY = joystickBaseRectState.top + joystickRadiusState;
+        let deltaX = currentX - baseCenterX;
+        let deltaY = currentY - baseCenterY;
+        const distance = Math.sqrt(deltaX * deltaX + deltaY * deltaY);
+        const angle = Math.atan2(deltaY, deltaX);
 
-        const DASH_SPEED_MULTIPLIER = 2.5;
-        const DASH_DURATION = 0.25;
-        const FLEE_RADIUS_BASE = 150;
-        let fleeRadius = FLEE_RADIUS_BASE;
-        const MAX_FEMALE_DOGS = 5;
-        const FEMALE_DOG_SPAWN_COOLDOWN = 2.0;
-        const TAG_LOCK_DURATION = 0.33;
-        const TAG_ANIMATION_TOTAL_DURATION = 0.83;
-        const SUCCESS_TEXT_DURATION = 1.5;
-        const PARTICLE_DURATION = 0.5;
-        const MISS_LUNGE_DURATION = 0.2;
-        const HEART_ANIM_DURATION = 1.16;
-
-        let player, femaleDogs = [], score = 0, keys = {};
-        let femaleDogSpawnTimer = 0, taggedDogInfo = null;
-        let successMessages = [], heartAnimations = [], backgroundFlowers = [];
-
-        const singleTagTexts = ["štěká, ale nekouše", "Haf haf, a je po ptákách!", "utrhnem se ze řetězu", "o jé!", "má naštěkáno do boudy!", "silnější pes mrdá", "beng beng beng, jak rej koranteng", "vrtí ocasem, ta to chce", "to je psina", "dáme pac, příště zas", "viděl jsem, štěknul jsem, prcnul jsem", "hlídej si ocas, jdu na věc", "rozjedem to na plný tlapky", "mrskej se ty čubičko", "štěňata se sama neudělaj!", "štěknem si", "epes rádes"];
-        const multiTagTexts = { 2: "čubčí trojka", 3: "tři čubičky v řadě", 4: "čtyři čubičky, to je síla", 5: "pět čubiček, to je mazec" };
-
-        // --- Entity Creation ---
-        function createPlayer() {
-            const sw = PLAYER_BASE_WIDTH * currentSpriteScale;
-            const sh = PLAYER_BASE_HEIGHT * currentSpriteScale;
-            return {
-                x: canvas.width / 2 - sw / 2, y: canvas.height / 2 - sh / 2,
-                width: sw, height: sh, speed: playerSpeed,
-                dx: 0, dy: 0,
-                isDashing: false, dashTimer: 0, currentDashSpeed: 0,
-                trail: [], maxTrailLength: 4,
-                isCurrentlyTagging: false, tagLockTimer: 0,
-                isMissLungeAnimating: false, missLungeTimer: 0,
-                facingDirection: 1
-            };
+        if (distance > maxKnobDisplacementState) {
+          deltaX = Math.cos(angle) * maxKnobDisplacementState;
+          deltaY = Math.sin(angle) * maxKnobDisplacementState;
         }
-        function createFemaleDog() {
-            const p = canvas.width * 0.05;
-            const sw = FEMALE_DOG_BASE_WIDTH * currentSpriteScale;
-            const sh = FEMALE_DOG_BASE_HEIGHT * currentSpriteScale;
-            return {
-                x: Math.random() * (canvas.width - sw - 2 * p) + p,
-                y: Math.random() * (canvas.height - sh - 2 * p) + p,
-                width: sw, height: sh, speed: femaleDogSpeed,
-                dx: (Math.random() - 0.5) * 2, dy: (Math.random() - 0.5) * 2,
-                moveTimer: Math.random() * 2 + 1,
-                facingDirection: (Math.random() < 0.5 ? -1 : 1)
-            };
+        joystickKnob.style.transform = `translate(calc(-50% + ${deltaX}px), calc(-50% + ${deltaY}px))`;
+
+        // Reset keys
+        keys["w"] = false;
+        keys["a"] = false;
+        keys["s"] = false;
+        keys["d"] = false;
+        const angleDeg = (angle * 180) / Math.PI;
+        const deadZone = knobRadiusState * 0.2; // 20% deadzone
+
+        if (distance > deadZone) {
+          // Only register input if outside deadzone
+          if (angleDeg >= -22.5 && angleDeg < 22.5) keys["d"] = true; // Right
+          else if (angleDeg >= 22.5 && angleDeg < 67.5) {
+            keys["s"] = true;
+            keys["d"] = true;
+          } // Down-Right
+          else if (angleDeg >= 67.5 && angleDeg < 112.5)
+            keys["s"] = true; // Down
+          else if (angleDeg >= 112.5 && angleDeg < 157.5) {
+            keys["s"] = true;
+            keys["a"] = true;
+          } // Down-Left
+          else if (angleDeg >= 157.5 || angleDeg < -157.5)
+            keys["a"] = true; // Left
+          else if (angleDeg >= -157.5 && angleDeg < -112.5) {
+            keys["w"] = true;
+            keys["a"] = true;
+          } // Up-Left
+          else if (angleDeg >= -112.5 && angleDeg < -67.5)
+            keys["w"] = true; // Up
+          else if (angleDeg >= -67.5 && angleDeg < -22.5) {
+            keys["w"] = true;
+            keys["d"] = true;
+          } // Up-Right
         }
-        function createParticle(x, y) {
-            return { x: x, y: y, size: Math.random() * 5 + 2, speedX: (Math.random() - 0.5) * 120, speedY: (Math.random() - 0.5) * 120 - 60, alpha: 1, duration: PARTICLE_DURATION, color: `hsl(${Math.random() * 60 + 200},100%,70%)` };
-        }
-        function createFlower() {
-            const petalColors = ["#FFEB3B", "#FFC107", "#FFF176", "#FF80AB", "#F8BBD0", "#E1BEE7", "#81D4FA", "#B3E5FC"];
-            const x = Math.random() * canvas.width;
-            const y = Math.random() * (canvas.height * 0.8) + canvas.height * 0.2;
-            const stemHeight = Math.random() * (canvas.height / 20) + (canvas.height / 30);
-            const centerRadius = Math.random() * (canvas.width / 200) + (canvas.width / 250);
-            const petalRadius = Math.random() * (canvas.width / 150) + (canvas.width / 200);
-            const numPetals = Math.floor(Math.random() * 3) + 5;
-            return { x, y, stemHeight, centerRadius, petalRadius, numPetals, petalColor: petalColors[Math.floor(Math.random() * petalColors.length)], stemColor: "#4CAF50" };
-        }
+      }
 
-        // --- Input Handling (Keyboard & Touch) ---
-        document.addEventListener("keydown", (e) => { keys[e.key.toLowerCase()] = true; initAudioSystemOnce(); });
-        document.addEventListener("keyup", (e) => { keys[e.key.toLowerCase()] = false; });
-
-        let joystickActive = false, joystickBaseRectState, joystickRadiusState, knobRadiusState, maxKnobDisplacementState, currentJoystickTouchId = null;
-
-        function updateJoystickPositionAndKeys(currentX, currentY) {
-            if (!joystickBaseRectState || joystickRadiusState <= 0) return;
-            const baseCenterX = joystickBaseRectState.left + joystickRadiusState;
-            const baseCenterY = joystickBaseRectState.top + joystickRadiusState;
-            let deltaX = currentX - baseCenterX;
-            let deltaY = currentY - baseCenterY;
-            const distance = Math.sqrt(deltaX * deltaX + deltaY * deltaY);
-            const angle = Math.atan2(deltaY, deltaX);
-
-            if (distance > maxKnobDisplacementState) {
-                deltaX = Math.cos(angle) * maxKnobDisplacementState;
-                deltaY = Math.sin(angle) * maxKnobDisplacementState;
-            }
-            joystickKnob.style.transform = `translate(calc(-50% + ${deltaX}px), calc(-50% + ${deltaY}px))`;
-
-            keys["w"] = false; keys["a"] = false; keys["s"] = false; keys["d"] = false;
-            const angleDeg = (angle * 180) / Math.PI;
-            const deadZone = knobRadiusState * 0.2;
-
-            if (distance > deadZone) {
-                if (angleDeg >= -22.5 && angleDeg < 22.5) keys["d"] = true;
-                else if (angleDeg >= 22.5 && angleDeg < 67.5) { keys["s"] = true; keys["d"] = true; }
-                else if (angleDeg >= 67.5 && angleDeg < 112.5) keys["s"] = true;
-                else if (angleDeg >= 112.5 && angleDeg < 157.5) { keys["s"] = true; keys["a"] = true; }
-                else if (angleDeg >= 157.5 || angleDeg < -157.5) keys["a"] = true;
-                else if (angleDeg >= -157.5 && angleDeg < -112.5) { keys["w"] = true; keys["a"] = true; }
-                else if (angleDeg >= -112.5 && angleDeg < -67.5) keys["w"] = true;
-                else if (angleDeg >= -67.5 && angleDeg < -22.5) { keys["w"] = true; keys["d"] = true; }
-            }
-        }
-
-        joystickBase.addEventListener("touchstart", (e) => {
-            e.preventDefault(); initAudioSystemOnce();
-            if (e.touches.length === 1 || !currentJoystickTouchId) {
-                currentJoystickTouchId = e.touches[0].identifier;
-                joystickBaseRectState = joystickBase.getBoundingClientRect();
-                joystickRadiusState = joystickBaseRectState.width / 2;
-                knobRadiusState = joystickKnob.offsetWidth / 2 || 30;
-                maxKnobDisplacementState = joystickRadiusState - knobRadiusState;
-                if (joystickRadiusState <= 0) { console.warn("Joystick base has no dimensions on touchstart."); return; }
-                joystickActive = true;
-                updateJoystickPositionAndKeys(e.touches[0].clientX, e.touches[0].clientY);
-            }
-        }, { passive: false });
-        joystickBase.addEventListener("mousedown", (e) => {
-            e.preventDefault(); initAudioSystemOnce();
+      joystickBase.addEventListener(
+        "touchstart",
+        (e) => {
+          e.preventDefault();
+          initAudioSystemOnce();
+          if (e.touches.length === 1 || !currentJoystickTouchId) {
+            // Start only if it's the first touch or current one is gone
+            currentJoystickTouchId = e.touches[0].identifier;
             joystickBaseRectState = joystickBase.getBoundingClientRect();
             joystickRadiusState = joystickBaseRectState.width / 2;
-            knobRadiusState = joystickKnob.offsetWidth / 2 || 30;
+            knobRadiusState = joystickKnob.offsetWidth / 2 || 30; // Fallback if offsetWidth is 0
             maxKnobDisplacementState = joystickRadiusState - knobRadiusState;
-            if (joystickRadiusState <= 0) { console.warn("Joystick base has no dimensions on mousedown."); return; }
+            if (joystickRadiusState <= 0) {
+              console.warn("Joystick base has no dimensions on touchstart.");
+              return;
+            }
             joystickActive = true;
-            updateJoystickPositionAndKeys(e.clientX, e.clientY);
-        }, { passive: false });
-
-        document.addEventListener("touchmove", (e) => {
-            if (!joystickActive || gameState !== "playing" || currentJoystickTouchId === null) return;
-            for (let i = 0; i < e.touches.length; i++) {
-                if (e.touches[i].identifier === currentJoystickTouchId) {
-                    updateJoystickPositionAndKeys(e.touches[i].clientX, e.touches[i].clientY);
-                    break;
-                }
-            }
-        }, { passive: false });
-        document.addEventListener("mousemove", (e) => {
-            if (!joystickActive || gameState !== "playing") return;
-            updateJoystickPositionAndKeys(e.clientX, e.clientY);
-        }, { passive: false });
-
-        document.addEventListener("touchend", (e) => {
-            for (let i = 0; i < e.changedTouches.length; i++) {
-                if (e.changedTouches[i].identifier === currentJoystickTouchId) {
-                    joystickActive = false; currentJoystickTouchId = null;
-                    joystickKnob.style.transform = "translate(-50%, -50%)";
-                    keys["w"] = keys["a"] = keys["s"] = keys["d"] = false;
-                    break;
-                }
-            }
-        });
-        document.addEventListener("mouseup", (e) => {
-            if (joystickActive) {
-                joystickActive = false;
-                joystickKnob.style.transform = "translate(-50%, -50%)";
-                keys["w"] = keys["a"] = keys["s"] = keys["d"] = false;
-            }
-        });
-
-        if (btnDashElement) {
-            const handleDashStart = (e) => { e.preventDefault(); keys[" "] = true; initAudioSystemOnce(); };
-            const handleDashEnd = (e) => { e.preventDefault(); keys[" "] = false; };
-            btnDashElement.addEventListener("touchstart", handleDashStart, { passive: false });
-            btnDashElement.addEventListener("touchend", handleDashEnd, { passive: false });
-            btnDashElement.addEventListener("mousedown", handleDashStart, { passive: false });
-            btnDashElement.addEventListener("mouseup", handleDashEnd, { passive: false });
-        }
-
-        // --- Screen Management ---
-        function showScreen(screenToShow) {
-            menuScreen.style.display = "none"; navodScreen.style.display = "none";
-            leaderboardScreen.style.display = "none"; gameOverScreen.style.display = "none";
-            canvas.style.display = "none"; controlsContainer.style.display = "none";
-            buyMeACoffeeContainer.style.display = "none";
-
-            if (screenToShow === "menu") { menuScreen.style.display = "flex"; buyMeACoffeeContainer.style.display = "block"; }
-            else if (screenToShow === "navod") navodScreen.style.display = "flex";
-            else if (screenToShow === "leaderboard") leaderboardScreen.style.display = "flex";
-            else if (screenToShow === "gameOver") gameOverScreen.style.display = "flex";
-            else if (screenToShow === "game") {
-                canvas.style.display = "block";
-                controlsContainer.style.display = "flex";
-                resizeCanvas();
-            }
-        }
-
-        function showMenu() {
-            gameState = "menu"; showScreen("menu"); scoreSavedThisSession = false;
-            if (btnSaveScoreGameOver) { btnSaveScoreGameOver.disabled = false; btnSaveScoreGameOver.textContent = "Uložit skóre"; }
-            if (musicStarted && backgroundMusicLoop && Tone && Tone.Transport) { backgroundMusicLoop.stop(); Tone.Transport.stop(); musicStarted = false; console.log("Music stopped for menu."); }
-        }
-
-        // --- Button Event Listeners for Screen Transitions ---
-        btnHraj.addEventListener("click", () => {
-            initAudioSystemOnce();
-            playSilentUtterance(); // Attempt to wake up TTS
-            showScreen("game");
-            startCountdown();
-        });
-        btnZebricekMenu.addEventListener("click", () => { initAudioSystemOnce(); showLeaderboard(); });
-        btnNavod.addEventListener("click", () => { initAudioSystemOnce(); showScreen("navod"); });
-        btnNavodToMenu.addEventListener("click", () => { initAudioSystemOnce(); showMenu(); });
-        btnLeaderboardToMenu.addEventListener("click", () => { initAudioSystemOnce(); showMenu(); });
-        btnGameOverToMenu.addEventListener("click", () => { initAudioSystemOnce(); showMenu(); });
-
-        btnSaveScoreGameOver.addEventListener("click", async () => {
-            initAudioSystemOnce();
-            if (scoreSavedThisSession) {
-                showCustomAlert("Skóre již bylo uloženo!");
-                return;
-            }
-            showCustomPrompt("Zadej jméno (max 10):", "Hráč",
-                async (playerName) => {
-                    if (playerName && playerName.trim() !== "") {
-                        const trimmedName = playerName.trim().substring(0, 10);
-                        await saveScoreToLeaderboard(trimmedName, score);
-                        scoreSavedThisSession = true;
-                        btnSaveScoreGameOver.textContent = "Uloženo!";
-                        btnSaveScoreGameOver.disabled = true;
-                        showCustomAlert("Skóre uloženo!");
-                    } else {
-                        showCustomAlert("Jméno nesmí být prázdné!");
-                    }
-                },
-                () => {
-                    console.log("Save score cancelled by user.");
-                }
+            updateJoystickPositionAndKeys(
+              e.touches[0].clientX,
+              e.touches[0].clientY
             );
+          }
+        },
+        { passive: false }
+      );
+      joystickBase.addEventListener(
+        "mousedown",
+        (e) => {
+          // For mouse control on desktop for testing
+          e.preventDefault();
+          initAudioSystemOnce();
+          joystickBaseRectState = joystickBase.getBoundingClientRect();
+          joystickRadiusState = joystickBaseRectState.width / 2;
+          knobRadiusState = joystickKnob.offsetWidth / 2 || 30;
+          maxKnobDisplacementState = joystickRadiusState - knobRadiusState;
+          if (joystickRadiusState <= 0) {
+            console.warn("Joystick base has no dimensions on mousedown.");
+            return;
+          }
+          joystickActive = true;
+          updateJoystickPositionAndKeys(e.clientX, e.clientY);
+        },
+        { passive: false }
+      );
+
+      document.addEventListener(
+        "touchmove",
+        (e) => {
+          if (
+            !joystickActive ||
+            gameState !== "playing" ||
+            currentJoystickTouchId === null
+          )
+            return;
+          for (let i = 0; i < e.touches.length; i++) {
+            if (e.touches[i].identifier === currentJoystickTouchId) {
+              updateJoystickPositionAndKeys(
+                e.touches[i].clientX,
+                e.touches[i].clientY
+              );
+              break;
+            }
+          }
+        },
+        { passive: false }
+      );
+      document.addEventListener(
+        "mousemove",
+        (e) => {
+          if (!joystickActive || gameState !== "playing") return;
+          updateJoystickPositionAndKeys(e.clientX, e.clientY);
+        },
+        { passive: false }
+      );
+
+      document.addEventListener("touchend", (e) => {
+        for (let i = 0; i < e.changedTouches.length; i++) {
+          if (e.changedTouches[i].identifier === currentJoystickTouchId) {
+            joystickActive = false;
+            currentJoystickTouchId = null;
+            joystickKnob.style.transform = "translate(-50%, -50%)"; // Reset knob
+            keys["w"] = keys["a"] = keys["s"] = keys["d"] = false; // Reset keys
+            break;
+          }
+        }
+      });
+      document.addEventListener("mouseup", (e) => {
+        // For mouse
+        if (joystickActive) {
+          joystickActive = false;
+          joystickKnob.style.transform = "translate(-50%, -50%)";
+          keys["w"] = keys["a"] = keys["s"] = keys["d"] = false;
+        }
+      });
+
+      if (btnDashElement) {
+        const handleDashStart = (e) => {
+          e.preventDefault();
+          keys[" "] = true;
+          initAudioSystemOnce();
+        };
+        const handleDashEnd = (e) => {
+          e.preventDefault();
+          keys[" "] = false;
+        };
+        btnDashElement.addEventListener("touchstart", handleDashStart, {
+          passive: false,
         });
-        btnZebricekGameOver.addEventListener("click", () => { initAudioSystemOnce(); showLeaderboard(); });
+        btnDashElement.addEventListener("touchend", handleDashEnd, {
+          passive: false,
+        });
+        btnDashElement.addEventListener("mousedown", handleDashStart, {
+          passive: false,
+        }); // For mouse
+        btnDashElement.addEventListener("mouseup", handleDashEnd, {
+          passive: false,
+        }); // For mouse
+      }
 
-        // --- Firebase Leaderboard Interaction ---
-        async function saveScoreToLeaderboard(name, playerScore) {
-            if (!window.db || !window.isFirebaseAuthReady() || !window.getFirebaseUserId()) {
-                showCustomAlert("Databáze není dostupná nebo uživatel není přihlášen. Skóre nebylo uloženo.");
-                console.error("DB not available or auth not ready for saving score. UserID:", window.getFirebaseUserId());
-                return;
-            }
-            const userId = window.getFirebaseUserId();
-            const collectionPath = `artifacts/${window.appIdGlobal}/public/data/pugTaggerScores`;
-            console.log(`Attempting to save score to: ${collectionPath} for user ${name} (UID: ${userId})`);
+      // --- Screen Management ---
+      function showScreen(screenToShow) {
+        menuScreen.style.display = "none";
+        navodScreen.style.display = "none";
+        leaderboardScreen.style.display = "none";
+        gameOverScreen.style.display = "none";
+        canvas.style.display = "none";
+        controlsContainer.style.display = "none";
+        buyMeACoffeeContainer.style.display = "none";
 
-            try {
-                await window.firebase.addDoc(window.firebase.collection(window.db, collectionPath), {
-                    name: name,
-                    score: playerScore,
-                    timestamp: window.firebase.serverTimestamp(),
-                    userId: userId
-                });
-                console.log("Score saved successfully:", name, playerScore);
-            } catch (e) {
-                console.error("Error saving score to Firestore:", e);
-                showCustomAlert("Chyba při ukládání skóre: " + e.message);
-            }
+        if (screenToShow === "menu") {
+          menuScreen.style.display = "flex";
+          buyMeACoffeeContainer.style.display = "block";
+        } else if (screenToShow === "navod") navodScreen.style.display = "flex";
+        else if (screenToShow === "leaderboard")
+          leaderboardScreen.style.display = "flex";
+        else if (screenToShow === "gameOver")
+          gameOverScreen.style.display = "flex";
+        else if (screenToShow === "game") {
+          canvas.style.display = "block";
+          controlsContainer.style.display = "flex"; // Show touch controls
+          resizeCanvas(); // Ensure canvas is sized correctly before game starts
         }
-        async function showLeaderboard() {
-            gameState = "leaderboard"; showScreen("leaderboard");
-            leaderboardListEl.innerHTML = ""; leaderboardLoadingTextEl.textContent = "Načítání...";
-            leaderboardLoadingTextEl.style.display = "block";
+      }
 
-            if (!window.db || !window.isFirebaseAuthReady()) {
-                leaderboardLoadingTextEl.textContent = "Databáze není dostupná nebo Firebase se inicializuje.";
-                console.error("DB not available or auth not ready for showing leaderboard.");
-                if (!window.isFirebaseAuthReady()) {
-                    setTimeout(showLeaderboard, 1000);
-                }
-                return;
-            }
-            const collectionPath = `artifacts/${window.appIdGlobal}/public/data/pugTaggerScores`;
-            console.log(`Fetching leaderboard from: ${collectionPath}`);
-            try {
-                // Fetch all documents without limiting to 10
-                const q = window.firebase.collection(window.db, collectionPath);
-                const querySnapshot = await window.firebase.getDocs(q);
-
-                let scores = [];
-                querySnapshot.forEach((doc) => {
-                    scores.push(doc.data());
-                });
-
-                scores.sort((a, b) => b.score - a.score || (a.timestamp && b.timestamp ? a.timestamp.seconds - b.timestamp.seconds : 0));
-
-                if (scores.length === 0) {
-                    leaderboardLoadingTextEl.textContent = "Žádné výsledky k zobrazení.";
-                } else {
-                    leaderboardLoadingTextEl.style.display = "none";
-                    let rank = 1;
-                    scores.forEach(data => {
-                        const li = document.createElement("li");
-                        li.innerHTML = `<span class="rank">${rank}.</span><span class="name">${data.name}</span><span class="score">${data.score}</span>`;
-                        leaderboardListEl.appendChild(li);
-                        rank++;
-                    });
-                }
-            } catch (e) {
-                console.error("Error fetching leaderboard from Firestore:", e);
-                leaderboardLoadingTextEl.textContent = "Chyba načítání žebříčku.";
-                if (e.message.includes("indexes")) {
-                    console.warn("Firestore index missing for leaderboard query. Sort will be client-side or limited.");
-                }
-            }
+      function showMenu() {
+        gameState = "menu";
+        showScreen("menu");
+        scoreSavedThisSession = false;
+        if (btnSaveScoreGameOver) {
+          btnSaveScoreGameOver.disabled = false;
+          btnSaveScoreGameOver.textContent =
+            translations.saveScoreButton[currentLanguage];
         }
-
-        // --- Game Flow (Countdown, Start, End) ---
-        function startCountdown() {
-            gameState = "countdown"; countdownValue = 3;
-            if (countdownInterval) clearInterval(countdownInterval);
-            countdownInterval = setInterval(() => {
-                countdownValue--;
-                if (countdownValue < 0) {
-                    clearInterval(countdownInterval); countdownInterval = null;
-                    startGame();
-                }
-            }, 1000);
+        if (musicStarted && backgroundMusicLoop && Tone && Tone.Transport) {
+          backgroundMusicLoop.stop();
+          Tone.Transport.stop();
+          musicStarted = false;
+          console.log("Music stopped for menu.");
         }
-        function drawCountdown() {
-            ctx.clearRect(0, 0, canvas.width, canvas.height);
-            ctx.fillStyle = "rgba(0,0,0,0.5)"; ctx.fillRect(0, 0, canvas.width, canvas.height);
-            ctx.font = `${canvas.width / 8}px "Press Start 2P"`;
-            ctx.fillStyle = "#FFD700"; ctx.textAlign = "center"; ctx.textBaseline = "middle";
-            let txt = countdownValue > 0 ? countdownValue.toString() : "TRHEJ!";
-            if (countdownValue === 0) txt = "TRHEJ!"; if (countdownValue < 0) txt = "";
-            ctx.fillText(txt, canvas.width / 2, canvas.height / 2);
+      }
+
+      // --- Button Event Listeners for Screen Transitions ---
+      btnHraj.addEventListener("click", () => {
+        initAudioSystemOnce();
+        playSilentUtterance(); // Attempt to wake up TTS
+        showScreen("game");
+        startCountdown();
+      });
+      btnZebricekMenu.addEventListener("click", () => {
+        initAudioSystemOnce();
+        showLeaderboard();
+      });
+      btnNavod.addEventListener("click", () => {
+        initAudioSystemOnce();
+        showScreen("navod");
+      });
+      btnNavodToMenu.addEventListener("click", () => {
+        initAudioSystemOnce();
+        showMenu();
+      });
+      btnLeaderboardToMenu.addEventListener("click", () => {
+        initAudioSystemOnce();
+        showMenu();
+      });
+      btnGameOverToMenu.addEventListener("click", () => {
+        initAudioSystemOnce();
+        showMenu();
+      });
+
+      btnSaveScoreGameOver.addEventListener("click", async () => {
+        initAudioSystemOnce();
+        if (scoreSavedThisSession) {
+          showCustomAlert("scoreAlreadySaved");
+          return;
         }
-        function startGame() {
-            gameState = "playing"; initGameLogic(); gameTimerValue = 60;
-            if (audioInitialized && backgroundMusicLoop && !musicStarted && Tone && Tone.Transport) { Tone.Transport.start(); backgroundMusicLoop.start(0); musicStarted = true; console.log("Music started for game."); }
-            controlsContainer.style.display = "flex";
-        }
-        function drawGameTimer() {
-            ctx.font = `${Math.max(10, canvas.width / 35)}px "Press Start 2P"`;
-            ctx.fillStyle = "#FFFFFF"; ctx.textAlign = "right";
-            ctx.fillText(`Čas: ${Math.max(0, Math.ceil(gameTimerValue))}`, canvas.width - canvas.width * 0.025, canvas.height * 0.06);
-        }
-        function endGame() {
-            gameState = "gameOver"; showScreen("gameOver");
-            gameOverScoreEl.textContent = `Skóre: ${score}`;
-            scoreSavedThisSession = false;
-            if (btnSaveScoreGameOver) { btnSaveScoreGameOver.disabled = false; btnSaveScoreGameOver.textContent = "Uložit skóre"; }
-            if (musicStarted && backgroundMusicLoop && Tone && Tone.Transport) { backgroundMusicLoop.stop(); Tone.Transport.stop(); musicStarted = false; console.log("Music stopped for game over."); }
-        }
-
-        // --- Game Logic Updates ---
-        function updatePlayer(dt) {
-            if (!player) return;
-
-            if (player.isMissLungeAnimating) {
-                player.missLungeTimer -= dt;
-                if (player.missLungeTimer <= 0) player.isMissLungeAnimating = false;
-                return; // Player is in miss lunge animation, no other movement/action
-            }
-            if (player.isCurrentlyTagging) {
-                player.tagLockTimer -= dt;
-                if (taggedDogInfo) {
-                    const bounceProgress = (TAG_LOCK_DURATION - player.tagLockTimer) / TAG_LOCK_DURATION;
-                    const bounceYOffset = Math.sin(bounceProgress * Math.PI) * (-player.height * 0.15);
-                    player.x = taggedDogInfo.originalX + (taggedDogInfo.dogData.width - player.width) / 2;
-                    player.y = taggedDogInfo.originalY - player.height * 0.3 + bounceYOffset;
-                }
-                if (player.tagLockTimer <= 0) player.isCurrentlyTagging = false;
-                player.dx = 0; player.dy = 0; player.trail = []; // Stop movement and clear trail during tag lock
-                return; // Player is busy tagging
-            }
-
-            // Handle regular movement and dash initiation
-            if (!player.isDashing) {
-                let new_dx = 0;
-                let new_dy = 0;
-                if (keys["w"]) new_dy = -1;
-                if (keys["s"]) new_dy = 1;
-                if (keys["a"]) new_dx = -1;
-                if (keys["d"]) new_dx = 1;
-
-                if (new_dx !== 0 && new_dy !== 0) { // Normalize diagonal movement
-                    const factor = 1 / Math.sqrt(2);
-                    new_dx *= factor;
-                    new_dy *= factor;
-                }
-                player.dx = new_dx;
-                player.dy = new_dy;
-
-                if (player.dx > 0) {
-                    player.facingDirection = 1;
-                } else if (player.dx < 0) {
-                    player.facingDirection = -1;
-                }
-
-                if (keys[" "] && !player.isDashing && !taggedDogInfo && !player.isCurrentlyTagging && !player.isMissLungeAnimating) {
-                    player.isDashing = true;
-                    player.dashTimer = DASH_DURATION;
-                    if (player.dx === 0 && player.dy === 0) { // If standing still, dash in facing direction
-                        player.dx = player.facingDirection;
-                        // player.dy remains 0 for a horizontal-only dash if standing still.
-                    }
-                    player.currentDashSpeed = player.speed * DASH_SPEED_MULTIPLIER;
-                } else if (keys[" "] && (player.isDashing || taggedDogInfo || player.isCurrentlyTagging || player.isMissLungeAnimating)) {
-                    playFailSound(); // Cannot dash if already dashing or busy
-                }
-
-                // Regular movement
-                player.x += player.dx * player.speed * dt;
-                player.y += player.dy * player.speed * dt;
-
-                if (player.trail.length > 0) player.trail.pop(); // Clear trail if not dashing
-
-            } else { // player.isDashing is true
-                player.dashTimer -= dt;
-
-                // --- MODIFICATION START ---
-                // Comment out or remove the following two lines to stop dash movement:
-                // player.x += player.dx * player.currentDashSpeed * dt;
-                // player.y += player.dy * player.currentDashSpeed * dt;
-                // --- MODIFICATION END ---
-
-                // Trail will now form at the player's static position during the dash
-                player.trail.unshift({ x: player.x, y: player.y, width: player.width, height: player.height, facingRight: player.facingDirection === 1 });
-                if (player.trail.length > player.maxTrailLength) player.trail.pop();
-
-                if (player.dashTimer <= 0) {
-                    player.isDashing = false;
-                    player.currentDashSpeed = 0; // Reset dash speed
-                    // If dash ended and no tag occurred (checked in checkCollisions which would set taggedDogInfo or isCurrentlyTagging)
-                    if (!player.isCurrentlyTagging && !taggedDogInfo) {
-                        player.isMissLungeAnimating = true;
-                        player.missLungeTimer = MISS_LUNGE_DURATION;
-                        playFailSound();
-                    }
-                }
-            }
-
-            // Keep player within canvas bounds
-            player.x = Math.max(0, Math.min(player.x, canvas.width - player.width));
-            player.y = Math.max(0, Math.min(player.y, canvas.height - player.height));
-        }
-
-        function updateFemaleDog(dog, dt) {
-            if (!player) return;
-            const dX = player.x + player.width / 2 - (dog.x + dog.width / 2);
-            const dY = player.y + player.height / 2 - (dog.y + dog.height / 2);
-            const dist = Math.sqrt(dX * dX + dY * dY);
-
-            if (dist < fleeRadius && !player.isCurrentlyTagging) {
-                const angle = Math.atan2(dY, dX);
-                dog.dx = -Math.cos(angle);
-                dog.dy = -Math.sin(angle);
+        showCustomPrompt(
+          "nameInputPlaceholder",
+          "Player", // Default value "Player"
+          async (playerName) => {
+            if (playerName && playerName.trim() !== "") {
+              const trimmedName = playerName.trim().substring(0, 10);
+              await saveScoreToLeaderboard(trimmedName, score);
+              scoreSavedThisSession = true;
+              btnSaveScoreGameOver.textContent =
+                translations.savedButton[currentLanguage];
+              btnSaveScoreGameOver.disabled = true;
+              showCustomAlert("scoreSavedSuccess");
             } else {
-                dog.moveTimer -= dt;
-                if (dog.moveTimer <= 0) {
-                    const randAngle = Math.random() * Math.PI * 2;
-                    dog.dx = Math.cos(randAngle);
-                    dog.dy = Math.sin(randAngle);
-                    dog.moveTimer = Math.random() * 2 + 1;
-                }
+              showCustomAlert("nameEmptyError");
             }
+          },
+          () => {
+            // Cancel callback
+            console.log("Save score cancelled by user.");
+          }
+        );
+      });
+      btnZebricekGameOver.addEventListener("click", () => {
+        initAudioSystemOnce();
+        showLeaderboard();
+      });
 
-            if (dog.dx > 0) {
-                dog.facingDirection = 1;
-            } else if (dog.dx < 0) {
-                dog.facingDirection = -1;
-            }
-
-            dog.x += dog.dx * dog.speed * dt;
-            dog.y += dog.dy * dog.speed * dt;
-
-            if (dog.x < 0) { dog.x = 0; dog.dx *= -1; dog.facingDirection *= -1; }
-            if (dog.x + dog.width > canvas.width) { dog.x = canvas.width - dog.width; dog.dx *= -1; dog.facingDirection *= -1; }
-            if (dog.y < 0) { dog.y = 0; dog.dy *= -1; }
-            if (dog.y + dog.height > canvas.height) { dog.y = canvas.height - dog.height; dog.dy *= -1; }
+      // Language switcher listeners
+      btnLangCZ.addEventListener("click", () => {
+        if (currentLanguage !== "cz") {
+          currentLanguage = "cz";
+          updateLanguageUI();
         }
-        function updateTagAnimationAndScore(dt) {
-            if (taggedDogInfo) { taggedDogInfo.animTimer -= dt; if (taggedDogInfo.animTimer < -0.16) taggedDogInfo = null; }
+      });
+      btnLangEN.addEventListener("click", () => {
+        if (currentLanguage !== "en") {
+          currentLanguage = "en";
+          updateLanguageUI();
         }
-        function updateSuccessMessages(dt) {
-            for (let i = successMessages.length - 1; i >= 0; i--) {
-                const msg = successMessages[i]; msg.timer -= dt; msg.alpha = msg.timer / SUCCESS_TEXT_DURATION;
-                msg.y -= 30 * dt; msg.scale = 1 + ((SUCCESS_TEXT_DURATION - msg.timer) / SUCCESS_TEXT_DURATION) * 0.3;
-                if (msg.particles) {
-                    for (let j = msg.particles.length - 1; j >= 0; j--) {
-                        const p = msg.particles[j]; p.x += p.speedX * dt; p.y += p.speedY * dt;
-                        p.alpha = p.duration / PARTICLE_DURATION; p.duration -= dt;
-                        if (p.duration <= 0) msg.particles.splice(j, 1);
-                    }
-                }
-                if (msg.timer <= 0) successMessages.splice(i, 1);
-            }
+      });
+
+      // --- Firebase Leaderboard Interaction ---
+      async function saveScoreToLeaderboard(name, playerScore) {
+        if (
+          !window.db ||
+          !window.isFirebaseAuthReady() ||
+          !window.getFirebaseUserId()
+        ) {
+          showCustomAlert("dbError");
+          console.error(
+            "DB not available or auth not ready for saving score. UserID:",
+            window.getFirebaseUserId()
+          );
+          return;
         }
-        function updateHeartAnimations(dt) {
-            for (let i = heartAnimations.length - 1; i >= 0; i--) {
-                const h = heartAnimations[i]; h.timer -= dt; h.y -= h.riseSpeed * 60 * dt;
-                h.alpha = h.timer / HEART_ANIM_DURATION;
-                if (h.phase === "grow" && h.currentScale < h.maxScale) { h.currentScale += 3 * dt; if (h.currentScale >= h.maxScale) h.phase = "float"; }
-                if (h.timer <= 0 || h.alpha <= 0) heartAnimations.splice(i, 1);
+        const userId = window.getFirebaseUserId();
+        const collectionPath = `artifacts/${window.appIdGlobal}/public/data/pugTaggerScores`;
+        console.log(
+          `Attempting to save score to: ${collectionPath} for user ${name} (UID: ${userId})`
+        );
+
+        try {
+          await window.firebase.addDoc(
+            window.firebase.collection(window.db, collectionPath),
+            {
+              name: name,
+              score: playerScore,
+              timestamp: window.firebase.serverTimestamp(), // Use server timestamp
+              userId: userId,
             }
+          );
+          console.log("Score saved successfully:", name, playerScore);
+        } catch (e) {
+          console.error("Error saving score to Firestore:", e);
+          showCustomAlert(
+            translations.dbSaveError[currentLanguage] + e.message
+          );
         }
-        function checkCollisions() {
-            if (!player || player.isCurrentlyTagging || taggedDogInfo || player.isMissLungeAnimating) return;
-            let newlyTaggedDogs = [];
-            if (player.isDashing) {
-                for (let i = femaleDogs.length - 1; i >= 0; i--) {
-                    const dog = femaleDogs[i];
-                    if (player.x < dog.x + dog.width && player.x + player.width > dog.x &&
-                        player.y < dog.y + dog.height && player.y + player.height > dog.y) {
-                        newlyTaggedDogs.push({ dog: dog, index: i, originalX: dog.x, originalY: dog.y, originalWidth: dog.width, originalHeight: dog.height });
-                    }
-                }
-            }
-            if (newlyTaggedDogs.length > 0) {
-                playTagSound(); player.isDashing = false; player.dashTimer = 0; player.trail = [];
-                let successText = ""; let particlesForMessage = [];
-                if (newlyTaggedDogs.length === 1) {
-                    const tagged = newlyTaggedDogs[0]; score++; femaleDogSpawnTimer = FEMALE_DOG_SPAWN_COOLDOWN;
-                    player.isCurrentlyTagging = true; player.tagLockTimer = TAG_LOCK_DURATION;
-                    taggedDogInfo = {
-                        dogData: { ...tagged.dog, facingDirection: tagged.dog.facingDirection },
-                        animTimer: TAG_ANIMATION_TOTAL_DURATION,
-                        originalX: tagged.originalX, originalY: tagged.originalY,
-                        scoreAwarded: true
-                    };
-                    femaleDogs.splice(tagged.index, 1);
-                    successText = singleTagTexts[Math.floor(Math.random() * singleTagTexts.length)];
-                    heartAnimations.push({ x: tagged.originalX + tagged.originalWidth / 2, y: tagged.originalY - 10, currentScale: 0.1, maxScale: 1.2, alpha: 1, timer: HEART_ANIM_DURATION, riseSpeed: 0.7, phase: "grow" });
-                } else {
-                    score += newlyTaggedDogs.length; femaleDogSpawnTimer = FEMALE_DOG_SPAWN_COOLDOWN;
-                    if (newlyTaggedDogs.length >= 5) successText = multiTagTexts[5];
-                    else successText = multiTagTexts[newlyTaggedDogs.length] || `Combo x${newlyTaggedDogs.length}!`;
-                    for (let k = 0; k < newlyTaggedDogs.length * 5; k++) { particlesForMessage.push(createParticle(player.x + player.width / 2, player.y + player.height / 2)); }
-                    newlyTaggedDogs.forEach(tagged => heartAnimations.push({ x: tagged.originalX + tagged.originalWidth / 2, y: tagged.originalY - 10, currentScale: 0.1, maxScale: 1.0, alpha: 1, timer: HEART_ANIM_DURATION, riseSpeed: 0.6, phase: "grow" }));
-                    newlyTaggedDogs.sort((a, b) => b.index - a.index);
-                    newlyTaggedDogs.forEach(tagged => femaleDogs.splice(tagged.index, 1));
-                }
-                if (successText) {
-                    successMessages.push({ text: successText, x: player.x + player.width / 2, y: player.y - 10, alpha: 1, scale: 1, timer: SUCCESS_TEXT_DURATION, particles: particlesForMessage });
-                    speakText(successText);
-                }
-            }
+      }
+      async function showLeaderboard() {
+        gameState = "leaderboard";
+        showScreen("leaderboard");
+        leaderboardListEl.innerHTML = "";
+        leaderboardLoadingTextEl.textContent =
+          translations.loadingText[currentLanguage];
+        leaderboardLoadingTextEl.style.display = "block";
+
+        if (!window.db || !window.isFirebaseAuthReady()) {
+          leaderboardLoadingTextEl.textContent =
+            translations.dbError[currentLanguage]; // More generic error
+          console.error(
+            "DB not available or auth not ready for showing leaderboard."
+          );
+          if (!window.isFirebaseAuthReady()) {
+            // Retry if auth is just slow
+            setTimeout(showLeaderboard, 1000);
+          }
+          return;
         }
-        function spawnFemaleDogs(dt) {
-            if (femaleDogSpawnTimer > 0) { femaleDogSpawnTimer -= dt; return; }
-            if (player && femaleDogs.length < MAX_FEMALE_DOGS && !taggedDogInfo && !player.isCurrentlyTagging && !player.isMissLungeAnimating) {
-                femaleDogs.push(createFemaleDog()); femaleDogSpawnTimer = FEMALE_DOG_SPAWN_COOLDOWN;
-            }
+        const collectionPath = `artifacts/${window.appIdGlobal}/public/data/pugTaggerScores`;
+        console.log(`Fetching leaderboard from: ${collectionPath}`);
+        try {
+          // Fetch all documents, then sort client-side to avoid needing complex indexes
+          const q = window.firebase.collection(window.db, collectionPath);
+          const querySnapshot = await window.firebase.getDocs(q);
+
+          let scores = [];
+          querySnapshot.forEach((doc) => {
+            scores.push(doc.data());
+          });
+
+          // Sort by score descending, then by timestamp ascending (oldest first for ties)
+          scores.sort(
+            (a, b) =>
+              b.score - a.score ||
+              (a.timestamp && b.timestamp
+                ? a.timestamp.seconds - b.timestamp.seconds
+                : 0)
+          );
+
+          // Display top N scores (e.g., top 10 or all if less than 10)
+          const scoresToDisplay = scores.slice(0, 100); // Display up to 100 scores
+
+          if (scoresToDisplay.length === 0) {
+            leaderboardLoadingTextEl.textContent =
+              translations.noResultsText[currentLanguage];
+          } else {
+            leaderboardLoadingTextEl.style.display = "none";
+            let rank = 1;
+            scoresToDisplay.forEach((data) => {
+              const li = document.createElement("li");
+              li.innerHTML = `<span class="rank">${rank}.</span><span class="name">${data.name}</span><span class="score">${data.score}</span>`;
+              leaderboardListEl.appendChild(li);
+              rank++;
+            });
+          }
+        } catch (e) {
+          console.error("Error fetching leaderboard from Firestore:", e);
+          leaderboardLoadingTextEl.textContent =
+            translations.leaderboardErrorText[currentLanguage];
+          if (e.message.includes("indexes")) {
+            // Check if it's an index issue
+            console.warn(
+              "Firestore index missing for leaderboard query. Client-side sort was attempted."
+            );
+          }
+        }
+      }
+
+      // --- Game Flow (Countdown, Start, End) ---
+      function startCountdown() {
+        gameState = "countdown";
+        countdownValue = 3;
+        if (countdownInterval) clearInterval(countdownInterval);
+        countdownInterval = setInterval(() => {
+          countdownValue--;
+          if (countdownValue < 0) {
+            clearInterval(countdownInterval);
+            countdownInterval = null;
+            startGame();
+          }
+        }, 1000);
+      }
+      function drawCountdown() {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        ctx.fillStyle = "rgba(0,0,0,0.5)";
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+        ctx.font = `${canvas.width / 8}px "Press Start 2P"`;
+        ctx.fillStyle = "#FFD700";
+        ctx.textAlign = "center";
+        ctx.textBaseline = "middle";
+        let txt =
+          countdownValue > 0
+            ? countdownValue.toString()
+            : translations.countdownGo[currentLanguage];
+        if (countdownValue === 0)
+          txt = translations.countdownGo[currentLanguage];
+        if (countdownValue < 0) txt = ""; // Don't draw after go
+        ctx.fillText(txt, canvas.width / 2, canvas.height / 2);
+      }
+      function startGame() {
+        gameState = "playing";
+        initGameLogic();
+        gameTimerValue = 60; // Reset timer
+        if (
+          audioInitialized &&
+          backgroundMusicLoop &&
+          !musicStarted &&
+          Tone &&
+          Tone.Transport
+        ) {
+          Tone.Transport.start();
+          backgroundMusicLoop.start(0);
+          musicStarted = true;
+          console.log("Music started for game.");
+        }
+        controlsContainer.style.display = "flex"; // Ensure controls are visible
+      }
+      function drawGameTimer() {
+        ctx.font = `${Math.max(10, canvas.width / 35)}px "Press Start 2P"`; // Responsive font size
+        ctx.fillStyle = "#FFFFFF";
+        ctx.textAlign = "right";
+        ctx.fillText(
+          `${translations.canvasTimeLabel[currentLanguage]}${Math.max(
+            0,
+            Math.ceil(gameTimerValue)
+          )}`,
+          canvas.width - canvas.width * 0.025,
+          canvas.height * 0.06
+        );
+      }
+      function endGame() {
+        gameState = "gameOver";
+        showScreen("gameOver");
+        gameOverScoreEl.textContent = `${translations.scoreLabel[currentLanguage]}${score}`;
+        scoreSavedThisSession = false; // Reset for new game over
+        if (btnSaveScoreGameOver) {
+          btnSaveScoreGameOver.disabled = false;
+          btnSaveScoreGameOver.textContent =
+            translations.saveScoreButton[currentLanguage];
+        }
+        if (musicStarted && backgroundMusicLoop && Tone && Tone.Transport) {
+          backgroundMusicLoop.stop();
+          Tone.Transport.stop();
+          musicStarted = false;
+          console.log("Music stopped for game over.");
+        }
+      }
+
+      // --- Game Logic Updates ---
+      function updatePlayer(dt) {
+        if (!player) return;
+
+        if (player.isMissLungeAnimating) {
+          player.missLungeTimer -= dt;
+          if (player.missLungeTimer <= 0) player.isMissLungeAnimating = false;
+          return;
+        }
+        if (player.isCurrentlyTagging) {
+          player.tagLockTimer -= dt;
+          if (taggedDogInfo) {
+            // Player "rides" the tagged dog
+            const bounceProgress =
+              (TAG_LOCK_DURATION - player.tagLockTimer) / TAG_LOCK_DURATION;
+            const bounceYOffset =
+              Math.sin(bounceProgress * Math.PI) * (-player.height * 0.15); // Player bounces more
+            player.x =
+              taggedDogInfo.originalX +
+              (taggedDogInfo.dogData.width - player.width) / 2;
+            player.y =
+              taggedDogInfo.originalY - player.height * 0.3 + bounceYOffset; // Player on top
+          }
+          if (player.tagLockTimer <= 0) player.isCurrentlyTagging = false;
+          player.dx = 0;
+          player.dy = 0;
+          player.trail = []; // Stop movement and clear trail during tag lock
+          return;
         }
 
-        // --- Drawing Functions ---
-        function drawPlayer() {
-            if (!player) return;
+        // Handle regular movement and dash initiation
+        if (!player.isDashing) {
+          let new_dx = 0;
+          let new_dy = 0;
+          if (keys["w"]) new_dy = -1;
+          if (keys["s"]) new_dy = 1;
+          if (keys["a"]) new_dx = -1;
+          if (keys["d"]) new_dx = 1;
 
-            // 1. Draw the dash trail first (if any)
-            if (player.trail.length > 0) {
-                for (let i = 0; i < player.trail.length; i++) {
-                    const t = player.trail[i];
-                    const alpha = 0.4 * (1 - (i + 1) / (player.trail.length + 1));
-                    ctx.globalAlpha = alpha;
+          if (new_dx !== 0 && new_dy !== 0) {
+            // Normalize diagonal movement
+            const factor = 1 / Math.sqrt(2);
+            new_dx *= factor;
+            new_dy *= factor;
+          }
+          player.dx = new_dx;
+          player.dy = new_dy;
 
-                    ctx.save(); // Save for trail element flip
-                    let trailDrawX = t.x;
-                    if (!t.facingRight) { // Assuming trail stores facingDirection
-                        ctx.scale(-1, 1);
-                        trailDrawX = -(t.x + t.width);
-                    }
-                    if (playerImg.complete && playerImg.naturalWidth > 0) {
-                        ctx.drawImage(playerImg, trailDrawX, t.y, t.width, t.height);
-                    }
-                    // Note: Dress is not drawn on trail elements for simplicity
-                    ctx.restore(); // Restore for trail element flip
+          if (player.dx > 0) {
+            player.facingDirection = 1;
+          } else if (player.dx < 0) {
+            player.facingDirection = -1;
+          }
+          // If no horizontal movement, keep last facing direction
 
-                    ctx.globalAlpha = 1.0; // Reset globalAlpha
-                }
+          if (
+            keys[" "] &&
+            !player.isDashing &&
+            !taggedDogInfo &&
+            !player.isCurrentlyTagging &&
+            !player.isMissLungeAnimating
+          ) {
+            player.isDashing = true;
+            player.dashTimer = DASH_DURATION;
+            if (player.dx === 0 && player.dy === 0) {
+              // If standing still, dash in facing direction
+              player.dx = player.facingDirection;
+              // player.dy remains 0 for a horizontal-only dash if standing still.
             }
+            player.currentDashSpeed = player.speed * DASH_SPEED_MULTIPLIER;
+          } else if (
+            keys[" "] &&
+            (player.isDashing ||
+              taggedDogInfo ||
+              player.isCurrentlyTagging ||
+              player.isMissLungeAnimating)
+          ) {
+            playFailSound(); // Cannot dash if already dashing or busy
+          }
 
-            // 2. Main player drawing
-            ctx.save(); // Save current context state (for transformations and GCO)
+          // Regular movement
+          player.x += player.dx * player.speed * dt;
+          player.y += player.dy * player.speed * dt;
 
-            let x = player.x;
-            let y = player.y;
+          if (player.trail.length > 0) player.trail.pop(); // Clear trail if not dashing
+        } else {
+          // player.isDashing is true
+          player.dashTimer -= dt;
 
-            // Apply flip transformation if player is not facing right
-            if (player.facingDirection === -1) {
-                ctx.scale(-1, 1);
-                x = -(x + player.width);
+          // Player does NOT move during dash, dash is an "area effect" at current position
+          // player.x += player.dx * player.currentDashSpeed * dt; // Original movement during dash
+          // player.y += player.dy * player.currentDashSpeed * dt; // Original movement during dash
+
+          // Trail forms at player's static position during the dash
+          player.trail.unshift({
+            x: player.x,
+            y: player.y,
+            width: player.width,
+            height: player.height,
+            facingRight: player.facingDirection === 1,
+          });
+          if (player.trail.length > player.maxTrailLength) player.trail.pop();
+
+          if (player.dashTimer <= 0) {
+            player.isDashing = false;
+            player.currentDashSpeed = 0; // Reset dash speed
+            // If dash ended and no tag occurred (checked in checkCollisions which would set taggedDogInfo or isCurrentlyTagging)
+            if (!player.isCurrentlyTagging && !taggedDogInfo) {
+              player.isMissLungeAnimating = true;
+              player.missLungeTimer = MISS_LUNGE_DURATION;
+              playFailSound();
             }
+          }
+        }
 
-            // Apply miss-lunge animation bob if active
-            if (player.isMissLungeAnimating) {
-                const lungeProgress = (MISS_LUNGE_DURATION - player.missLungeTimer) / MISS_LUNGE_DURATION;
-                const lungeYOffset = Math.sin(lungeProgress * Math.PI) * -(player.height * 0.2);
-                y += lungeYOffset;
+        // Keep player within canvas bounds
+        player.x = Math.max(0, Math.min(player.x, canvas.width - player.width));
+        player.y = Math.max(
+          0,
+          Math.min(player.y, canvas.height - player.height)
+        );
+      }
+
+      function updateFemaleDog(dog, dt) {
+        if (!player) return;
+        const dX = player.x + player.width / 2 - (dog.x + dog.width / 2);
+        const dY = player.y + player.height / 2 - (dog.y + dog.height / 2);
+        const dist = Math.sqrt(dX * dX + dY * dY);
+
+        if (dist < fleeRadius && !player.isCurrentlyTagging) {
+          // Flee if player is close and not busy tagging
+          const angle = Math.atan2(dY, dX);
+          dog.dx = -Math.cos(angle); // Flee directly away
+          dog.dy = -Math.sin(angle);
+        } else {
+          // Wander
+          dog.moveTimer -= dt;
+          if (dog.moveTimer <= 0) {
+            const randAngle = Math.random() * Math.PI * 2;
+            dog.dx = Math.cos(randAngle);
+            dog.dy = Math.sin(randAngle);
+            dog.moveTimer = Math.random() * 2 + 1; // New direction for 1-3s
+          }
+        }
+
+        if (dog.dx > 0) {
+          dog.facingDirection = 1;
+        } else if (dog.dx < 0) {
+          dog.facingDirection = -1;
+        }
+
+        dog.x += dog.dx * dog.speed * dt;
+        dog.y += dog.dy * dog.speed * dt;
+
+        // Boundary collision for dogs
+        if (dog.x < 0) {
+          dog.x = 0;
+          dog.dx *= -1;
+          dog.facingDirection *= -1;
+        }
+        if (dog.x + dog.width > canvas.width) {
+          dog.x = canvas.width - dog.width;
+          dog.dx *= -1;
+          dog.facingDirection *= -1;
+        }
+        if (dog.y < 0) {
+          dog.y = 0;
+          dog.dy *= -1;
+        }
+        if (dog.y + dog.height > canvas.height) {
+          dog.y = canvas.height - dog.height;
+          dog.dy *= -1;
+        }
+      }
+      function updateTagAnimationAndScore(dt) {
+        if (taggedDogInfo) {
+          taggedDogInfo.animTimer -= dt;
+          if (taggedDogInfo.animTimer < -0.16) taggedDogInfo = null;
+        } // Allow a bit extra for fade
+      }
+      function updateSuccessMessages(dt) {
+        for (let i = successMessages.length - 1; i >= 0; i--) {
+          const msg = successMessages[i];
+          msg.timer -= dt;
+          msg.alpha = msg.timer / SUCCESS_TEXT_DURATION;
+          msg.y -= 30 * dt;
+          msg.scale =
+            1 +
+            ((SUCCESS_TEXT_DURATION - msg.timer) / SUCCESS_TEXT_DURATION) * 0.3;
+          if (msg.particles) {
+            for (let j = msg.particles.length - 1; j >= 0; j--) {
+              const p = msg.particles[j];
+              p.x += p.speedX * dt;
+              p.y += p.speedY * dt;
+              p.alpha = p.duration / PARTICLE_DURATION;
+              p.duration -= dt;
+              if (p.duration <= 0) msg.particles.splice(j, 1);
             }
+          }
+          if (msg.timer <= 0) successMessages.splice(i, 1);
+        }
+      }
+      function updateHeartAnimations(dt) {
+        for (let i = heartAnimations.length - 1; i >= 0; i--) {
+          const h = heartAnimations[i];
+          h.timer -= dt;
+          h.y -= h.riseSpeed * 60 * dt; // 60fps assumption for speed
+          h.alpha = h.timer / HEART_ANIM_DURATION;
+          if (h.phase === "grow" && h.currentScale < h.maxScale) {
+            h.currentScale += 3 * dt;
+            if (h.currentScale >= h.maxScale) h.phase = "float";
+          }
+          if (h.timer <= 0 || h.alpha <= 0) heartAnimations.splice(i, 1);
+        }
+      }
+      function checkCollisions() {
+        if (
+          !player ||
+          player.isCurrentlyTagging ||
+          taggedDogInfo ||
+          player.isMissLungeAnimating
+        )
+          return;
+        let newlyTaggedDogs = [];
+        if (player.isDashing) {
+          // Only tag during dash
+          for (let i = femaleDogs.length - 1; i >= 0; i--) {
+            const dog = femaleDogs[i];
+            // Simple AABB collision check
+            if (
+              player.x < dog.x + dog.width &&
+              player.x + player.width > dog.x &&
+              player.y < dog.y + dog.height &&
+              player.y + player.height > dog.y
+            ) {
+              newlyTaggedDogs.push({
+                dog: dog,
+                index: i,
+                originalX: dog.x,
+                originalY: dog.y,
+                originalWidth: dog.width,
+                originalHeight: dog.height,
+              });
+            }
+          }
+        }
+        if (newlyTaggedDogs.length > 0) {
+          playTagSound();
+          player.isDashing = false;
+          player.dashTimer = 0;
+          player.trail = []; // Stop dash, clear trail
+          let successText = "";
+          let particlesForMessage = [];
+          if (newlyTaggedDogs.length === 1) {
+            const tagged = newlyTaggedDogs[0];
+            score++;
+            femaleDogSpawnTimer = FEMALE_DOG_SPAWN_COOLDOWN;
+            player.isCurrentlyTagging = true;
+            player.tagLockTimer = TAG_LOCK_DURATION;
+            taggedDogInfo = {
+              // Store info about the dog being "ridden"
+              dogData: {
+                ...tagged.dog,
+                facingDirection: tagged.dog.facingDirection,
+              }, // Copy dog data
+              animTimer: TAG_ANIMATION_TOTAL_DURATION,
+              originalX: tagged.originalX,
+              originalY: tagged.originalY, // Store original position for animation
+              scoreAwarded: true, // Mark that score was given for this interaction
+            };
+            femaleDogs.splice(tagged.index, 1); // Remove the tagged dog
+            successText =
+              translations.singleTagResults[currentLanguage][
+                Math.floor(
+                  Math.random() *
+                    translations.singleTagResults[currentLanguage].length
+                )
+              ];
+            heartAnimations.push({
+              x: tagged.originalX + tagged.originalWidth / 2,
+              y: tagged.originalY - 10,
+              currentScale: 0.1,
+              maxScale: 1.2,
+              alpha: 1,
+              timer: HEART_ANIM_DURATION,
+              riseSpeed: 0.7,
+              phase: "grow",
+            });
+          } else {
+            // Multi-tag
+            score += newlyTaggedDogs.length;
+            femaleDogSpawnTimer = FEMALE_DOG_SPAWN_COOLDOWN;
+            successText =
+              translations.multiTagResults[currentLanguage][
+                newlyTaggedDogs.length
+              ] ||
+              `${translations.comboGeneric[currentLanguage]}${newlyTaggedDogs.length}!`;
+            for (let k = 0; k < newlyTaggedDogs.length * 5; k++) {
+              particlesForMessage.push(
+                createParticle(
+                  player.x + player.width / 2,
+                  player.y + player.height / 2
+                )
+              );
+            }
+            newlyTaggedDogs.forEach((tagged) =>
+              heartAnimations.push({
+                x: tagged.originalX + tagged.originalWidth / 2,
+                y: tagged.originalY - 10,
+                currentScale: 0.1,
+                maxScale: 1.0,
+                alpha: 1,
+                timer: HEART_ANIM_DURATION,
+                riseSpeed: 0.6,
+                phase: "grow",
+              })
+            );
+            // Remove multi-tagged dogs (sort by index to avoid issues when splicing)
+            newlyTaggedDogs
+              .sort((a, b) => b.index - a.index)
+              .forEach((tagged) => femaleDogs.splice(tagged.index, 1));
+          }
+          if (successText) {
+            successMessages.push({
+              text: successText,
+              x: player.x + player.width / 2,
+              y: player.y - 10,
+              alpha: 1,
+              scale: 1,
+              timer: SUCCESS_TEXT_DURATION,
+              particles: particlesForMessage,
+            });
+            speakText(successText);
+          }
+        }
+      }
+      function spawnFemaleDogs(dt) {
+        if (femaleDogSpawnTimer > 0) {
+          femaleDogSpawnTimer -= dt;
+          return;
+        }
+        if (
+          player &&
+          femaleDogs.length < MAX_FEMALE_DOGS &&
+          !taggedDogInfo &&
+          !player.isCurrentlyTagging &&
+          !player.isMissLungeAnimating
+        ) {
+          femaleDogs.push(createFemaleDog());
+          femaleDogSpawnTimer = FEMALE_DOG_SPAWN_COOLDOWN;
+        }
+      }
 
-            // Draw the pug (base character)
+      // --- Drawing Functions ---
+      function drawPlayer() {
+        if (!player) return;
+
+        // 1. Draw the dash trail first (if any)
+        if (player.trail.length > 0) {
+          for (let i = 0; i < player.trail.length; i++) {
+            const t = player.trail[i];
+            const alpha = 0.4 * (1 - (i + 1) / (player.trail.length + 1)); // Fade out trail
+            ctx.globalAlpha = alpha;
+
+            ctx.save(); // Save for trail element flip
+            let trailDrawX = t.x;
+            if (!t.facingRight) {
+              // Trail elements store their facing direction
+              ctx.scale(-1, 1);
+              trailDrawX = -(t.x + t.width);
+            }
             if (playerImg.complete && playerImg.naturalWidth > 0) {
-                ctx.drawImage(playerImg, x, y, player.width, player.height);
+              ctx.drawImage(playerImg, trailDrawX, t.y, t.width, t.height);
+            }
+            // Dress is not drawn on trail elements for simplicity and performance
+            ctx.restore(); // Restore for trail element flip
+
+            ctx.globalAlpha = 1.0; // Reset globalAlpha
+          }
+        }
+
+        // 2. Main player drawing
+        ctx.save(); // Save current context state (for transformations and GCO)
+
+        let x = player.x;
+        let y = player.y;
+
+        // Apply flip transformation if player is not facing right
+        if (player.facingDirection === -1) {
+          ctx.scale(-1, 1);
+          x = -(x + player.width); // Adjust x-coordinate for flipped drawing
+        }
+
+        // Apply miss-lunge animation bob if active
+        if (player.isMissLungeAnimating) {
+          const lungeProgress =
+            (MISS_LUNGE_DURATION - player.missLungeTimer) / MISS_LUNGE_DURATION;
+          const lungeYOffset =
+            Math.sin(lungeProgress * Math.PI) * -(player.height * 0.2); // Bob up and down
+          y += lungeYOffset;
+        }
+
+        // Draw the pug (base character)
+        if (playerImg.complete && playerImg.naturalWidth > 0) {
+          ctx.drawImage(playerImg, x, y, player.width, player.height);
+        } else {
+          // Fallback if player image not loaded
+          ctx.fillStyle = "saddlebrown";
+          ctx.fillRect(x, y, player.width, player.height);
+        }
+
+        // Draw the tinted dress on top of the pug
+        if (dressImg.complete && dressImg.naturalWidth > 0) {
+          // Create a temporary off-screen canvas for tinting the dress
+          const tempCanvas = document.createElement("canvas");
+          tempCanvas.width = player.width;
+          tempCanvas.height = player.height;
+          const tempCtx = tempCanvas.getContext("2d");
+
+          if (tempCtx) {
+            // Draw original dress onto temp canvas
+            tempCtx.drawImage(dressImg, 0, 0, player.width, player.height);
+
+            // Apply tint using 'source-in' composite operation
+            tempCtx.globalCompositeOperation = "source-in";
+            tempCtx.fillStyle = dressTint;
+            tempCtx.fillRect(0, 0, player.width, player.height);
+
+            // Draw the tinted dress from tempCanvas to the main canvas
+            ctx.drawImage(tempCanvas, x, y, player.width, player.height);
+          } else {
+            console.warn(
+              "Failed to get 2D context for temporary canvas for dress tinting."
+            );
+            // Fallback: draw untinted dress if temp canvas fails
+            ctx.drawImage(dressImg, x, y, player.width, player.height);
+          }
+        }
+
+        ctx.restore(); // Restore context (removes flip, resets GCO to state before this save)
+      }
+
+      function drawFemaleDog(dog) {
+        ctx.save();
+        let dogDrawX = dog.x;
+        if (dog.facingDirection === -1) {
+          // Flip if facing left
+          ctx.scale(-1, 1);
+          dogDrawX = -(dog.x + dog.width);
+        }
+
+        if (femaleDogImg.complete && femaleDogImg.naturalWidth !== 0) {
+          ctx.drawImage(femaleDogImg, dogDrawX, dog.y, dog.width, dog.height);
+        } else {
+          // Fallback
+          ctx.fillStyle = "lightpink";
+          ctx.fillRect(dogDrawX, dog.y, dog.width, dog.height);
+        }
+        ctx.restore();
+      }
+
+      function drawActiveTagAnimation() {
+        if (!taggedDogInfo || taggedDogInfo.animTimer <= -0.16) return; // Animation finished or not active
+        const td = taggedDogInfo.dogData; // The female dog's data
+        const animTimer = taggedDogInfo.animTimer;
+
+        if (player && player.isCurrentlyTagging) {
+          // Player is actively in the tagging bounce animation
+          // Draw the female dog being tagged (with its part of the bounce)
+          ctx.save();
+          let dogDrawX = td.x; // td.x and td.y are original positions at time of tag
+          let dogDrawY = td.y;
+          if (taggedDogInfo.dogData.facingDirection === -1) {
+            // Use stored facing direction
+            ctx.scale(-1, 1);
+            dogDrawX = -(td.x + td.width);
+          }
+          const dogBounceProgress =
+            (TAG_LOCK_DURATION - player.tagLockTimer) / TAG_LOCK_DURATION;
+          const dogBounceYOffset =
+            Math.sin(dogBounceProgress * Math.PI) * (td.height * 0.1); // Dog bounces less
+
+          if (femaleDogImg.complete && femaleDogImg.naturalWidth !== 0) {
+            ctx.drawImage(
+              femaleDogImg,
+              dogDrawX,
+              dogDrawY + dogBounceYOffset,
+              td.width,
+              td.height
+            );
+          } else {
+            ctx.fillStyle = "lightpink";
+            ctx.fillRect(
+              dogDrawX,
+              dogDrawY + dogBounceYOffset,
+              td.width,
+              td.height
+            );
+          }
+          ctx.restore();
+
+          // Player is drawn by drawPlayer(), which handles its own bounce based on player.y
+          // No need to re-draw player here if drawPlayer() is called after this in the main loop.
+          // However, to ensure correct layering if drawPlayer is called before, we might need it.
+          // For now, assuming drawPlayer() is called after, and it uses player.x, player.y which are set for the bounce.
+        } else {
+          // This 'else' is for when player.isCurrentlyTagging is false, but taggedDogInfo exists (fade out animation of female dog)
+          const fadeDuration = TAG_ANIMATION_TOTAL_DURATION - TAG_LOCK_DURATION; // Total time for fade after lock
+          const currentFadeTime = animTimer; // animTimer counts down through this phase
+          const fadeProgress = Math.max(
+            0,
+            Math.min(1, currentFadeTime / fadeDuration)
+          );
+
+          const scale = fadeProgress * 0.8 + 0.2; // Ends at 0.2 scale (shrinks)
+          const alpha = fadeProgress; // Fades to 0 alpha
+
+          const scaledWidth = td.width * scale;
+          const scaledHeight = td.height * scale;
+          const drawTargetX =
+            taggedDogInfo.originalX + (td.width - scaledWidth) / 2; // Center the shrinking image
+          const drawTargetY =
+            taggedDogInfo.originalY + (td.height - scaledHeight) / 2;
+
+          ctx.save();
+          ctx.globalAlpha = alpha;
+          let finalDogFadeDrawX = drawTargetX;
+          if (taggedDogInfo.dogData.facingDirection === -1) {
+            ctx.scale(-1, 1);
+            finalDogFadeDrawX = -(drawTargetX + scaledWidth);
+          }
+
+          if (femaleDogImg.complete && femaleDogImg.naturalWidth !== 0) {
+            ctx.drawImage(
+              femaleDogImg,
+              finalDogFadeDrawX,
+              drawTargetY,
+              scaledWidth,
+              scaledHeight
+            );
+          } else {
+            ctx.fillStyle = "lightpink";
+            ctx.fillRect(
+              finalDogFadeDrawX,
+              drawTargetY,
+              scaledWidth,
+              scaledHeight
+            );
+          }
+          ctx.restore();
+        }
+      }
+
+      function drawSuccessMessages() {
+        successMessages.forEach((msg) => {
+          if (msg.particles) {
+            msg.particles.forEach((p) => {
+              ctx.globalAlpha = p.alpha;
+              ctx.fillStyle = p.color;
+              ctx.beginPath();
+              ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
+              ctx.fill();
+            });
+            ctx.globalAlpha = 1; // Reset for text
+          }
+          ctx.save();
+          ctx.globalAlpha = msg.alpha;
+          ctx.fillStyle = "#FFD700";
+          ctx.strokeStyle = "#000000";
+          ctx.lineWidth = Math.max(1, canvas.width / 400); // Scaled stroke
+          const baseFontSize = Math.max(10, Math.min(20, canvas.width / 40)); // Responsive base font size
+          const fS = baseFontSize * msg.scale;
+          ctx.font = `${fS}px "Press Start 2P"`;
+          ctx.textAlign = "center";
+          ctx.strokeText(msg.text, msg.x, msg.y);
+          ctx.fillText(msg.text, msg.x, msg.y);
+          ctx.restore();
+        });
+      }
+      function drawHeart(x, y, s, a) {
+        // x,y is top-left of bounding box for heart
+        ctx.save();
+        ctx.globalAlpha = a;
+        ctx.fillStyle = "red";
+        ctx.strokeStyle = "darkred";
+        ctx.lineWidth = Math.max(1, canvas.width / 500);
+        ctx.beginPath();
+        const tCH = s * 0.3; // Top Curve Height factor
+        ctx.moveTo(x, y + tCH);
+        ctx.bezierCurveTo(x, y, x - s / 2, y, x - s / 2, y + tCH); // Left top curve
+        ctx.bezierCurveTo(
+          x - s / 2,
+          y + (s + tCH) / 2,
+          x,
+          y + (s + tCH) / 2 + tCH / 2,
+          x,
+          y + s
+        ); // Left bottom to point
+        ctx.bezierCurveTo(
+          x,
+          y + (s + tCH) / 2 + tCH / 2,
+          x + s / 2,
+          y + (s + tCH) / 2,
+          x + s / 2,
+          y + tCH
+        ); // Right bottom to curve
+        ctx.bezierCurveTo(x + s / 2, y, x, y, x, y + tCH); // Right top curve
+        ctx.closePath();
+        ctx.fill();
+        ctx.stroke();
+        ctx.restore();
+      }
+      function drawHeartAnimations() {
+        heartAnimations.forEach((h) => {
+          const heartSize = Math.max(5, canvas.width / 80) * h.currentScale; // Responsive heart size
+          drawHeart(
+            h.x - heartSize / 2,
+            h.y - heartSize / 2,
+            heartSize,
+            h.alpha
+          ); // Center the heart
+        });
+      }
+      function drawFlowers() {
+        backgroundFlowers.forEach((f) => {
+          ctx.strokeStyle = f.stemColor;
+          ctx.lineWidth = Math.max(1, canvas.width / 300); // Scaled stem
+          ctx.beginPath();
+          ctx.moveTo(f.x, f.y + f.stemHeight);
+          ctx.lineTo(f.x, f.y);
+          ctx.stroke(); // Stem
+          ctx.fillStyle = f.petalColor;
+          for (let i = 0; i < f.numPetals; i++) {
+            // Petals
+            const ang = (i / f.numPetals) * Math.PI * 2;
+            const pX =
+              f.x + Math.cos(ang) * (f.centerRadius + f.petalRadius / 2);
+            const pY =
+              f.y + Math.sin(ang) * (f.centerRadius + f.petalRadius / 2);
+            ctx.beginPath();
+            ctx.arc(pX, pY, f.petalRadius, 0, Math.PI * 2);
+            ctx.fill();
+          }
+          ctx.fillStyle = "#FFD700";
+          ctx.beginPath(); // Center
+          ctx.arc(f.x, f.y, f.centerRadius, 0, Math.PI * 2);
+          ctx.fill();
+        });
+      }
+      function drawScoreOnCanvas() {
+        ctx.fillStyle = "#FFFFFF";
+        const baseFontSize = Math.max(10, 24); // Min 10px, base 24px
+        const scaledFontSize = Math.max(
+          10,
+          Math.min(baseFontSize, canvas.width / 35)
+        ); // Responsive font size
+        ctx.font = `${scaledFontSize}px "Press Start 2P"`;
+        ctx.textAlign = "left";
+        ctx.fillText(
+          translations.canvasScoreLabel[currentLanguage] + score,
+          canvas.width * 0.02,
+          canvas.height * 0.05
+        );
+      }
+
+      // --- Game Initialization and Loop ---
+      function initGameLogic() {
+        // Scale game elements based on canvas width for responsiveness
+        const scaleFactor = canvas.width / 800; // Base width of 800px for scaling
+        currentSpriteScale =
+          SPRITE_SCALE_BASE * Math.max(0.7, Math.min(1.5, scaleFactor * 1.1)); // Clamp scale
+        playerSpeed = PLAYER_SPEED_BASE * Math.max(0.8, scaleFactor);
+        femaleDogSpeed = FEMALE_DOG_SPEED_BASE * Math.max(0.8, scaleFactor);
+        fleeRadius =
+          FLEE_RADIUS_BASE * Math.max(0.7, Math.min(1.5, scaleFactor));
+
+        player = createPlayer();
+        femaleDogs = [];
+        backgroundFlowers = [];
+        const numFlowers =
+          canvas.width > 0 && canvas.height > 0
+            ? 15 + Math.floor(Math.random() * 10)
+            : 0; // Only if canvas has dimensions
+        for (let i = 0; i < numFlowers; i++)
+          backgroundFlowers.push(createFlower());
+
+        for (let i = 0; i < Math.floor(MAX_FEMALE_DOGS / 2) + 1; i++)
+          femaleDogs.push(createFemaleDog()); // Start with some dogs
+        score = 0;
+        keys = {};
+        femaleDogSpawnTimer = FEMALE_DOG_SPAWN_COOLDOWN;
+        taggedDogInfo = null;
+        successMessages = [];
+        heartAnimations = [];
+        gameTimerValue = 60; // Reset game timer
+        lastTime = 0; // Reset lastTime for deltaTime calculation
+      }
+
+      let animationFrameId;
+      function gameLoop(currentTime) {
+        if (!lastTime && gameState === "playing") lastTime = currentTime; // Initialize lastTime on first playing frame
+
+        const deltaTime = (currentTime - lastTime) / 1000; // Delta time in seconds
+        if (gameState === "playing") {
+          // Only update lastTime if game is actively playing
+          lastTime = currentTime;
+        }
+
+        if (
+          gameState === "menu" ||
+          gameState === "leaderboard" ||
+          gameState === "navod"
+        ) {
+          // Static screens, no game logic update needed, UI handled by showScreen
+        } else if (gameState === "countdown") {
+          drawCountdown();
+        } else if (gameState === "playing") {
+          if (deltaTime > 0.1) {
+            // If deltaTime is too large (e.g. tab was inactive)
+            // console.warn("Large deltaTime detected, capping at 0.1s. Actual:", deltaTime);
+            // effectiveDeltaTime = 0.1; // Cap deltaTime to prevent jumpiness
+            // No update, wait for next frame to avoid large jumps
+          } else {
+            gameTimerValue -= deltaTime; // Only decrease timer if deltaTime is reasonable
+          }
+
+          if (gameTimerValue <= 0) {
+            endGame();
+          } else {
+            const effectiveDeltaTime = Math.min(deltaTime, 0.1); // Cap deltaTime for updates
+
+            updatePlayer(effectiveDeltaTime);
+            femaleDogs.forEach((dog) =>
+              updateFemaleDog(dog, effectiveDeltaTime)
+            );
+            updateTagAnimationAndScore(effectiveDeltaTime);
+            updateSuccessMessages(effectiveDeltaTime);
+            updateHeartAnimations(effectiveDeltaTime);
+            checkCollisions();
+            spawnFemaleDogs(effectiveDeltaTime);
+
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            drawFlowers();
+            femaleDogs.forEach(drawFemaleDog);
+            // Player and active tag animation need to be drawn in correct order
+            // If player is tagging, drawActiveTagAnimation will handle both player and dog during interaction
+            if (player && player.isCurrentlyTagging && taggedDogInfo) {
+              drawActiveTagAnimation(); // Handles both player and dog during tag
             } else {
-                // Fallback if player image not loaded
-                ctx.fillStyle = 'saddlebrown';
-                ctx.fillRect(x, y, player.width, player.height);
+              drawPlayer(); // Draw player normally
+              if (taggedDogInfo) drawActiveTagAnimation(); // Draw fading dog if any
             }
 
-            // Draw the tinted dress on top of the pug
-            if (dressImg.complete && dressImg.naturalWidth > 0) {
-                // Create a temporary off-screen canvas for tinting the dress
-                const tempCanvas = document.createElement('canvas');
-                tempCanvas.width = player.width;
-                tempCanvas.height = player.height;
-                const tempCtx = tempCanvas.getContext('2d');
-
-                if (tempCtx) {
-                    // Draw original dress onto temp canvas
-                    tempCtx.drawImage(dressImg, 0, 0, player.width, player.height);
-
-                    // Apply tint: draw tint color, then use 'source-in'
-                    // 'source-in' means the new shape (tint color) is drawn only where it overlaps the existing content (dress),
-                    // and the existing content's alpha is preserved.
-                    tempCtx.globalCompositeOperation = 'source-in';
-                    tempCtx.fillStyle = dressTint; // dressTint should be globally available or passed
-                    tempCtx.fillRect(0, 0, player.width, player.height);
-
-                    // Reset GCO for drawing onto main canvas (though it's a new context, good practice)
-                    // tempCtx.globalCompositeOperation = 'source-over'; // Not strictly needed for tempCtx after this
-
-                    // Draw the tinted dress from tempCanvas to the main canvas
-                    // The main canvas 'ctx' should be in 'source-over' mode by default here
-                    // or after the flip restoration if GCO was changed before.
-                    ctx.drawImage(tempCanvas, x, y, player.width, player.height);
-                } else {
-                    console.warn("Failed to get 2D context for temporary canvas for dress tinting.");
-                    // Fallback: draw untinted dress if temp canvas fails
-                    ctx.drawImage(dressImg, x, y, player.width, player.height);
-                }
-            }
-
-            ctx.restore(); // Restore context (removes flip, resets GCO to state before this save)
+            drawSuccessMessages();
+            drawHeartAnimations();
+            drawScoreOnCanvas();
+            drawGameTimer();
+          }
+        } else if (gameState === "gameOver") {
+          // Game over screen is handled by showScreen, no canvas drawing needed here
         }
+        animationFrameId = requestAnimationFrame(gameLoop);
+      }
 
-        function drawFemaleDog(dog) {
-            ctx.save();
-            let dogDrawX = dog.x;
-            if (dog.facingDirection === -1) {
-                ctx.scale(-1, 1);
-                dogDrawX = -(dog.x + dog.width);
-            }
+      // Initial setup when DOM is ready
+      document.addEventListener("DOMContentLoaded", () => {
+        // Firebase init is already running via the script type=module at the top.
+        // We wait for images to load before showing the menu.
+        // updateLanguageUI(); // Initial language setup will be called after images load
+      });
 
-            if (femaleDogImg.complete && femaleDogImg.naturalWidth !== 0) {
-                ctx.drawImage(femaleDogImg, dogDrawX, dog.y, dog.width, dog.height);
-            } else {
-                ctx.fillStyle = "lightpink";
-                ctx.fillRect(dogDrawX, dog.y, dog.width, dog.height);
-            }
-            ctx.restore();
-        }
-
-        function drawActiveTagAnimation() {
-            if (!taggedDogInfo || taggedDogInfo.animTimer <= -0.16) return;
-            const td = taggedDogInfo.dogData;
-            const animTimer = taggedDogInfo.animTimer;
-
-            if (player && player.isCurrentlyTagging) { // Player is actively in the tagging bounce animation
-                // Draw the female dog being tagged (with its part of the bounce)
-                ctx.save();
-                let dogDrawX = td.x;
-                if (td.facingDirection === -1) {
-                    ctx.scale(-1, 1);
-                    dogDrawX = -(td.x + td.width);
-                }
-                const dogBounceProgress = (TAG_LOCK_DURATION - player.tagLockTimer) / TAG_LOCK_DURATION;
-                const dogBounceYOffset = Math.sin(dogBounceProgress * Math.PI) * (td.height * 0.1);
-                if (femaleDogImg.complete && femaleDogImg.naturalWidth !== 0) {
-                    ctx.drawImage(femaleDogImg, dogDrawX, td.y + dogBounceYOffset, td.width, td.height);
-                } else {
-                    ctx.fillStyle = "lightpink";
-                    ctx.fillRect(dogDrawX, td.y + dogBounceYOffset, td.width, td.height);
-                }
-                ctx.restore();
-
-                // Draw the player pug (with its part of the bounce and THE DRESS)
-                ctx.save();
-                let playerAnimDrawX = player.x; // player.x and player.y are updated in updatePlayer for the bounce
-                let playerAnimDrawY = player.y;
-
-                if (player.facingDirection === -1) {
-                    ctx.scale(-1, 1);
-                    playerAnimDrawX = -(player.x + player.width);
-                }
-
-                // Draw the pug base image
-                if (playerImg.complete && playerImg.naturalWidth !== 0) {
-                    ctx.drawImage(playerImg, playerAnimDrawX, playerAnimDrawY, player.width, player.height);
-                } else { // Fallback for player image
-                    ctx.fillStyle = "saddlebrown";
-                    ctx.fillRect(playerAnimDrawX, playerAnimDrawY, player.width, player.height);
-                }
-
-                // --- ADDED DRESS DRAWING LOGIC ---
-                if (dressImg.complete && dressImg.naturalWidth > 0) {
-                    const tempCanvas = document.createElement('canvas');
-                    tempCanvas.width = player.width;
-                    tempCanvas.height = player.height;
-                    const tempCtx = tempCanvas.getContext('2d');
-
-                    if (tempCtx) {
-                        tempCtx.drawImage(dressImg, 0, 0, player.width, player.height);
-                        tempCtx.globalCompositeOperation = 'source-in';
-                        tempCtx.fillStyle = dressTint;
-                        tempCtx.fillRect(0, 0, player.width, player.height);
-                        // Draw the tinted dress from tempCanvas to the main canvas
-                        ctx.drawImage(tempCanvas, playerAnimDrawX, playerAnimDrawY, player.width, player.height);
-                    } else {
-                        console.warn("Failed to get 2D context for temp dress canvas in drawActiveTagAnimation.");
-                        // Fallback: draw untinted dress if temp canvas fails
-                        ctx.drawImage(dressImg, playerAnimDrawX, playerAnimDrawY, player.width, player.height);
-                    }
-                }
-                // --- END OF ADDED DRESS LOGIC ---
-                ctx.restore(); // Restores context for player drawing
-
-            } else { // This 'else' is for when player.isCurrentlyTagging is false, but taggedDogInfo exists (fade out animation of female dog)
-                const fadeDuration = TAG_ANIMATION_TOTAL_DURATION - TAG_LOCK_DURATION; // Total time for fade after lock
-                const currentFadeTime = animTimer; // animTimer counts down through this phase
-                const fadeProgress = Math.max(0, Math.min(1, currentFadeTime / fadeDuration));
-
-                const scale = fadeProgress * 0.8 + 0.2; // Ends at 0.2 scale
-                const alpha = fadeProgress; // Fades to 0 alpha
-
-                const scaledWidth = td.width * scale;
-                const scaledHeight = td.height * scale;
-                const drawTargetX = taggedDogInfo.originalX + (td.width - scaledWidth) / 2;
-                const drawTargetY = taggedDogInfo.originalY + (td.height - scaledHeight) / 2;
-
-                ctx.save();
-                ctx.globalAlpha = alpha;
-                let finalDogFadeDrawX = drawTargetX;
-                if (td.facingDirection === -1) {
-                    ctx.scale(-1, 1);
-                    finalDogFadeDrawX = -(drawTargetX + scaledWidth);
-                }
-
-                if (femaleDogImg.complete && femaleDogImg.naturalWidth !== 0) {
-                    ctx.drawImage(femaleDogImg, finalDogFadeDrawX, drawTargetY, scaledWidth, scaledHeight);
-                } else {
-                    ctx.fillStyle = "lightpink";
-                    ctx.fillRect(finalDogFadeDrawX, drawTargetY, scaledWidth, scaledHeight);
-                }
-                ctx.restore();
-            }
-        }
-
-        function drawSuccessMessages() {
-            successMessages.forEach(msg => {
-                if (msg.particles) {
-                    msg.particles.forEach(p => {
-                        ctx.globalAlpha = p.alpha; ctx.fillStyle = p.color; ctx.beginPath();
-                        ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2); ctx.fill();
-                    });
-                    ctx.globalAlpha = 1;
-                }
-                ctx.save(); ctx.globalAlpha = msg.alpha; ctx.fillStyle = "#FFD700"; ctx.strokeStyle = "#000000";
-                ctx.lineWidth = Math.max(1, canvas.width / 400);
-                const baseFontSize = Math.max(10, Math.min(20, canvas.width / 40));
-                const fS = baseFontSize * msg.scale;
-                ctx.font = `${fS}px "Press Start 2P"`; ctx.textAlign = "center";
-                ctx.strokeText(msg.text, msg.x, msg.y); ctx.fillText(msg.text, msg.x, msg.y);
-                ctx.restore();
-            });
-        }
-        function drawHeart(x, y, s, a) {
-            ctx.save(); ctx.globalAlpha = a; ctx.fillStyle = "red"; ctx.strokeStyle = "darkred";
-            ctx.lineWidth = Math.max(1, canvas.width / 500); ctx.beginPath(); const tCH = s * 0.3;
-            ctx.moveTo(x, y + tCH);
-            ctx.bezierCurveTo(x, y, x - s / 2, y, x - s / 2, y + tCH);
-            ctx.bezierCurveTo(x - s / 2, y + (s + tCH) / 2, x, y + (s + tCH) / 2 + tCH / 2, x, y + s);
-            ctx.bezierCurveTo(x, y + (s + tCH) / 2 + tCH / 2, x + s / 2, y + (s + tCH) / 2, x + s / 2, y + tCH);
-            ctx.bezierCurveTo(x + s / 2, y, x, y, x, y + tCH);
-            ctx.closePath(); ctx.fill(); ctx.stroke(); ctx.restore();
-        }
-        function drawHeartAnimations() {
-            heartAnimations.forEach(h => {
-                const heartSize = Math.max(5, canvas.width / 80) * h.currentScale;
-                drawHeart(h.x - heartSize / 2, h.y - heartSize / 2, heartSize, h.alpha);
-            });
-        }
-        function drawFlowers() {
-            backgroundFlowers.forEach(f => {
-                ctx.strokeStyle = f.stemColor;
-                ctx.lineWidth = Math.max(1, canvas.width / 300);
-                ctx.beginPath(); ctx.moveTo(f.x, f.y + f.stemHeight); ctx.lineTo(f.x, f.y); ctx.stroke();
-                ctx.fillStyle = f.petalColor;
-                for (let i = 0; i < f.numPetals; i++) {
-                    const ang = (i / f.numPetals) * Math.PI * 2;
-                    const pX = f.x + Math.cos(ang) * (f.centerRadius + f.petalRadius / 2);
-                    const pY = f.y + Math.sin(ang) * (f.centerRadius + f.petalRadius / 2);
-                    ctx.beginPath(); ctx.arc(pX, pY, f.petalRadius, 0, Math.PI * 2); ctx.fill();
-                }
-                ctx.fillStyle = "#FFD700"; ctx.beginPath();
-                ctx.arc(f.x, f.y, f.centerRadius, 0, Math.PI * 2); ctx.fill();
-            });
-        }
-        function drawScoreOnCanvas() {
-            ctx.fillStyle = "#FFFFFF";
-            const baseFontSize = Math.max(10, 24);
-            const scaledFontSize = Math.max(10, Math.min(baseFontSize, canvas.width / 35));
-            ctx.font = `${scaledFontSize}px "Press Start 2P"`; ctx.textAlign = "left";
-            ctx.fillText("Skóre: " + score, canvas.width * 0.02, canvas.height * 0.05);
-        }
-
-        // --- Game Initialization and Loop ---
-        function initGameLogic() {
-            const scaleFactor = canvas.width / 800;
-            currentSpriteScale = SPRITE_SCALE_BASE * Math.max(0.7, Math.min(1.5, scaleFactor * 1.1));
-            playerSpeed = PLAYER_SPEED_BASE * Math.max(0.8, scaleFactor);
-            femaleDogSpeed = FEMALE_DOG_SPEED_BASE * Math.max(0.8, scaleFactor);
-            fleeRadius = FLEE_RADIUS_BASE * Math.max(0.7, Math.min(1.5, scaleFactor));
-
-            player = createPlayer();
-            femaleDogs = []; backgroundFlowers = [];
-            const numFlowers = canvas.width > 0 && canvas.height > 0 ? 15 + Math.floor(Math.random() * 10) : 0;
-            for (let i = 0; i < numFlowers; i++) backgroundFlowers.push(createFlower());
-
-            for (let i = 0; i < Math.floor(MAX_FEMALE_DOGS / 2) + 1; i++) femaleDogs.push(createFemaleDog());
-            score = 0; keys = {}; femaleDogSpawnTimer = FEMALE_DOG_SPAWN_COOLDOWN;
-            taggedDogInfo = null; successMessages = []; heartAnimations = [];
-            gameTimerValue = 60;
-            lastTime = 0;
-        }
-
-        let animationFrameId;
-        function gameLoop(currentTime) {
-            if (!lastTime && gameState === "playing") lastTime = currentTime;
-
-            const deltaTime = (currentTime - lastTime) / 1000;
-            if (gameState === "playing") {
-                lastTime = currentTime;
-            }
-
-            if (gameState === "menu" || gameState === "leaderboard" || gameState === "navod") {
-                // Static screens
-            } else if (gameState === "countdown") {
-                drawCountdown();
-            } else if (gameState === "playing") {
-                if (deltaTime > 0.1) {
-                    // Capped deltaTime logic
-                } else {
-                    gameTimerValue -= deltaTime;
-                }
-
-                if (gameTimerValue <= 0) {
-                    endGame();
-                } else {
-                    const effectiveDeltaTime = Math.min(deltaTime, 0.1);
-
-                    updatePlayer(effectiveDeltaTime);
-                    femaleDogs.forEach(dog => updateFemaleDog(dog, effectiveDeltaTime));
-                    updateTagAnimationAndScore(effectiveDeltaTime);
-                    updateSuccessMessages(effectiveDeltaTime);
-                    updateHeartAnimations(effectiveDeltaTime);
-                    checkCollisions();
-                    spawnFemaleDogs(effectiveDeltaTime);
-
-                    ctx.clearRect(0, 0, canvas.width, canvas.height);
-                    drawFlowers();
-                    femaleDogs.forEach(drawFemaleDog);
-                    drawPlayer();
-                    drawActiveTagAnimation();
-                    drawSuccessMessages();
-                    drawHeartAnimations();
-                    drawScoreOnCanvas();
-                    drawGameTimer();
-                }
-            } else if (gameState === "gameOver") {
-                // Game over screen
-            }
-            animationFrameId = requestAnimationFrame(gameLoop);
-        }
-
-        requestAnimationFrame(gameLoop);
-
+      // Start the game loop
+      requestAnimationFrame(gameLoop);
     </script>
-</body>
-
+  </body>
 </html>
