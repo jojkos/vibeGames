@@ -1,0 +1,309 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Automatic Guitar Tuner</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            touch-action: manipulation;
+        }
+        .tuner-needle {
+            transition: transform 0.2s linear;
+        }
+        .note-button.active {
+            background-color: #fbbf24;
+            color: #1f2937;
+            transform: scale(1.05);
+        }
+        .status-light {
+            transition: background-color 0.2s;
+        }
+    </style>
+</head>
+<body class="bg-gray-900 text-white flex items-center justify-center min-h-screen">
+
+    <div id="tuner-container" class="w-full max-w-sm mx-auto bg-gray-800 rounded-2xl shadow-2xl p-6 text-center">
+        <h1 class="text-3xl font-bold mb-2 text-amber-400">Automatic Tuner</h1>
+        <p id="instructions" class="text-gray-400 mb-6">Click 'Start' and play a note</p>
+
+        <!-- Visual Tuner Display -->
+        <div id="visual-tuner" class="hidden my-8">
+            <div class="relative h-40 bg-gray-700/50 rounded-lg p-4 flex flex-col justify-between">
+                <!-- Tuner Scale -->
+                <div class="absolute top-8 left-0 right-0 flex justify-between px-6 text-xs text-gray-400">
+                    <span>-50</span>
+                    <span>Flat</span>
+                    <span>In Tune</span>
+                    <span>Sharp</span>
+                    <span>+50</span>
+                </div>
+                 <!-- Center Line -->
+                <div class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 h-24 w-1 bg-amber-400/50 rounded-full"></div>
+                <!-- Needle -->
+                <div id="tuner-needle-container" class="relative w-full h-full flex items-center justify-center">
+                   <div id="tuner-needle" class="h-20 w-1.5 bg-red-500 rounded-full origin-bottom"></div>
+                </div>
+
+                 <!-- Note Display -->
+                <div class="text-center">
+                    <div id="note-name" class="text-5xl font-bold text-white">-</div>
+                    <div id="frequency-display" class="text-lg text-gray-300">0.00 Hz</div>
+                </div>
+            </div>
+             <!-- Status indicator light -->
+            <div class="mt-4 flex justify-center items-center space-x-2">
+                 <div id="status-light" class="w-4 h-4 rounded-full bg-gray-600"></div>
+                 <span id="tuning-status" class="text-gray-400">Waiting for signal...</span>
+            </div>
+        </div>
+
+        <!-- Start Button -->
+        <button id="start-button" class="w-full bg-amber-500 hover:bg-amber-600 text-gray-900 font-bold py-3 px-4 rounded-lg text-xl">
+            Start
+        </button>
+
+        <!-- Error Message Display -->
+        <div id="error-message" class="hidden mt-4 bg-red-500/20 text-red-400 p-3 rounded-lg"></div>
+    </div>
+
+    <script>
+        // DOM Elements
+        const startButton = document.getElementById('start-button');
+        const visualTuner = document.getElementById('visual-tuner');
+        const instructions = document.getElementById('instructions');
+        const errorMessage = document.getElementById('error-message');
+        const needle = document.getElementById('tuner-needle');
+        const noteNameDisplay = document.getElementById('note-name');
+        const frequencyDisplay = document.getElementById('frequency-display');
+        const tuningStatus = document.getElementById('tuning-status');
+        const statusLight = document.getElementById('status-light');
+
+        // Audio variables
+        let audioContext;
+        let analyser;
+        let microphone;
+        let dataArray;
+        
+        // Tuning state
+        let isTunerActive = false;
+        let animationFrameId;
+        let centsHistory = [];
+        const SMOOTHING_BUFFER_SIZE = 5;
+
+        // Generate musical note scale
+        const noteStrings = ["C", "C♯", "D", "D♯", "E", "F", "F♯", "G", "G♯", "A", "A♯", "B"];
+        const allNotes = [];
+
+        function generateNotes() {
+            const A4 = 440;
+            for (let octave = 0; octave < 9; octave++) {
+                for (let i = 0; i < 12; i++) {
+                    const totalSemitonesFromA4 = (octave - 4) * 12 + (i - 9);
+                    const freq = A4 * Math.pow(2, totalSemitonesFromA4 / 12);
+                    // Limit the range for common instruments
+                    if (freq > 60 && freq < 1400) { 
+                        allNotes.push({ name: noteStrings[i], freq: freq, octave: octave });
+                    }
+                }
+            }
+        }
+        generateNotes();
+
+        // Event Listeners
+        startButton.addEventListener('click', startTuner);
+
+        // --- Core Functions ---
+
+        /**
+         * Initializes the tuner, requests microphone access, and starts the loop.
+         */
+        async function startTuner() {
+            try {
+                audioContext = new (window.AudioContext || window.webkitAudioContext)();
+                const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+                microphone = audioContext.createMediaStreamSource(stream);
+
+                analyser = audioContext.createAnalyser();
+                analyser.fftSize = 4096; // Increased for better bass accuracy
+                const bufferLength = analyser.frequencyBinCount;
+                dataArray = new Float32Array(bufferLength);
+                
+                microphone.connect(analyser);
+
+                // Update UI
+                startButton.classList.add('hidden');
+                visualTuner.classList.remove('hidden');
+                instructions.textContent = 'Play any note...';
+                isTunerActive = true;
+                
+                updateTuner(); // Start the loop
+            } catch (err) {
+                console.error('Error starting tuner:', err);
+                showError("Could not access the microphone. Please allow microphone access in your browser settings.");
+                startButton.classList.remove('hidden');
+            }
+        }
+        
+        /**
+         * Finds the closest note to a given frequency.
+         * @param {number} frequency - The measured frequency in Hz.
+         * @returns {object|null} The note object or null.
+         */
+        function findClosestNote(frequency) {
+            if (!frequency) return null;
+            let closestNote = null;
+            let minDiff = Infinity;
+
+            for(const note of allNotes) {
+                const diff = Math.abs(frequency - note.freq);
+                if (diff < minDiff) {
+                    minDiff = diff;
+                    closestNote = note;
+                }
+            }
+            return closestNote;
+        }
+
+        /**
+         * The main loop that continuously detects pitch and updates the UI.
+         */
+        function updateTuner() {
+            if (!isTunerActive) {
+                animationFrameId = null;
+                return;
+            }
+
+            const frequency = getPitch();
+            const targetNote = findClosestNote(frequency);
+
+            if (frequency && targetNote) {
+                frequencyDisplay.textContent = `${frequency.toFixed(2)} Hz`;
+                noteNameDisplay.textContent = targetNote.name;
+                const cents = 1200 * Math.log2(frequency / targetNote.freq);
+                updateVisuals(cents);
+            } else {
+                resetVisuals();
+            }
+
+            animationFrameId = requestAnimationFrame(updateTuner);
+        }
+        
+        /**
+         * Updates the visual elements based on pitch difference.
+         * @param {number} cents - The pitch difference in cents.
+         */
+        function updateVisuals(cents) {
+            centsHistory.push(cents);
+            if (centsHistory.length > SMOOTHING_BUFFER_SIZE) {
+                centsHistory.shift();
+            }
+
+            const smoothedCents = centsHistory.reduce((a, b) => a + b, 0) / centsHistory.length;
+            
+            const clampedCents = Math.max(-50, Math.min(50, smoothedCents));
+            const rotation = (clampedCents / 50) * 45;
+            needle.style.transform = `rotate(${rotation}deg)`;
+
+            // Tolerance of 5 cents for "In Tune"
+            if (Math.abs(smoothedCents) < 5) { 
+                tuningStatus.textContent = 'In Tune';
+                statusLight.style.backgroundColor = '#34d399';
+                needle.style.backgroundColor = '#34d399';
+            } else if (smoothedCents < 0) {
+                tuningStatus.textContent = 'Too Flat';
+                statusLight.style.backgroundColor = '#fb923c';
+                needle.style.backgroundColor = '#fb923c';
+            } else {
+                tuningStatus.textContent = 'Too Sharp';
+                statusLight.style.backgroundColor = '#fb923c';
+                needle.style.backgroundColor = '#fb923c';
+            }
+        }
+
+        /**
+         * Resets the visualizer to its default state.
+         */
+        function resetVisuals() {
+            tuningStatus.textContent = 'Waiting for signal...';
+            noteNameDisplay.textContent = '-';
+            statusLight.style.backgroundColor = '#4b5563';
+            needle.style.backgroundColor = '#ef4444';
+            needle.style.transform = 'rotate(0deg)';
+        }
+
+        /**
+         * Displays an error message in the UI.
+         * @param {string} message - The error message to display.
+         */
+        function showError(message) {
+            errorMessage.textContent = message;
+            errorMessage.classList.remove('hidden');
+        }
+
+        // --- Pitch Detection Algorithm (Autocorrelation) ---
+
+        function getPitch() {
+            analyser.getFloatTimeDomainData(dataArray);
+            let ac = autoCorrelate(dataArray, audioContext.sampleRate);
+            return ac;
+        }
+
+        function autoCorrelate(buf, sampleRate) {
+            const SIZE = buf.length;
+            let rms = 0;
+            for (let i = 0; i < SIZE; i++) {
+                const val = buf[i];
+                rms += val * val;
+            }
+            rms = Math.sqrt(rms / SIZE);
+            if (rms < 0.01) { // Not enough signal
+                return null;
+            }
+
+            let r1 = 0, r2 = SIZE - 1, thres = 0.2;
+            for (let i = 0; i < SIZE / 2; i++) {
+                if (Math.abs(buf[i]) < thres) { r1 = i; break; }
+            }
+            for (let i = 1; i < SIZE / 2; i++) {
+                if (Math.abs(buf[SIZE - i]) < thres) { r2 = SIZE - i; break; }
+            }
+
+            buf = buf.slice(r1, r2);
+            const C_SIZE = buf.length;
+            const c = new Float32Array(C_SIZE).fill(0);
+            for (let i = 0; i < C_SIZE; i++) {
+                for (let j = 0; j < C_SIZE - i; j++) {
+                    c[i] = c[i] + buf[j] * buf[j + i];
+                }
+            }
+
+            let d = 0;
+            while (d < C_SIZE && c[d] > c[d + 1]) {
+                d++;
+            }
+            let maxval = -1, maxpos = -1;
+            for (let i = d; i < C_SIZE; i++) {
+                if (c[i] > maxval) {
+                    maxval = c[i];
+                    maxpos = i;
+                }
+            }
+            
+            let T0 = maxpos;
+            if (T0 > 0 && T0 < C_SIZE - 1) {
+                const x1 = c[T0 - 1], x2 = c[T0], x3 = c[T0 + 1];
+                const a = (x1 + x3 - 2 * x2) / 2;
+                const b = (x3 - x1) / 2;
+                if (a) T0 = T0 - b / (2 * a);
+            }
+
+            if (T0 === 0) return null;
+            return sampleRate / T0;
+        }
+    </script>
+</body>
+</html>
