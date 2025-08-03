@@ -1,0 +1,996 @@
+<!DOCTYPE html>
+<html lang="cs">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Calendar Puzzle Solver</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700&display=swap"
+      rel="stylesheet"
+    />
+    <style>
+      :root {
+        --bg-gradient-start: #6d83a1;
+        --bg-gradient-end: #3c4a5f;
+        --container-bg: #ffffff;
+        --grid-border: #d1d5db;
+        --text-primary: #1f2937;
+        --text-secondary: #4b5563;
+        --button-bg: #3b82f6;
+        --button-hover-bg: #2563eb;
+        --button-disabled-bg: #9ca3af;
+        --refresh-bg: #ef4444;
+        --refresh-hover-bg: #dc2626;
+        --cell-disabled-bg: #e5e7eb;
+        --cell-puzzle-disabled-bg: #374151;
+        --cell-font-color: rgba(0, 0, 0, 0.3);
+        --success-color: #10b981;
+        --error-color: #f43f5e;
+        --secondary-button-bg: #6b7280;
+        --secondary-button-hover-bg: #4b5563;
+      }
+
+      * {
+        box-sizing: border-box;
+        margin: 0;
+        padding: 0;
+      }
+
+      html {
+        font-size: 16px;
+      }
+
+      body {
+        min-height: 100vh;
+        font-family: "Inter", sans-serif;
+        background: linear-gradient(
+          135deg,
+          var(--bg-gradient-start) 0%,
+          var(--bg-gradient-end) 100%
+        );
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        padding: 1rem;
+        color: var(--text-primary);
+      }
+
+      #container {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        width: 100%;
+        max-width: 550px;
+        padding: 2rem;
+        background: var(--container-bg);
+        border-radius: 12px;
+        box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1),
+          0 4px 10px rgba(0, 0, 0, 0.05);
+      }
+
+      h1 {
+        font-size: 1.75rem;
+        font-weight: 700;
+        margin-bottom: 0.5rem;
+        text-align: center;
+      }
+
+      p {
+        font-size: 1rem;
+        margin: 0.25rem 0;
+        text-align: center;
+        color: var(--text-secondary);
+        max-width: 450px;
+      }
+
+      #wrapper {
+        position: relative;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        margin-top: 1.5rem;
+      }
+
+      #grid {
+        display: grid;
+        border: 1px solid var(--grid-border);
+        border-radius: 8px;
+        overflow: hidden;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+      }
+
+      #date {
+        font-size: 1.5rem;
+        font-weight: 500;
+        color: var(--text-primary);
+        text-align: center;
+        margin-top: 1rem;
+        padding: 0.5rem 1rem;
+        background-color: #f3f4f6;
+        border-radius: 8px;
+      }
+
+      .cell {
+        width: 45px;
+        height: 45px;
+        background-color: #fff;
+        border: 1px solid var(--grid-border);
+        cursor: pointer;
+        transition: background-color 0.2s, transform 0.1s;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 0.8rem;
+        color: var(--cell-font-color);
+        user-select: none;
+      }
+
+      .cell:not(.disabled):not(.puzzle-disabled):hover {
+        background-color: #f9fafb;
+        transform: scale(1.05);
+      }
+
+      .disabled {
+        font-weight: 700;
+        border: 2px solid var(--text-primary) !important;
+        color: var(--text-primary);
+        font-size: 0.9rem;
+        background-color: var(--cell-disabled-bg);
+      }
+
+      .puzzle-disabled {
+        background-color: var(--cell-puzzle-disabled-bg) !important;
+        pointer-events: none;
+        cursor: default;
+      }
+
+      .controls-container {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 1rem;
+        margin-top: 1.5rem;
+        width: 100%;
+      }
+
+      .solve-buttons {
+        display: flex;
+        gap: 1rem;
+        justify-content: center;
+        width: 100%;
+      }
+
+      button {
+        padding: 0.75rem 1.5rem;
+        font-size: 1rem;
+        font-weight: 500;
+        border: none;
+        border-radius: 8px;
+        background: var(--button-bg);
+        color: #fff;
+        cursor: pointer;
+        transition: background-color 0.2s, transform 0.1s;
+        width: auto;
+      }
+
+      button:hover:not(:disabled) {
+        background: var(--button-hover-bg);
+        transform: translateY(-2px);
+      }
+
+      button:disabled {
+        background: var(--button-disabled-bg);
+        cursor: not-allowed;
+        transform: none;
+      }
+
+      #findNextButton {
+        background-color: var(--secondary-button-bg);
+      }
+      #findNextButton:hover:not(:disabled) {
+        background-color: var(--secondary-button-hover-bg);
+      }
+
+      #refreshButton {
+        width: 40px;
+        height: 40px;
+        border-radius: 50%;
+        font-size: 1.2rem;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: var(--refresh-bg);
+        padding: 0;
+        min-width: 40px;
+        max-width: 40px;
+      }
+
+      #refreshButton:hover {
+        background: var(--refresh-hover-bg);
+      }
+
+      #message-box {
+        font-size: 0.9rem;
+        margin-top: 10px;
+        text-align: center;
+        min-height: 20px;
+        font-weight: 500;
+        transition: color 0.3s;
+      }
+
+      .message-success {
+        color: var(--success-color);
+      }
+      .message-error {
+        color: var(--error-color);
+      }
+      .message-info {
+        color: var(--text-secondary);
+      }
+
+      .checkbox-container {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+      }
+
+      .puzzle-types {
+        display: flex;
+        gap: 1rem;
+        align-items: center;
+      }
+      .puzzle-types label {
+        cursor: pointer;
+      }
+    </style>
+  </head>
+  <body>
+    <div id="container">
+      <h1>Calendar Puzzle</h1>
+      <p>
+        Select a date by clicking on the grid cells, then run the solver to find
+        the solution.
+      </p>
+
+      <div id="wrapper">
+        <div id="grid"></div>
+        <div id="date"></div>
+      </div>
+
+      <div class="controls-container">
+        <div class="checkbox-container">
+          <input type="checkbox" id="renderCheck" />
+          <label for="renderCheck">Show solving animation</label>
+        </div>
+
+        <div class="puzzle-types">
+          <p>Puzzle Type:</p>
+          <label>
+            <input type="radio" id="two" name="puzzleType" /> Type A
+          </label>
+          <label>
+            <input type="radio" id="three" name="puzzleType" checked /> Type B
+          </label>
+        </div>
+
+        <div class="solve-buttons">
+          <button id="runButton">Find Solution</button>
+          <button id="findNextButton" style="display: none">
+            Find Another
+          </button>
+        </div>
+        <div id="message-box" class="message-info">Ready to solve.</div>
+
+        <button id="refreshButton" title="Reset Page">↻</button>
+      </div>
+    </div>
+
+    <script>
+      // --- Main Application Module ---
+      // Encapsulated in an IIFE to avoid polluting the global scope.
+      (function () {
+        // --- DOM Elements ---
+        const gridElement = document.getElementById("grid");
+        const runButton = document.getElementById("runButton");
+        const findNextButton = document.getElementById("findNextButton");
+        const refreshButton = document.getElementById("refreshButton");
+        const renderCheck = document.getElementById("renderCheck");
+        const puzzleTypeRadios = document.getElementsByName("puzzleType");
+        const dateElement = document.getElementById("date");
+        const messageBox = document.getElementById("message-box");
+
+        // --- Puzzle Definitions ---
+        // Centralized configuration for different puzzle types.
+        const puzzleDefinitions = {
+          two: {
+            tiles: [
+              {
+                shape: [
+                  [1, 0, 0],
+                  [1, 0, 0],
+                  [1, 1, 1],
+                ],
+                color: "#ef4444",
+              },
+              {
+                shape: [
+                  [1, 1],
+                  [0, 1],
+                  [1, 1],
+                ],
+                color: "#3b82f6",
+              },
+              {
+                shape: [
+                  [0, 1],
+                  [0, 1],
+                  [0, 1],
+                  [1, 1],
+                ],
+                color: "#22c55e",
+              },
+              {
+                shape: [
+                  [1, 1, 0],
+                  [0, 1, 0],
+                  [0, 1, 1],
+                ],
+                color: "#8b5cf6",
+              },
+              {
+                shape: [
+                  [1, 0],
+                  [1, 1],
+                  [1, 1],
+                ],
+                color: "#f97316",
+              },
+              {
+                shape: [
+                  [1, 1],
+                  [1, 1],
+                  [1, 1],
+                ],
+                color: "#14b8a6",
+              },
+              {
+                shape: [
+                  [1, 0],
+                  [1, 1],
+                  [0, 1],
+                  [0, 1],
+                ],
+                color: "#eab308",
+              },
+              {
+                shape: [
+                  [0, 1],
+                  [1, 1],
+                  [0, 1],
+                  [0, 1],
+                ],
+                color: "#ec4899",
+              },
+            ],
+            disabledCells:
+              "[[0,6],[0,7],[1,6],[1,7],[6,3],[6,4],[6,5],[6,6],[6,7],[2,7],[3,7],[4,7],[5,7]]",
+            gridData: [
+              ["Led", "Úno", "Bře", "Dub", "Kvě", "Čvn", "_"],
+              ["Čvc", "Srp", "Zář", "Říj", "Lis", "Pro", "_"],
+              ["1", "2", "3", "4", "5", "6", "7"],
+              ["8", "9", "10", "11", "12", "13", "14"],
+              ["15", "16", "17", "18", "19", "20", "21"],
+              ["22", "23", "24", "25", "26", "27", "28"],
+              ["29", "30", "31", "_", "_", "_", "_"],
+            ],
+            maxUserDisabled: 2,
+          },
+          three: {
+            tiles: [
+              {
+                shape: [
+                  [1, 1, 1],
+                  [0, 1, 0],
+                  [0, 1, 0],
+                ],
+                color: "#ef4444",
+              },
+              {
+                shape: [
+                  [1, 0, 1],
+                  [1, 1, 1],
+                ],
+                color: "#3b82f6",
+              },
+              { shape: [[1], [1], [1], [1]], color: "#22c55e" },
+              {
+                shape: [
+                  [1, 0],
+                  [1, 0],
+                  [1, 1],
+                ],
+                color: "#8b5cf6",
+              },
+              {
+                shape: [
+                  [1, 0, 0, 0],
+                  [1, 1, 1, 1],
+                ],
+                color: "#f97316",
+              },
+              {
+                shape: [
+                  [1, 1, 1],
+                  [1, 0, 0],
+                  [1, 0, 0],
+                ],
+                color: "#14b8a6",
+              },
+              {
+                shape: [
+                  [1, 1, 0],
+                  [0, 1, 1],
+                ],
+                color: "#eab308",
+              },
+              {
+                shape: [
+                  [1, 1, 0, 0],
+                  [0, 1, 1, 1],
+                ],
+                color: "#ec4899",
+              },
+              {
+                shape: [
+                  [1, 1, 0],
+                  [0, 1, 0],
+                  [0, 1, 1],
+                ],
+                color: "#a16207",
+              },
+              {
+                shape: [
+                  [1, 1],
+                  [1, 1],
+                  [0, 1],
+                ],
+                color: "#0d9488",
+              },
+            ],
+            disabledCells: "[[0,6],[1,6],[7,0],[7,1],[7,2],[7,3]]",
+            gridData: [
+              ["Led", "Úno", "Bře", "Dub", "Kvě", "Čvn", "_"],
+              ["Čvc", "Srp", "Zář", "Říj", "Lis", "Pro", "_"],
+              ["1", "2", "3", "4", "5", "6", "7"],
+              ["8", "9", "10", "11", "12", "13", "14"],
+              ["15", "16", "17", "18", "19", "20", "21"],
+              ["22", "23", "24", "25", "26", "27", "28"],
+              ["29", "30", "31", "Po", "Út", "St", "Čt"],
+              ["_", "_", "_", "_", "Pá", "So", "Ne"],
+            ],
+            maxUserDisabled: 3,
+          },
+        };
+
+        // --- Application State ---
+        let state = {
+          puzzleType: "three",
+          rows: 0,
+          cols: 0,
+          puzzleFixedDisabled: [],
+          userDisabledCells: [],
+          maxUserDisabled: 0,
+          tiles: [],
+          precomputedTiles: [],
+          animationFrame: null,
+          isSolving: false,
+        };
+
+        // --- Core Logic ---
+
+        /**
+         * Initializes the puzzle state based on the selected type.
+         */
+        function initPuzzle() {
+          const selectedId =
+            Array.from(puzzleTypeRadios).find((r) => r.checked)?.id || "three";
+          state.puzzleType = selectedId;
+
+          const puzzleDef = puzzleDefinitions[state.puzzleType];
+          if (!puzzleDef) {
+            console.error("Invalid puzzle type selected:", state.puzzleType);
+            return;
+          }
+
+          state.rows = puzzleDef.gridData.length;
+          state.cols = puzzleDef.gridData[0].length;
+          state.maxUserDisabled = puzzleDef.maxUserDisabled;
+          state.tiles = puzzleDef.tiles;
+
+          try {
+            state.puzzleFixedDisabled = JSON.parse(puzzleDef.disabledCells);
+          } catch (e) {
+            console.error("Failed to parse disabledCells JSON:", e);
+            state.puzzleFixedDisabled = [];
+          }
+
+          // Set user disabled cells to today's date
+          state.userDisabledCells = getTodayCells(
+            puzzleDef.gridData,
+            puzzleDef.maxUserDisabled === 3
+          );
+
+          // Precompute tile rotations and sort them for efficiency
+          state.precomputedTiles = precomputeAndSortTiles(state.tiles);
+
+          createGrid();
+          updateDateDiv();
+          findNextButton.style.display = "none"; // Hide on init
+        }
+
+        /**
+         * Determines which cells should be disabled for today's date.
+         */
+        function getTodayCells(gridData, includeDay) {
+          const today = new Date();
+          const dayNames = ["Po", "Út", "St", "Čt", "Pá", "So", "Ne"];
+          const monthNames = [
+            "Led",
+            "Úno",
+            "Bře",
+            "Dub",
+            "Kvě",
+            "Čvn",
+            "Čvc",
+            "Srp",
+            "Zář",
+            "Říj",
+            "Lis",
+            "Pro",
+          ];
+          const dayIndex = (today.getDay() + 6) % 7;
+          const todayText = {
+            day: dayNames[dayIndex],
+            date: today.getDate().toString(),
+            month: monthNames[today.getMonth()],
+          };
+          const disabledToday = [];
+          for (let r = 0; r < gridData.length; r++) {
+            for (let c = 0; c < gridData[r].length; c++) {
+              const cellValue = gridData[r][c];
+              if (
+                (includeDay && cellValue === todayText.day) ||
+                cellValue === todayText.date ||
+                cellValue === todayText.month
+              ) {
+                disabledToday.push([r, c]);
+              }
+            }
+          }
+          return disabledToday;
+        }
+
+        /**
+         * Creates and populates the grid UI.
+         */
+        function createGrid() {
+          const puzzleDef = puzzleDefinitions[state.puzzleType];
+          gridElement.innerHTML = "";
+          gridElement.style.gridTemplateColumns = `repeat(${state.cols}, 45px)`;
+          gridElement.style.gridTemplateRows = `repeat(${state.rows}, 45px)`;
+
+          for (let r = 0; r < state.rows; r++) {
+            for (let c = 0; c < state.cols; c++) {
+              const cell = document.createElement("div");
+              cell.classList.add("cell");
+              cell.dataset.row = r;
+              cell.dataset.col = c;
+              const label = puzzleDef.gridData[r][c];
+              if (label !== "_") {
+                cell.textContent = label;
+              }
+              if (isCellPuzzleDisabled(r, c)) {
+                cell.classList.add("puzzle-disabled");
+              } else if (isCellUserDisabled(r, c)) {
+                cell.classList.add("disabled");
+              }
+              if (!isCellPuzzleDisabled(r, c)) {
+                cell.addEventListener("click", () => handleCellClick(r, c));
+              }
+              gridElement.appendChild(cell);
+            }
+          }
+        }
+
+        /**
+         * Toggles a cell's user-disabled state.
+         */
+        function handleCellClick(row, col) {
+          if (state.isSolving) return;
+          const index = state.userDisabledCells.findIndex(
+            ([r, c]) => r === row && c === col
+          );
+          if (index !== -1) {
+            state.userDisabledCells.splice(index, 1);
+          } else {
+            if (state.userDisabledCells.length < state.maxUserDisabled) {
+              state.userDisabledCells.push([row, col]);
+            } else {
+              displayMessage(
+                `You can only disable ${state.maxUserDisabled} cells!`,
+                "error",
+                2000
+              );
+            }
+          }
+          createGrid();
+          updateDateDiv();
+        }
+
+        // --- Solver Logic ---
+
+        function shuffleArray(array) {
+          for (let i = array.length - 1; i > 0; i--) {
+            const j = Math.floor(Math.random() * (i + 1));
+            [array[i], array[j]] = [array[j], array[i]];
+          }
+        }
+
+        /**
+         * Precomputes all unique rotations for tiles and sorts them by area descending.
+         */
+        function precomputeAndSortTiles(tiles) {
+          const precomputed = tiles.map((tile) => {
+            const rotations = [];
+            let current = tile.shape;
+            for (let i = 0; i < 4; i++) {
+              const s = JSON.stringify(current);
+              if (!rotations.some((r) => JSON.stringify(r) === s)) {
+                rotations.push(current);
+              }
+              current = rotatePiece(current);
+            }
+            const area = tile.shape.flat().reduce((a, v) => a + v, 0);
+            return { color: tile.color, rotations, area };
+          });
+          return precomputed.sort((a, b) => b.area - a.area);
+        }
+
+        function rotatePiece(piece) {
+          const rows = piece.length;
+          const cols = piece[0].length;
+          const newPiece = Array.from({ length: cols }, () =>
+            Array(rows).fill(0)
+          );
+          for (let r = 0; r < rows; r++) {
+            for (let c = 0; c < cols; c++) {
+              newPiece[c][rows - 1 - r] = piece[r][c];
+            }
+          }
+          return newPiece;
+        }
+
+        /**
+         * The main backtracking solver.
+         */
+        function solve(grid, tileIndex) {
+          if (tileIndex >= state.precomputedTiles.length) {
+            return true;
+          }
+          if (!canContinue(grid, state.precomputedTiles.slice(tileIndex))) {
+            return false;
+          }
+          const tile = state.precomputedTiles[tileIndex];
+          for (let r = 0; r < state.rows; r++) {
+            for (let c = 0; c < state.cols; c++) {
+              for (const rotation of tile.rotations) {
+                if (canPlace(grid, rotation, r, c)) {
+                  placePiece(grid, rotation, r, c, tile.color);
+                  if (solve(grid, tileIndex + 1)) {
+                    return true;
+                  }
+                  placePiece(grid, rotation, r, c, 0);
+                }
+              }
+            }
+          }
+          return false;
+        }
+
+        /**
+         * Generator function for the animated solver.
+         */
+        function* solveAnimatedGenerator(grid, tileIndex) {
+          if (tileIndex >= state.precomputedTiles.length) {
+            yield { success: true };
+            return;
+          }
+          if (!canContinue(grid, state.precomputedTiles.slice(tileIndex))) {
+            return;
+          }
+          const tile = state.precomputedTiles[tileIndex];
+          for (let r = 0; r < state.rows; r++) {
+            for (let c = 0; c < state.cols; c++) {
+              for (const rotation of tile.rotations) {
+                if (canPlace(grid, rotation, r, c)) {
+                  placePiece(grid, rotation, r, c, tile.color);
+                  yield { grid };
+                  const subGen = solveAnimatedGenerator(grid, tileIndex + 1);
+                  for (const result of subGen) {
+                    yield result;
+                    if (result.success) {
+                      return;
+                    }
+                  }
+                  placePiece(grid, rotation, r, c, 0);
+                  yield { grid };
+                }
+              }
+            }
+          }
+        }
+
+        // --- Solver Helper Functions ---
+
+        function canPlace(grid, piece, r, c) {
+          for (let i = 0; i < piece.length; i++) {
+            for (let j = 0; j < piece[i].length; j++) {
+              if (piece[i][j] === 1) {
+                const newR = r + i;
+                const newC = c + j;
+                if (
+                  newR < 0 ||
+                  newR >= state.rows ||
+                  newC < 0 ||
+                  newC >= state.cols ||
+                  grid[newR][newC] !== 0 ||
+                  isCellDisabled(newR, newC)
+                ) {
+                  return false;
+                }
+              }
+            }
+          }
+          return true;
+        }
+
+        function placePiece(grid, piece, r, c, value) {
+          for (let i = 0; i < piece.length; i++) {
+            for (let j = 0; j < piece[i].length; j++) {
+              if (piece[i][j] === 1) {
+                grid[r + i][c + j] = value;
+              }
+            }
+          }
+        }
+
+        function canContinue(grid, remainingTiles) {
+          if (remainingTiles.length === 0) return true;
+          const regions = findContiguousRegions(grid);
+          const smallestPieceArea = Math.min(
+            ...remainingTiles.map((t) => t.area)
+          );
+          return !regions.some(
+            (regionSize) => regionSize > 0 && regionSize < smallestPieceArea
+          );
+        }
+
+        function findContiguousRegions(grid) {
+          const visited = Array.from({ length: state.rows }, () =>
+            Array(state.cols).fill(false)
+          );
+          const directions = [
+            [1, 0],
+            [-1, 0],
+            [0, 1],
+            [0, -1],
+          ];
+          const regions = [];
+          for (let r = 0; r < state.rows; r++) {
+            for (let c = 0; c < state.cols; c++) {
+              if (!visited[r][c] && grid[r][c] === 0 && !isCellDisabled(r, c)) {
+                const queue = [[r, c]];
+                visited[r][c] = true;
+                let size = 0;
+                while (queue.length > 0) {
+                  const [x, y] = queue.shift();
+                  size++;
+                  for (const [dx, dy] of directions) {
+                    const nx = x + dx;
+                    const ny = y + dy;
+                    if (
+                      nx >= 0 &&
+                      nx < state.rows &&
+                      ny >= 0 &&
+                      ny < state.cols &&
+                      !visited[nx][ny] &&
+                      grid[nx][ny] === 0 &&
+                      !isCellDisabled(nx, ny)
+                    ) {
+                      visited[nx][ny] = true;
+                      queue.push([nx, ny]);
+                    }
+                  }
+                }
+                regions.push(size);
+              }
+            }
+          }
+          return regions;
+        }
+
+        // --- UI Update Functions ---
+
+        function updateUIAfterSolve(grid) {
+          for (let r = 0; r < state.rows; r++) {
+            for (let c = 0; c < state.cols; c++) {
+              const cell = gridElement.querySelector(
+                `[data-row="${r}"][data-col="${c}"]`
+              );
+              if (cell) {
+                cell.style.backgroundColor =
+                  grid[r][c] === 0 ? "white" : grid[r][c];
+              }
+            }
+          }
+          const disabledCells = gridElement.querySelectorAll(".disabled");
+          disabledCells.forEach((cell) => (cell.style.backgroundColor = ""));
+        }
+
+        function updateDateDiv() {
+          const puzzleDef = puzzleDefinitions[state.puzzleType];
+          const selectedValues = state.userDisabledCells.map(
+            ([r, c]) => puzzleDef.gridData[r][c]
+          );
+          const dayNames = ["Po", "Út", "St", "Čt", "Pá", "So", "Ne"];
+          const monthNames = [
+            "Led",
+            "Úno",
+            "Bře",
+            "Dub",
+            "Kvě",
+            "Čvn",
+            "Čvc",
+            "Srp",
+            "Zář",
+            "Říj",
+            "Lis",
+            "Pro",
+          ];
+          let foundDayName =
+            selectedValues.find((v) => dayNames.includes(v)) || "";
+          let foundMonthName =
+            selectedValues.find((v) => monthNames.includes(v)) || "";
+          let foundDayNumber =
+            selectedValues.find(
+              (v) =>
+                !isNaN(parseInt(v, 10)) &&
+                parseInt(v, 10) >= 1 &&
+                parseInt(v, 10) <= 31
+            ) || "";
+          const dateStr =
+            [foundDayName, foundDayNumber, foundMonthName]
+              .filter(Boolean)
+              .join(" ") || "No Date Selected";
+          dateElement.textContent = dateStr;
+        }
+
+        function displayMessage(msg, type = "info", duration = 0) {
+          messageBox.textContent = msg;
+          messageBox.className = `message-${type}`;
+          if (duration > 0) {
+            setTimeout(() => {
+              if (messageBox.textContent === msg) {
+                displayMessage("Ready to solve.", "info");
+              }
+            }, duration);
+          }
+        }
+
+        function resetGridAppearance() {
+          const cells = gridElement.querySelectorAll(".cell");
+          cells.forEach((cell) => {
+            if (
+              !cell.classList.contains("puzzle-disabled") &&
+              !cell.classList.contains("disabled")
+            ) {
+              cell.style.backgroundColor = "white";
+            }
+          });
+        }
+
+        function setSolvingState(isSolving) {
+          state.isSolving = isSolving;
+          runButton.disabled = isSolving;
+          findNextButton.disabled = isSolving;
+          runButton.textContent = isSolving ? "Solving..." : "Find Solution";
+          puzzleTypeRadios.forEach((r) => (r.disabled = isSolving));
+          renderCheck.disabled = isSolving;
+        }
+
+        // --- Helper Predicates ---
+        const isCellPuzzleDisabled = (r, c) =>
+          state.puzzleFixedDisabled.some(([rr, cc]) => rr === r && cc === c);
+        const isCellUserDisabled = (r, c) =>
+          state.userDisabledCells.some(([rr, cc]) => rr === r && cc === c);
+        const isCellDisabled = (r, c) =>
+          isCellPuzzleDisabled(r, c) || isCellUserDisabled(r, c);
+
+        // --- Event Handlers ---
+
+        function handleRun(findNext = false) {
+          if (state.isSolving) return;
+          setSolvingState(true);
+          resetGridAppearance();
+          displayMessage("Solving...", "info");
+
+          if (findNext) {
+            shuffleArray(state.precomputedTiles);
+          } else {
+            // For the first run, sort by area for a fast, deterministic result.
+            state.precomputedTiles.sort((a, b) => b.area - a.area);
+            findNextButton.style.display = "none";
+          }
+
+          if (state.animationFrame) {
+            cancelAnimationFrame(state.animationFrame);
+            state.animationFrame = null;
+          }
+
+          const grid = Array.from({ length: state.rows }, () =>
+            Array(state.cols).fill(0)
+          );
+
+          if (renderCheck.checked) {
+            const generator = solveAnimatedGenerator(grid, 0);
+            let solutionFound = false;
+            function animate() {
+              const { value: result, done } = generator.next();
+              if (done) {
+                if (!solutionFound) {
+                  displayMessage("No solution exists for this date.", "error");
+                }
+                setSolvingState(false);
+                return;
+              }
+              if (result && result.grid) {
+                updateUIAfterSolve(result.grid);
+              }
+              if (result && result.success) {
+                solutionFound = true;
+                displayMessage("Solution Found!", "success");
+                findNextButton.style.display = "inline-block";
+              }
+              state.animationFrame = requestAnimationFrame(animate);
+            }
+            state.animationFrame = requestAnimationFrame(animate);
+          } else {
+            setTimeout(() => {
+              const success = solve(grid, 0);
+              if (success) {
+                updateUIAfterSolve(grid);
+                displayMessage("Solution Found!", "success");
+                findNextButton.style.display = "inline-block";
+              } else {
+                displayMessage("No solution exists for this date.", "error");
+              }
+              setSolvingState(false);
+            }, 10);
+          }
+        }
+
+        // --- Initial Setup ---
+        runButton.addEventListener("click", () => handleRun(false));
+        findNextButton.addEventListener("click", () => handleRun(true));
+        refreshButton.addEventListener("click", () => location.reload());
+        puzzleTypeRadios.forEach((radio) =>
+          radio.addEventListener("change", initPuzzle)
+        );
+
+        initPuzzle();
+      })();
+    </script>
+  </body>
+</html>
