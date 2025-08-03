@@ -1,0 +1,1269 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta
+      name="viewport"
+      content="width=device-width,initial-scale=1,viewport-fit=cover"
+    />
+    <title>Neon Drift — Refined Controls</title>
+    <meta
+      name="description"
+      content="Neon Drift with precise, responsive controls and aim-follow dash."
+    />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700;900&family=Orbitron:wght@700;900&display=swap"
+      rel="stylesheet"
+    />
+    <style>
+      :root {
+        --bg: #06070c;
+        --primary: #57d6ff;
+        --accent: #ff7bd5;
+        --lime: #a7ff66;
+        --amber: #ffd166;
+        --danger: #ff4961;
+        --glass: rgba(255, 255, 255, 0.06);
+        --stroke: rgba(255, 255, 255, 0.12);
+      }
+      * {
+        box-sizing: border-box;
+      }
+      html,
+      body {
+        height: 100%;
+      }
+      body {
+        margin: 0;
+        background: radial-gradient(
+            1000px 700px at 20% 15%,
+            rgba(87, 214, 255, 0.08),
+            transparent 60%
+          ),
+          radial-gradient(
+            800px 600px at 80% 80%,
+            rgba(255, 123, 213, 0.06),
+            transparent 60%
+          ),
+          linear-gradient(180deg, #05060a, #080a12 40%, #0a0e1b);
+        color: #eaf5ff;
+        font-family: Inter, system-ui, -apple-system, Segoe UI, Roboto,
+          Helvetica, Arial, sans-serif;
+        overflow: hidden;
+      }
+      .hud {
+        position: fixed;
+        inset: 16px 16px auto 16px;
+        display: flex;
+        align-items: center;
+        gap: 14px;
+        z-index: 40;
+        pointer-events: none;
+        font-weight: 800;
+        text-shadow: 0 6px 30px rgba(87, 214, 255, 0.25);
+      }
+      .chip {
+        pointer-events: auto;
+        display: inline-flex;
+        align-items: center;
+        gap: 10px;
+        padding: 10px 14px;
+        border-radius: 14px;
+        background: linear-gradient(
+          160deg,
+          rgba(255, 255, 255, 0.08),
+          rgba(255, 255, 255, 0.02)
+        );
+        border: 1px solid var(--stroke);
+        backdrop-filter: blur(10px) saturate(120%);
+        box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.08),
+          0 8px 24px rgba(0, 0, 0, 0.35);
+        user-select: none;
+      }
+      .chip .dot {
+        width: 8px;
+        height: 8px;
+        border-radius: 50%;
+      }
+      .chip .k {
+        font-family: "Orbitron", sans-serif;
+        letter-spacing: 0.04em;
+      }
+      .chip button {
+        appearance: none;
+        border: none;
+        outline: none;
+        background: linear-gradient(135deg, #53c9ff, #7a5bff);
+        color: #04111b;
+        font-weight: 900;
+        padding: 8px 12px;
+        border-radius: 10px;
+        cursor: pointer;
+        box-shadow: 0 10px 24px rgba(83, 201, 255, 0.35);
+      }
+      .chip button:active {
+        transform: translateY(1px);
+      }
+      .brand {
+        position: fixed;
+        top: 16px;
+        right: 16px;
+        z-index: 40;
+        font-family: "Orbitron", sans-serif;
+        letter-spacing: 0.06em;
+        font-weight: 900;
+        background: linear-gradient(180deg, #f0fbff, #a9e5ff 60%, #7dcfff);
+        -webkit-background-clip: text;
+        background-clip: text;
+        color: transparent;
+        text-shadow: 0 10px 40px rgba(87, 214, 255, 0.25);
+        user-select: none;
+      }
+      .panel {
+        position: fixed;
+        inset: 0;
+        display: grid;
+        place-items: center;
+        z-index: 50;
+        background: radial-gradient(
+            1200px 800px at 50% 20%,
+            rgba(87, 214, 255, 0.08),
+            transparent 50%
+          ),
+          linear-gradient(180deg, rgba(6, 7, 12, 0.9), rgba(6, 7, 12, 0.6));
+        backdrop-filter: blur(8px);
+        opacity: 0;
+        visibility: hidden;
+        transition: 0.35s ease;
+      }
+      .panel.show {
+        opacity: 1;
+        visibility: visible;
+      }
+      .card {
+        width: min(760px, 92vw);
+        background: linear-gradient(
+          160deg,
+          rgba(255, 255, 255, 0.06),
+          rgba(255, 255, 255, 0.02)
+        );
+        border: 1px solid var(--stroke);
+        border-radius: 18px;
+        padding: 22px;
+        box-shadow: 0 20px 70px rgba(0, 0, 0, 0.5),
+          inset 0 1px 0 rgba(255, 255, 255, 0.08);
+        color: #dff4ff;
+      }
+      .card h1 {
+        margin: 8px 0 8px;
+        font-family: "Orbitron", sans-serif;
+        letter-spacing: 0.04em;
+        font-size: clamp(24px, 4vw, 38px);
+        text-shadow: 0 10px 30px rgba(87, 214, 255, 0.2);
+      }
+      .grid {
+        display: grid;
+        grid-template-columns: 1fr;
+        gap: 14px;
+      }
+      @media (min-width: 720px) {
+        .grid {
+          grid-template-columns: 1fr 1fr;
+        }
+      }
+      .tip {
+        background: rgba(255, 255, 255, 0.04);
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        border-radius: 12px;
+        padding: 14px;
+      }
+      .tip b {
+        color: #a7ffcf;
+      }
+      .row {
+        display: flex;
+        gap: 10px;
+        flex-wrap: wrap;
+        align-items: center;
+        justify-content: space-between;
+      }
+      .row .btn {
+        appearance: none;
+        border: none;
+        outline: none;
+        cursor: pointer;
+        background: linear-gradient(135deg, #53c9ff, #3a8bff 50%, #7a5bff);
+        color: #061525;
+        font-weight: 900;
+        padding: 12px 16px;
+        border-radius: 12px;
+        box-shadow: 0 12px 28px rgba(83, 201, 255, 0.35);
+      }
+      .row .btn.secondary {
+        background: linear-gradient(135deg, #ffd166, #ff9f1c);
+        color: #2a1500;
+        box-shadow: 0 12px 28px rgba(255, 209, 102, 0.35);
+      }
+      .row .btn.danger {
+        background: linear-gradient(135deg, #ff7b9a, #ff4961);
+        color: #2a0312;
+        box-shadow: 0 12px 28px rgba(255, 73, 97, 0.4);
+      }
+      .row small {
+        opacity: 0.8;
+      }
+      canvas {
+        position: fixed;
+        inset: 0;
+        width: 100vw;
+        height: 100vh;
+        display: block;
+        background: transparent;
+      }
+      .bloom {
+        position: fixed;
+        inset: 0;
+        pointer-events: none;
+        z-index: 10;
+        mix-blend-mode: screen;
+        opacity: 0.7;
+        filter: blur(18px) saturate(1.2);
+      }
+      .touch {
+        position: fixed;
+        inset: auto 0 0 0;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 20px;
+        padding: 16px;
+        z-index: 30;
+      }
+      .pad {
+        width: 110px;
+        height: 110px;
+        border-radius: 50%;
+        background: rgba(255, 255, 255, 0.05);
+        border: 1px solid var(--stroke);
+        backdrop-filter: blur(8px);
+        touch-action: none;
+        user-select: none;
+        position: relative;
+      }
+      .stick {
+        position: absolute;
+        left: 50%;
+        top: 50%;
+        transform: translate(-50%, -50%);
+        width: 58px;
+        height: 58px;
+        border-radius: 50%;
+        background: linear-gradient(
+          160deg,
+          rgba(255, 255, 255, 0.12),
+          rgba(255, 255, 255, 0.02)
+        );
+        border: 1px solid rgba(255, 255, 255, 0.2);
+      }
+      .act {
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+      }
+      .btn-sm {
+        width: 64px;
+        height: 64px;
+        border-radius: 14px;
+        touch-action: none;
+        display: grid;
+        place-items: center;
+        font-weight: 900;
+        background: linear-gradient(135deg, #53c9ff, #7a5bff);
+        box-shadow: 0 12px 28px rgba(83, 201, 255, 0.35);
+        color: #05121d;
+        border: 1px solid rgba(255, 255, 255, 0.2);
+      }
+      @media (min-width: 920px) {
+        .touch {
+          display: none;
+        }
+      }
+      .toast {
+        position: fixed;
+        left: 50%;
+        transform: translateX(-50%);
+        bottom: 24px;
+        z-index: 60;
+        background: rgba(10, 20, 30, 0.7);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        padding: 12px 16px;
+        border-radius: 12px;
+        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.45);
+        backdrop-filter: blur(8px);
+        opacity: 0;
+        transition: 0.35s ease;
+        pointer-events: none;
+        font-weight: 700;
+      }
+      .toast.show {
+        opacity: 1;
+      }
+      @media (prefers-reduced-motion: reduce) {
+        .bloom {
+          filter: none;
+          opacity: 0.4;
+        }
+        .panel,
+        .toast {
+          transition: none;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="hud">
+      <div class="chip">
+        <span class="dot" style="background: var(--primary)"></span
+        ><span class="k">Score</span><span id="score">0</span>
+      </div>
+      <div class="chip">
+        <span class="dot" style="background: var(--amber)"></span
+        ><span class="k">Combo</span><span id="combo">x1</span>
+      </div>
+      <div class="chip">
+        <span class="dot" style="background: var(--lime)"></span
+        ><span class="k">Multiplier</span><span id="mult">1.0</span>
+      </div>
+      <div class="chip">
+        <span class="dot" style="background: var(--accent)"></span
+        ><span class="k">Best</span><span id="best">0</span>
+      </div>
+      <div class="chip"><button id="btnPause">Pause</button></div>
+    </div>
+    <div class="brand">NEON DRIFT</div>
+
+    <canvas id="game"></canvas>
+    <canvas id="glow" class="bloom"></canvas>
+
+    <div class="panel" id="panel">
+      <div class="card">
+        <h1>Neon Drift</h1>
+        <p>
+          Refined controls: crisp movement, absolute aim dash, and consistent
+          acceleration for better playability.
+        </p>
+        <div class="grid" style="margin-top: 12px">
+          <div class="tip">
+            <b>Controls</b>
+            <ul>
+              <li>Move: WASD or Arrow Keys</li>
+              <li>Dash (towards mouse): Shift or Space</li>
+              <li>Time Bend (slow mo): Hold Right Mouse / Hold E</li>
+              <li>Mouse aims the dash and adds subtle steering</li>
+            </ul>
+          </div>
+          <div class="tip">
+            <b>Notes</b>
+            <ul>
+              <li>Movement is a clean twin-stick style with smooth damping</li>
+              <li>Dash follows your aim direction for 0.24s with i-frames</li>
+              <li>No unwanted vertical pull; camera scroll is separate</li>
+            </ul>
+          </div>
+        </div>
+        <div class="row" style="margin-top: 12px">
+          <div style="display: flex; gap: 8px; align-items: center">
+            <button class="btn" id="btnStart">Play</button>
+            <button class="btn secondary" id="btnResume" style="display: none">
+              Resume
+            </button>
+            <button class="btn danger" id="btnRestart" style="display: none">
+              Restart
+            </button>
+          </div>
+          <small
+            >Tip: Aim your cursor, then dash through hazards to convert them to
+            points.</small
+          >
+        </div>
+      </div>
+    </div>
+
+    <div class="touch">
+      <div class="pad" id="pad"><div class="stick" id="stick"></div></div>
+      <div class="act">
+        <div class="btn-sm" id="btnDash">Dash</div>
+        <div class="btn-sm" id="btnSlow">Time</div>
+      </div>
+    </div>
+
+    <div class="toast" id="toast">New best!</div>
+
+    <script>
+      const c = document.getElementById("game");
+      const g = c.getContext("2d");
+      const glow = document.getElementById("glow");
+      const gg = glow.getContext("2d");
+
+      function resize() {
+        const dpr = Math.min(window.devicePixelRatio || 1, 2);
+        c.width = innerWidth * dpr;
+        c.height = innerHeight * dpr;
+        c.style.width = innerWidth + "px";
+        c.style.height = innerHeight + "px";
+        g.setTransform(dpr, 0, 0, dpr, 0, 0);
+
+        glow.width = innerWidth * dpr;
+        glow.height = innerHeight * dpr;
+        glow.style.width = innerWidth + "px";
+        glow.style.height = innerHeight + "px";
+        gg.setTransform(dpr, 0, 0, dpr, 0, 0);
+      }
+      addEventListener("resize", resize);
+      resize();
+
+      const scoreEl = document.getElementById("score");
+      const comboEl = document.getElementById("combo");
+      const multEl = document.getElementById("mult");
+      const bestEl = document.getElementById("best");
+      const panel = document.getElementById("panel");
+      const btnStart = document.getElementById("btnStart");
+      const btnResume = document.getElementById("btnResume");
+      const btnRestart = document.getElementById("btnRestart");
+      const btnPause = document.getElementById("btnPause");
+      const toast = document.getElementById("toast");
+
+      let best = Number(localStorage.getItem("neon-best") || 0);
+      bestEl.textContent = best;
+
+      function showPanel(show = true) {
+        panel.classList.toggle("show", show);
+      }
+      function showToast(msg, ms = 1800) {
+        toast.textContent = msg;
+        toast.classList.add("show");
+        setTimeout(() => toast.classList.remove("show"), ms);
+      }
+
+      // Core state with refined control variables
+      const state = {
+        playing: false,
+        paused: true,
+        over: false,
+        time: 0,
+        dt: 0,
+        last: performance.now(),
+        worldSpeed: 220,
+        scroll: 0,
+        score: 0,
+        combo: 1,
+        comboTimer: 0,
+        multiplier: 1,
+        ship: {
+          x: innerWidth / 2,
+          y: innerHeight * 0.72,
+          vx: 0,
+          vy: 0,
+          r: 12,
+          dash: 0,
+          dashMax: 100,
+          dashing: false,
+          inv: 0,
+          slow: 0,
+          slowMax: 100,
+          dashDirX: 0,
+          dashDirY: -1,
+          dashTime: 0,
+        },
+        inputs: {
+          up: 0,
+          down: 0,
+          left: 0,
+          right: 0,
+          dash: false,
+          slow: false,
+          mx: innerWidth / 2,
+          my: innerHeight / 2,
+        },
+        hazards: [],
+        shards: [],
+        trails: [],
+        sparks: [],
+        rings: [],
+        lines: [],
+      };
+
+      // Tuned movement parameters
+      const CTRL = {
+        moveSpeed: 380, // base pixels/sec
+        mouseSteer: 0.18, // 0..1 subtle steering to mouse
+        accel: 2800, // how fast we accelerate to target velocity
+        damping: 8.5, // higher = tighter control
+        dashSpeed: 1200, // pixels/sec during dash
+        dashDuration: 0.24,
+        dashCost: 28,
+        iframes: 0.24,
+        slowDrain: 20,
+        slowRegen: 12,
+        dashRegen: 14,
+        mouseInfluenceRadius: 240, // how far mouse pulls the ship
+      };
+
+      function resetGame() {
+        Object.assign(state, {
+          playing: true,
+          paused: false,
+          over: false,
+          time: 0,
+          dt: 0,
+          worldSpeed: 220,
+          scroll: 0,
+          score: 0,
+          combo: 1,
+          comboTimer: 0,
+          multiplier: 1,
+        });
+        Object.assign(state.ship, {
+          x: innerWidth / 2,
+          y: innerHeight * 0.72,
+          vx: 0,
+          vy: 0,
+          r: 12,
+          dash: 60,
+          dashing: false,
+          inv: 0,
+          slow: 80,
+          dashDirX: 0,
+          dashDirY: -1,
+          dashTime: 0,
+        });
+        state.hazards.length = 0;
+        state.shards.length = 0;
+        state.trails.length = 0;
+        state.sparks.length = 0;
+        state.rings.length = 0;
+        state.lines.length = 0;
+        for (let i = 0; i < 18; i++) spawnShard(true);
+        for (let i = 0; i < 10; i++) spawnHazard(true);
+      }
+
+      // Inputs
+      addEventListener("keydown", (e) => {
+        if (e.key === "Escape") {
+          togglePause();
+          return;
+        }
+        if (!state.playing) return;
+        if (["ArrowUp", "w", "W"].includes(e.key)) state.inputs.up = 1;
+        if (["ArrowDown", "s", "S"].includes(e.key)) state.inputs.down = 1;
+        if (["ArrowLeft", "a", "A"].includes(e.key)) state.inputs.left = 1;
+        if (["ArrowRight", "d", "D"].includes(e.key)) state.inputs.right = 1;
+        if (e.key === "Shift" || e.code === "Space") state.inputs.dash = true;
+        if (e.key === "e" || e.key === "E") state.inputs.slow = true;
+      });
+      addEventListener("keyup", (e) => {
+        if (["ArrowUp", "w", "W"].includes(e.key)) state.inputs.up = 0;
+        if (["ArrowDown", "s", "S"].includes(e.key)) state.inputs.down = 0;
+        if (["ArrowLeft", "a", "A"].includes(e.key)) state.inputs.left = 0;
+        if (["ArrowRight", "d", "D"].includes(e.key)) state.inputs.right = 0;
+        if (e.key === "Shift" || e.code === "Space") state.inputs.dash = false;
+        if (e.key === "e" || e.key === "E") state.inputs.slow = false;
+      });
+      let slowMouse = false;
+      addEventListener("mousemove", (e) => {
+        state.inputs.mx = e.clientX;
+        state.inputs.my = e.clientY;
+      });
+      addEventListener("mousedown", (e) => {
+        if (e.button === 2) {
+          slowMouse = true;
+          state.inputs.slow = true;
+        }
+      });
+      addEventListener("mouseup", (e) => {
+        if (e.button === 2) {
+          slowMouse = false;
+          state.inputs.slow = false;
+        }
+      });
+      addEventListener("contextmenu", (e) => e.preventDefault());
+
+      // Touch
+      const pad = document.getElementById("pad");
+      const stick = document.getElementById("stick");
+      const btnDashM = document.getElementById("btnDash");
+      const btnSlowM = document.getElementById("btnSlow");
+      let padActive = false,
+        padBase = null;
+      function padStart(e) {
+        padActive = true;
+        const t = e.touches ? e.touches[0] : e;
+        const r = pad.getBoundingClientRect();
+        padBase = { x: r.left + r.width / 2, y: r.top + r.height / 2 };
+        stick.style.transition = "none";
+        moveStick(t);
+      }
+      function padMove(e) {
+        if (!padActive) return;
+        moveStick(e.touches ? e.touches[0] : e);
+      }
+      function padEnd() {
+        padActive = false;
+        state.inputs.up =
+          state.inputs.down =
+          state.inputs.left =
+          state.inputs.right =
+            0;
+        stick.style.transition = "transform .2s ease";
+        stick.style.transform = "translate(-50%,-50%) translate(0,0)";
+      }
+      function moveStick(t) {
+        const dx = t.clientX - padBase.x;
+        const dy = t.clientY - padBase.y;
+        const max = 36;
+        const mag = Math.hypot(dx, dy);
+        const clamped = Math.min(mag, max);
+        const ang = Math.atan2(dy, dx);
+        const sx = Math.cos(ang) * clamped,
+          sy = Math.sin(ang) * clamped;
+        stick.style.transform = `translate(-50%,-50%) translate(${sx}px,${sy}px)`;
+        state.inputs.left = dx < -8 ? 1 : 0;
+        state.inputs.right = dx > 8 ? 1 : 0;
+        state.inputs.up = dy < -8 ? 1 : 0;
+        state.inputs.down = dy > 8 ? 1 : 0;
+      }
+      pad.addEventListener("pointerdown", padStart);
+      pad.addEventListener("pointermove", padMove);
+      addEventListener("pointerup", padEnd);
+      btnDashM.addEventListener(
+        "pointerdown",
+        () => (state.inputs.dash = true)
+      );
+      btnDashM.addEventListener("pointerup", () => (state.inputs.dash = false));
+      btnSlowM.addEventListener(
+        "pointerdown",
+        () => (state.inputs.slow = true)
+      );
+      btnSlowM.addEventListener("pointerup", () => (state.inputs.slow = false));
+
+      // UI
+      btnStart.onclick = () => {
+        resetGame();
+        showPanel(false);
+      };
+      btnResume.onclick = () => {
+        state.paused = false;
+        showPanel(false);
+      };
+      btnRestart.onclick = () => {
+        resetGame();
+        showPanel(false);
+      };
+      btnPause.onclick = () => togglePause();
+
+      function togglePause() {
+        if (!state.playing) {
+          showPanel(true);
+          btnStart.style.display = "inline-flex";
+          btnResume.style.display = "none";
+          btnRestart.style.display = "none";
+          return;
+        }
+        state.paused = !state.paused;
+        if (state.paused) {
+          btnStart.style.display = "none";
+          btnResume.style.display = "inline-flex";
+          btnRestart.style.display = "inline-flex";
+          showPanel(true);
+        } else showPanel(false);
+      }
+
+      // Spawners
+      function spawnHazard(init = false) {
+        const size = Math.random() * 18 + 14;
+        const x = Math.random() * innerWidth;
+        const y = init ? Math.random() * innerHeight * 0.6 : -40;
+        const speed = state.worldSpeed * (0.75 + Math.random() * 0.35);
+        const drift = (Math.random() - 0.5) * 60;
+        const rot = Math.random() * Math.PI * 2;
+        state.hazards.push({
+          x,
+          y,
+          r: size,
+          speed,
+          drift,
+          rot,
+          alive: true,
+          type: Math.random() < 0.25 ? "rotor" : "meteor",
+        });
+      }
+      function spawnShard(init = false) {
+        const x = Math.random() * innerWidth;
+        const y = init ? Math.random() * innerHeight * 0.6 : -30;
+        const speed = state.worldSpeed * (0.7 + Math.random() * 0.3);
+        state.shards.push({ x, y, r: 8, speed, t: 0, alive: true });
+      }
+      function spawnRing(x, y, color = "#57d6ff") {
+        state.rings.push({ x, y, r: 6, max: 42, a: 1, color });
+      }
+      function spawnSpark(x, y, color = "#57d6ff") {
+        for (let i = 0; i < 10; i++) {
+          const a = Math.random() * Math.PI * 2;
+          const s = Math.random() * 220 + 120;
+          const life = Math.random() * 0.4 + 0.3;
+          state.sparks.push({
+            x,
+            y,
+            vx: Math.cos(a) * s,
+            vy: Math.sin(a) * s,
+            life,
+            a: 1,
+            color,
+          });
+        }
+      }
+      function addTrail(x, y, color) {
+        state.trails.push({ x, y, life: 0.4, a: 1, color });
+      }
+      function addLines() {
+        const cols = 6;
+        for (let i = 0; i < cols; i++) {
+          const x = (i + 0.5) * (innerWidth / cols);
+          state.lines.push({
+            x,
+            y: -40,
+            length: 80 + Math.random() * 140,
+            speed: state.worldSpeed * 1.4,
+          });
+        }
+      }
+
+      function circColl(a, b) {
+        const dx = a.x - b.x,
+          dy = a.y - b.y;
+        return dx * dx + dy * dy <= (a.r + b.r) * (a.r + b.r);
+      }
+
+      // Main loop
+      function step(now) {
+        state.dt = Math.min((now - state.last) / 1000, 0.05);
+        state.last = now;
+
+        if (!state.playing || state.paused) {
+          draw(true);
+          requestAnimationFrame(step);
+          return;
+        }
+
+        let dt = state.dt;
+        state.time += dt;
+
+        // Time bend
+        const bending = state.inputs.slow && state.ship.slow > 0;
+        const slowFactor = bending ? 0.6 : 1;
+        if (bending)
+          state.ship.slow = Math.max(0, state.ship.slow - CTRL.slowDrain * dt);
+        else
+          state.ship.slow = Math.min(
+            state.ship.slowMax,
+            state.ship.slow + CTRL.slowRegen * dt
+          );
+        dt *= slowFactor;
+
+        // World scroll
+        state.worldSpeed += 3 * dt;
+        state.scroll += state.worldSpeed * dt;
+
+        if (Math.random() < 0.2) addLines();
+
+        // Movement — consistent, responsive twin-stick
+        const s = state.ship;
+        const dirX = state.inputs.right - state.inputs.left;
+        const dirY = state.inputs.down - state.inputs.up;
+
+        // Keyboard desired vector
+        let desiredVX = dirX * CTRL.moveSpeed;
+        let desiredVY = dirY * CTRL.moveSpeed;
+
+        // Mouse subtle steering
+        const dxm = state.inputs.mx - s.x;
+        const dym = state.inputs.my - s.y;
+        const distm = Math.hypot(dxm, dym) || 1;
+        const steer =
+          Math.min(1, distm / CTRL.mouseInfluenceRadius) * CTRL.mouseSteer;
+        desiredVX += (dxm / distm) * CTRL.moveSpeed * steer;
+        desiredVY += (dym / distm) * CTRL.moveSpeed * steer;
+
+        // If dashing, lock velocity to dash direction
+        if (s.dashing) {
+          desiredVX = s.dashDirX * CTRL.dashSpeed;
+          desiredVY = s.dashDirY * CTRL.dashSpeed;
+        }
+
+        // Smoothly approach desired velocity
+        s.vx +=
+          (desiredVX - s.vx) * Math.min(1, (CTRL.accel * dt) / CTRL.moveSpeed);
+        s.vy +=
+          (desiredVY - s.vy) * Math.min(1, (CTRL.accel * dt) / CTRL.moveSpeed);
+
+        // Damping
+        s.vx *= Math.exp(-CTRL.damping * dt);
+        s.vy *= Math.exp(-CTRL.damping * dt);
+
+        // Integrate
+        s.x += s.vx * dt;
+        s.y += s.vy * dt;
+
+        // Bounds
+        s.x = Math.max(20, Math.min(innerWidth - 20, s.x));
+        s.y = Math.max(60, Math.min(innerHeight - 20, s.y));
+
+        // Dash trigger: aim-follow
+        if (state.inputs.dash && s.dash > CTRL.dashCost && !s.dashing) {
+          const aimDX = state.inputs.mx - s.x;
+          const aimDY = state.inputs.my - s.y;
+          const aimLen = Math.hypot(aimDX, aimDY) || 1;
+          s.dashDirX = aimDX / aimLen;
+          s.dashDirY = aimDY / aimLen;
+
+          s.dashing = true;
+          s.dashTime = CTRL.dashDuration;
+          s.inv = CTRL.iframes;
+          s.dash -= CTRL.dashCost;
+          spawnRing(s.x, s.y, "#a7ff66");
+          spawnSpark(s.x, s.y, "#a7ff66");
+        }
+
+        if (s.dashing) {
+          s.dashTime -= dt;
+          addTrail(
+            s.x - s.dashDirX * 6,
+            s.y - s.dashDirY * 6,
+            "rgba(167,255,102,0.7)"
+          );
+          if (s.dashTime <= 0) {
+            s.dashing = false;
+          }
+        }
+        if (s.inv > 0) s.inv -= dt;
+
+        // Regen
+        s.dash = Math.min(s.dashMax, s.dash + CTRL.dashRegen * dt);
+
+        // Hazards
+        if (Math.random() < 0.016) spawnHazard();
+        state.hazards.forEach((h) => {
+          h.y += (h.speed + state.worldSpeed * 0.15) * dt;
+          h.x += h.drift * dt;
+          h.rot += dt * (h.type === "rotor" ? 2.8 : 1.2);
+        });
+
+        // Shards
+        if (Math.random() < 0.02) spawnShard();
+        state.shards.forEach((a) => {
+          a.y += (a.speed + state.worldSpeed * 0.12) * dt;
+          a.t += dt * 2;
+        });
+
+        // Lines
+        state.lines.forEach((l) => {
+          l.y += (l.speed + state.worldSpeed * 0.6) * dt;
+        });
+
+        // Particles
+        state.trails.forEach((tl) => {
+          tl.life -= dt;
+          tl.a = Math.max(0, tl.life / 0.4);
+        });
+        state.sparks.forEach((sp) => {
+          sp.x += sp.vx * dt;
+          sp.y += sp.vy * dt;
+          sp.vx *= 0.98;
+          sp.vy = sp.vy * 0.98 + 40 * dt;
+          sp.life -= dt;
+          sp.a = Math.max(0, sp.life / 0.7);
+        });
+        state.rings.forEach((r) => {
+          r.r += 160 * dt;
+          r.a -= 1.6 * dt;
+        });
+
+        // Prune
+        state.hazards = state.hazards.filter(
+          (h) =>
+            h.y < innerHeight + 60 &&
+            h.x > -80 &&
+            h.x < innerWidth + 80 &&
+            h.alive
+        );
+        state.shards = state.shards.filter(
+          (a) => a.y < innerHeight + 50 && a.alive
+        );
+        state.trails = state.trails.filter((tl) => tl.life > 0);
+        state.sparks = state.sparks.filter((sp) => sp.a > 0);
+        state.rings = state.rings.filter((r) => r.a > 0);
+        state.lines = state.lines.filter((l) => l.y < innerHeight + 100);
+
+        // Collisions
+        const shipCircle = { x: s.x, y: s.y, r: s.r };
+        // shards
+        for (const a of state.shards) {
+          if (!a.alive) continue;
+          if (circColl(shipCircle, a)) {
+            a.alive = false;
+            const gain = Math.floor(50 * state.multiplier);
+            state.score += gain;
+            s.dash = Math.min(s.dashMax, s.dash + 22);
+            s.slow = Math.min(s.slowMax, s.slow + 12);
+            state.combo = Math.min(20, state.combo + 1);
+            state.comboTimer = 2.2;
+            state.multiplier = 1 + (state.combo - 1) * 0.08;
+            spawnRing(a.x, a.y, "#57d6ff");
+            spawnSpark(a.x, a.y, "#57d6ff");
+            addTrail(s.x, s.y + 4, "rgba(87,214,255,0.6)");
+          }
+        }
+        // hazards
+        let hit = false;
+        for (const h of state.hazards) {
+          if (!h.alive) continue;
+          const hazardCircle = { x: h.x, y: h.y, r: h.r * 0.9 };
+          if (circColl(shipCircle, hazardCircle)) {
+            if (s.dashing || s.inv > 0) {
+              // convert to points if in dash/iframes
+              h.alive = false;
+              const gain = Math.floor(120 * state.multiplier);
+              state.score += gain;
+              state.combo = Math.min(20, state.combo + 2);
+              state.comboTimer = 2.6;
+              state.multiplier = 1 + (state.combo - 1) * 0.08;
+              spawnRing(h.x, h.y, "#a7ff66");
+              spawnSpark(h.x, h.y, "#a7ff66");
+            } else {
+              hit = true;
+              break;
+            }
+          } else {
+            const dx = h.x - s.x,
+              dy = h.y - s.y;
+            const dist = Math.hypot(dx, dy);
+            if (dist < h.r + s.r + 32 && dist > h.r + s.r + 2) {
+              if (Math.random() < 0.004) {
+                state.combo = Math.min(20, state.combo + 1);
+                state.comboTimer = Math.min(2.5, state.comboTimer + 0.4);
+                state.multiplier = 1 + (state.combo - 1) * 0.08;
+                spawnSpark((h.x + s.x) / 2, (h.y + s.y) / 2, "#ffd166");
+              }
+            }
+          }
+        }
+        if (hit) {
+          state.over = true;
+          state.paused = true;
+          state.playing = false;
+          const isBest = state.score > best;
+          if (isBest) {
+            best = state.score;
+            localStorage.setItem("neon-best", best);
+            bestEl.textContent = best;
+            showToast("New Best!");
+          }
+          btnStart.style.display = "none";
+          btnResume.style.display = "none";
+          btnRestart.style.display = "inline-flex";
+          showPanel(true);
+          spawnRing(s.x, s.y, "#ff4961");
+          spawnSpark(s.x, s.y, "#ff4961");
+        }
+
+        // combo decay
+        state.comboTimer -= dt;
+        if (state.comboTimer <= 0) {
+          state.comboTimer = 0;
+          if (state.combo > 1) {
+            state.combo--;
+            state.multiplier = 1 + (state.combo - 1) * 0.08;
+            state.comboTimer = 1.2;
+          }
+        }
+
+        // Passive score
+        state.score += Math.floor(
+          state.worldSpeed * 0.015 * state.multiplier * dt
+        );
+
+        scoreEl.textContent = state.score.toString();
+        comboEl.textContent = "x" + state.combo;
+        multEl.textContent = state.multiplier.toFixed(1);
+
+        draw(false);
+        requestAnimationFrame(step);
+      }
+      requestAnimationFrame(step);
+
+      function draw(paused) {
+        const w = innerWidth,
+          h = innerHeight;
+        g.clearRect(0, 0, w, h);
+        gg.clearRect(0, 0, w, h);
+
+        // Background grid
+        const rows = 10,
+          cols = 8;
+        g.save();
+        g.strokeStyle = "rgba(87,214,255,0.18)";
+        g.lineWidth = 1.2;
+        const baseY = state.scroll % 80;
+        for (let i = 0; i < rows; i++) {
+          const y = Math.floor(h * 0.2 + i * (h / rows) - baseY);
+          g.beginPath();
+          g.moveTo(0, y);
+          g.lineTo(w, y);
+          g.stroke();
+        }
+        g.strokeStyle = "rgba(255,123,213,0.16)";
+        for (let x = 0; x <= cols; x++) {
+          const t = x / cols;
+          const px = t * w;
+          g.beginPath();
+          g.moveTo(px, 0);
+          g.lineTo(px, h);
+          g.stroke();
+        }
+        g.restore();
+
+        // lane lines
+        g.save();
+        g.strokeStyle = "rgba(255,255,255,0.15)";
+        g.lineWidth = 3;
+        state.lines.forEach((l) => {
+          g.globalAlpha = 0.5;
+          g.beginPath();
+          g.moveTo(l.x, l.y);
+          g.lineTo(l.x, l.y + l.length);
+          g.stroke();
+        });
+        g.restore();
+
+        // Shards
+        state.shards.forEach((a) => {
+          const pulse = 1 + Math.sin(a.t * 6) * 0.08;
+          g.save();
+          g.translate(a.x, a.y);
+          g.scale(pulse, pulse);
+          g.fillStyle = "#7ddfff";
+          drawDiamond(g, a.r);
+          g.restore();
+          gg.save();
+          gg.translate(a.x, a.y);
+          gg.fillStyle = "rgba(87,214,255,0.55)";
+          drawGlowDiamond(gg, a.r * 2.2);
+          gg.restore();
+        });
+
+        // Hazards
+        state.hazards.forEach((hz) => {
+          g.save();
+          g.translate(hz.x, hz.y);
+          g.rotate(hz.rot);
+          if (hz.type === "rotor") {
+            g.strokeStyle = "rgba(255,123,213,0.9)";
+            g.lineWidth = 2;
+            g.beginPath();
+            for (let i = 0; i < 3; i++) {
+              g.moveTo(0, 0);
+              g.lineTo(
+                Math.cos((i * 2 * Math.PI) / 3) * hz.r,
+                Math.sin((i * 2 * Math.PI) / 3) * hz.r
+              );
+            }
+            g.stroke();
+            g.beginPath();
+            g.arc(0, 0, 4, 0, Math.PI * 2);
+            g.fillStyle = "#ff7bd5";
+            g.fill();
+          } else {
+            g.fillStyle = "#ff96ae";
+            drawMeteor(g, hz.r);
+          }
+          g.restore();
+
+          gg.save();
+          gg.translate(hz.x, hz.y);
+          gg.globalAlpha = 0.7;
+          gg.fillStyle =
+            hz.type === "rotor"
+              ? "rgba(255,123,213,0.35)"
+              : "rgba(255,73,97,0.35)";
+          gg.beginPath();
+          gg.arc(0, 0, hz.r * 1.7, 0, Math.PI * 2);
+          gg.fill();
+          gg.restore();
+        });
+
+        // Trails
+        state.trails.forEach((t) => {
+          g.save();
+          g.globalAlpha = t.a;
+          g.fillStyle = t.color;
+          g.beginPath();
+          g.arc(t.x, t.y, 8 * (1 - t.a), 0, Math.PI * 2);
+          g.fill();
+          g.restore();
+        });
+
+        // Ship
+        const s = state.ship;
+        g.save();
+        g.translate(s.x, s.y);
+        // Face towards aim, not just velocity, for responsive feel
+        const rot =
+          Math.atan2(state.inputs.my - s.y, state.inputs.mx - s.x) +
+          Math.PI / 2;
+        g.rotate(rot);
+        g.fillStyle = s.dashing ? "#a7ff66" : "#dff4ff";
+        drawShip(g, s.r);
+        g.restore();
+
+        gg.save();
+        gg.translate(s.x, s.y);
+        gg.globalAlpha = 0.85;
+        gg.fillStyle = s.dashing
+          ? "rgba(167,255,102,0.4)"
+          : "rgba(87,214,255,0.4)";
+        gg.beginPath();
+        gg.arc(0, 0, s.r * 3.2, 0, Math.PI * 2);
+        gg.fill();
+        gg.restore();
+
+        // Rings
+        state.rings.forEach((r) => {
+          g.save();
+          g.globalAlpha = Math.max(0, r.a);
+          g.strokeStyle = r.color;
+          g.lineWidth = 2;
+          g.beginPath();
+          g.arc(r.x, r.y, r.r, 0, Math.PI * 2);
+          g.stroke();
+          g.restore();
+        });
+
+        // Sparks
+        state.sparks.forEach((sp) => {
+          g.save();
+          g.globalAlpha = sp.a;
+          g.fillStyle = sp.color;
+          g.fillRect(sp.x, sp.y, 2, 2);
+          g.restore();
+          gg.save();
+          gg.globalAlpha = sp.a * 0.8;
+          gg.fillStyle = sp.color;
+          gg.beginPath();
+          gg.arc(sp.x, sp.y, 6, 0, Math.PI * 2);
+          gg.fill();
+          gg.restore();
+        });
+
+        drawGauges();
+
+        if (paused && (state.playing || state.over)) {
+          g.save();
+          g.globalAlpha = 0.3;
+          g.strokeStyle = "#7ddfff";
+          g.beginPath();
+          g.arc(innerWidth / 2, innerHeight / 2, 80, 0, Math.PI * 2);
+          g.stroke();
+          g.restore();
+        }
+      }
+
+      function drawShip(ctx, r) {
+        ctx.beginPath();
+        ctx.moveTo(0, -r * 1.6);
+        ctx.lineTo(r * 0.9, r * 1.2);
+        ctx.lineTo(0, r * 0.6);
+        ctx.lineTo(-r * 0.9, r * 1.2);
+        ctx.closePath();
+        ctx.fill();
+        ctx.fillStyle = "rgba(255,255,255,0.6)";
+        ctx.fillRect(-2, -r * 1.2, 4, 6);
+      }
+      function drawDiamond(ctx, r) {
+        ctx.beginPath();
+        ctx.moveTo(0, -r);
+        ctx.lineTo(r, 0);
+        ctx.lineTo(0, r);
+        ctx.lineTo(-r, 0);
+        ctx.closePath();
+        ctx.fill();
+      }
+      function drawGlowDiamond(ctx, r) {
+        ctx.beginPath();
+        ctx.moveTo(0, -r);
+        ctx.lineTo(r, 0);
+        ctx.lineTo(0, r);
+        ctx.lineTo(-r, 0);
+        ctx.closePath();
+        ctx.fill();
+      }
+      function drawMeteor(ctx, r) {
+        ctx.beginPath();
+        for (let i = 0; i < 7; i++) {
+          const ang = i * ((Math.PI * 2) / 7) + Math.random() * 0.2;
+          const rad = r * (0.7 + Math.random() * 0.5);
+          const x = Math.cos(ang) * rad,
+            y = Math.sin(ang) * rad;
+          if (i === 0) ctx.moveTo(x, y);
+          else ctx.lineTo(x, y);
+        }
+        ctx.closePath();
+        ctx.fill();
+      }
+
+      function drawGauges() {
+        const s = state.ship;
+        const w = 160,
+          h = 10;
+        const x = 16,
+          y = innerHeight - 24;
+        g.fillStyle = "rgba(255,255,255,0.15)";
+        g.fillRect(x, y, w, h);
+        g.fillStyle = "#a7ff66";
+        g.fillRect(x, y, w * (s.dash / s.dashMax), h);
+        g.fillStyle = "rgba(0,0,0,0.4)";
+        g.fillText("Dash", x, y - 6);
+
+        g.fillStyle = "rgba(255,255,255,0.15)";
+        g.fillRect(x, y - 20, w, h);
+        g.fillStyle = "#57d6ff";
+        g.fillRect(x, y - 20, w * (s.slow / s.slowMax), h);
+        g.fillStyle = "rgba(0,0,0,0.4)";
+        g.fillText("Time", x, y - 26);
+
+        const cx = innerWidth - 60,
+          cy = 60,
+          r = 28;
+        g.save();
+        g.globalAlpha = 0.8;
+        g.strokeStyle = "#ffd166";
+        g.lineWidth = 4;
+        g.beginPath();
+        g.arc(
+          cx,
+          cy,
+          r,
+          -Math.PI / 2,
+          -Math.PI / 2 + Math.PI * 2 * Math.max(0, state.comboTimer / 2.6)
+        );
+        g.stroke();
+        g.fillStyle = "#ffd166";
+        g.font = "700 12px Inter";
+        g.textAlign = "center";
+        g.fillText("COMBO", cx, cy + 4);
+        g.restore();
+      }
+
+      showPanel(true);
+    </script>
+  </body>
+</html>
