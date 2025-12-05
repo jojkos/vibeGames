@@ -1,826 +1,1243 @@
 <!DOCTYPE html>
 <html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <head>
+    <meta charset="UTF-8" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"
+    />
     <title>Factorio Lamp Studio</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/pako@2.0.4/dist/pako.min.js"></script>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"
+    />
     <style>
-        body {
-            font-family: 'Inter', sans-serif;
-            background-color: #0d0e12;
-            color: #d1d5db;
-            min-height: 100vh;
-            overflow-x: hidden;
-        }
-        
-        ::-webkit-scrollbar { width: 8px; height: 8px; }
-        ::-webkit-scrollbar-thumb { background-color: #4b5563; border-radius: 4px; }
-        ::-webkit-scrollbar-track { background-color: #1f2937; }
+      body {
+        font-family: "Inter", sans-serif;
+        background-color: #0d0e12;
+        color: #d1d5db;
+        min-height: 100vh;
+        overflow-x: hidden;
+        overscroll-behavior: none;
+      }
 
-        .canvas-container {
-            background-image: 
-                linear-gradient(45deg, #1f2937 25%, transparent 25%), 
-                linear-gradient(-45deg, #1f2937 25%, transparent 25%), 
-                linear-gradient(45deg, transparent 75%, #1f2937 75%), 
-                linear-gradient(-45deg, transparent 75%, #1f2937 75%);
-            background-size: 20px 20px;
-            background-position: 0 0, 0 10px, 10px -10px, -10px 0px;
-            box-shadow: inset 0 0 20px rgba(0,0,0,0.5);
-            cursor: crosshair;
-        }
-        
-        /* Distinct Button Tabs */
-        .tab-btn {
-            @apply flex items-center px-6 py-3 text-sm font-bold text-gray-400 bg-gray-800 border border-gray-700 rounded-lg transition-all duration-200 shadow-md;
-        }
-        
-        .tab-btn:hover {
-            @apply text-white bg-gray-700 border-gray-600 transform -translate-y-0.5;
-        }
-        
-        .tab-btn.active {
-            @apply bg-yellow-600 text-white border-yellow-500 shadow-lg shadow-yellow-900/20 transform -translate-y-0.5 ring-1 ring-yellow-400/50;
-        }
+      ::-webkit-scrollbar {
+        width: 8px;
+        height: 8px;
+      }
+      ::-webkit-scrollbar-thumb {
+        background-color: #4b5563;
+        border-radius: 4px;
+      }
+      ::-webkit-scrollbar-track {
+        background-color: #1f2937;
+      }
 
-        .tool-btn {
-            @apply p-2 rounded bg-gray-700 hover:bg-gray-600 text-gray-300 transition-all border border-gray-600;
-        }
-        .tool-btn.active {
-            @apply bg-yellow-600 text-white border-yellow-500 transform -translate-y-0.5 shadow-lg;
-        }
+      .canvas-container {
+        background-image: linear-gradient(45deg, #1f2937 25%, transparent 25%),
+          linear-gradient(-45deg, #1f2937 25%, transparent 25%),
+          linear-gradient(45deg, transparent 75%, #1f2937 75%),
+          linear-gradient(-45deg, transparent 75%, #1f2937 75%);
+        background-size: 20px 20px;
+        background-position: 0 0, 0 10px, 10px -10px, -10px 0px;
+        box-shadow: inset 0 0 20px rgba(0, 0, 0, 0.5);
+        cursor: crosshair;
+        touch-action: none;
+      }
 
-        input[type="color"] {
-            -webkit-appearance: none; border: none; padding: 0; width: 100%; height: 100%; cursor: pointer; background: none;
-        }
-        input[type="color"]::-webkit-color-swatch-wrapper { padding: 0; }
-        input[type="color"]::-webkit-color-swatch { border: none; border-radius: 4px; }
+      /* --- VISUAL BUTTONS (Main Menu) --- */
+      .mode-btn {
+        @apply flex items-center justify-center px-6 py-3 rounded-xl border-2 font-bold text-sm transition-all duration-200 uppercase tracking-wider shadow-lg transform;
+      }
+
+      /* Inactive State: Gray, outlines */
+      .mode-btn-inactive {
+        @apply bg-gray-800 border-gray-600 text-gray-400 hover:bg-gray-700 hover:border-gray-500 hover:text-gray-200 hover:-translate-y-0.5;
+      }
+
+      /* Active State: Bright Yellow, Solid */
+      .mode-btn-active {
+        @apply bg-yellow-600 border-yellow-500 text-white shadow-yellow-900/50 scale-105;
+      }
+
+      .tool-btn {
+        @apply p-2 rounded bg-gray-700 hover:bg-gray-600 text-gray-300 transition-all border border-gray-600;
+      }
+      .tool-btn.active {
+        @apply bg-yellow-600 text-white border-yellow-500 transform -translate-y-0.5 shadow-lg;
+      }
+
+      input[type="color"] {
+        -webkit-appearance: none;
+        border: none;
+        padding: 0;
+        width: 100%;
+        height: 100%;
+        cursor: pointer;
+        background: none;
+      }
+      input[type="color"]::-webkit-color-swatch-wrapper {
+        padding: 0;
+      }
+      input[type="color"]::-webkit-color-swatch {
+        border: none;
+        border-radius: 4px;
+      }
     </style>
-</head>
-<body class="flex flex-col h-screen">
-
+  </head>
+  <body class="flex flex-col h-screen">
     <!-- Header & Tabs -->
-    <header class="bg-gray-900 border-b border-gray-700 shadow-xl z-20 relative">
-        <div class="flex items-center justify-between h-20 px-6">
-            
-            <!-- Logo Section -->
-            <div class="flex items-center gap-4 w-1/4 min-w-max">
-                <div class="bg-yellow-500/10 p-2.5 rounded-xl border border-yellow-500/20">
-                    <i class="fa-solid fa-lightbulb text-yellow-500 text-2xl"></i>
-                </div>
-                <div>
-                    <h1 class="text-lg font-extrabold text-gray-100 leading-tight tracking-tight">Factorio Lamp Studio</h1>
-                    <p class="text-[10px] text-gray-500 font-mono uppercase tracking-widest mt-0.5">Blueprint Generator</p>
-                </div>
-            </div>
-
-            <!-- Centered Navigation Tabs -->
-            <div class="flex-1 flex justify-center gap-4">
-                <button class="tab-btn active" id="tab-text" onclick="switchTab('text')">
-                    <i class="fa-solid fa-quote-left mr-2"></i>
-                    Text Generator
-                </button>
-                <button class="tab-btn" id="tab-draw" onclick="switchTab('draw')">
-                    <i class="fa-solid fa-paintbrush mr-2"></i>
-                    Pixel Drawer
-                </button>
-            </div>
-
-            <!-- Right Spacer (keeps tabs perfectly centered) -->
-            <div class="w-1/4 hidden md:block"></div>
+    <header
+      class="bg-gray-900 border-b border-gray-700 shadow-xl z-20 shrink-0"
+    >
+      <div
+        class="flex flex-col md:flex-row items-center justify-between px-4 md:px-6 py-3 md:h-20 gap-4"
+      >
+        <!-- Logo Section -->
+        <div
+          class="flex items-center gap-3 w-full md:w-auto justify-center md:justify-start"
+        >
+          <div
+            class="bg-yellow-500/10 p-2 rounded-xl border border-yellow-500/20 shrink-0"
+          >
+            <i
+              class="fa-solid fa-lightbulb text-yellow-500 text-xl md:text-2xl"
+            ></i>
+          </div>
+          <div class="text-center md:text-left">
+            <h1
+              class="text-base md:text-lg font-extrabold text-gray-100 leading-tight tracking-tight"
+            >
+              Factorio Lamp Studio
+            </h1>
+            <p
+              class="text-[10px] text-gray-500 font-mono uppercase tracking-widest"
+            >
+              Blueprint Generator
+            </p>
+          </div>
         </div>
+
+        <!-- BUTTONS: Navigation Tabs -->
+        <div class="w-full md:w-auto flex justify-center gap-4">
+          <button
+            id="btn-mode-text"
+            class="mode-btn mode-btn-inactive w-1/2 md:w-auto"
+            onclick="switchTab('text')"
+          >
+            <i class="fa-solid fa-quote-left mr-2"></i> Text Gen
+          </button>
+          <button
+            id="btn-mode-draw"
+            class="mode-btn mode-btn-inactive w-1/2 md:w-auto"
+            onclick="switchTab('draw')"
+          >
+            <i class="fa-solid fa-paintbrush mr-2"></i> Pixel Draw
+          </button>
+        </div>
+
+        <!-- Right Spacer (hidden on mobile) -->
+        <div class="hidden md:block md:w-48"></div>
+      </div>
     </header>
 
     <!-- CONTENT AREA -->
-    <main class="flex-1 overflow-hidden relative">
-
-        <!-- VIEW 1: TEXT GENERATOR (Simple Mode) -->
-        <div id="view-text" class="absolute inset-0 p-8 overflow-y-auto bg-gray-900 flex flex-col items-center">
-            <div class="max-w-3xl w-full bg-gray-800 p-10 rounded-2xl shadow-2xl border border-gray-700 mt-8">
-                <div class="text-center mb-8">
-                    <div class="inline-block p-3 rounded-full bg-yellow-500/10 mb-4">
-                        <i class="fa-solid fa-font text-3xl text-yellow-500"></i>
-                    </div>
-                    <h2 class="text-3xl font-bold text-white mb-2">Quick Text to Blueprint</h2>
-                    <p class="text-gray-400 text-sm">Convert plain text into Factorio lamp arrays instantly.</p>
-                </div>
-                
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-8 mb-8">
-                    <div>
-                        <label class="block text-sm font-medium text-gray-400 mb-2">Lamp Color</label>
-                        <div class="flex gap-3 items-center h-12 w-full bg-gray-700/50 rounded-lg border border-gray-600 p-1.5 transition-colors hover:border-gray-500">
-                            <!-- Wider color input -->
-                            <input type="color" id="simple-color" value="#ff0000" class="w-16 h-full rounded cursor-pointer shadow-sm">
-                            <span class="text-sm font-bold text-gray-200 ml-2">Color</span>
-                        </div>
-                    </div>
-                    <div>
-                        <label class="block text-sm font-medium text-gray-400 mb-2">Size (Blocks per Pixel)</label>
-                        <input type="number" id="simple-size" value="1" min="1" max="10" class="w-full h-12 bg-gray-700/50 border border-gray-600 rounded-lg px-4 text-white focus:ring-2 focus:ring-yellow-500 focus:border-transparent outline-none transition-all">
-                        <p class="text-[10px] text-gray-500 mt-1.5 ml-1">1 = 5x5 blocks per char.</p>
-                    </div>
-                </div>
-
-                <div class="mb-10">
-                    <label class="block text-sm font-medium text-gray-400 mb-2">Text Content</label>
-                    <textarea id="simple-text-input" rows="3" placeholder="FACTORIO" class="w-full p-5 bg-gray-900/80 border border-gray-600 rounded-xl text-yellow-500 font-mono text-2xl tracking-widest uppercase focus:ring-2 focus:ring-yellow-500 focus:border-transparent outline-none transition-all shadow-inner"></textarea>
-                    <p class="text-xs text-gray-500 mt-2 text-right">Supported: A-Z, 0-9</p>
-                </div>
-
-                <button onclick="generateSimpleBlueprint()" class="w-full py-4 bg-gradient-to-r from-yellow-600 to-yellow-500 hover:from-yellow-500 hover:to-yellow-400 text-white font-bold text-lg rounded-xl shadow-lg flex items-center justify-center gap-3 transition-all transform hover:-translate-y-0.5 active:scale-[0.98]">
-                    <i class="fa-solid fa-copy"></i> Generate & Copy Blueprint
-                </button>
-
-                <div id="simple-msg" class="mt-6 text-center text-sm min-h-[24px] font-medium transition-all duration-300"></div>
+    <main class="flex-1 overflow-hidden relative w-full">
+      <!-- VIEW 1: TEXT GENERATOR (Simple Mode) -->
+      <div
+        id="view-text"
+        class="absolute inset-0 p-4 md:p-8 overflow-y-auto bg-gray-900 flex flex-col items-center"
+      >
+        <div
+          class="max-w-3xl w-full bg-gray-800 p-6 md:p-10 rounded-2xl shadow-2xl border border-gray-700 mt-2 md:mt-8"
+        >
+          <div class="text-center mb-6 md:mb-8">
+            <div class="inline-block p-3 rounded-full bg-yellow-500/10 mb-4">
+              <i
+                class="fa-solid fa-font text-2xl md:text-3xl text-yellow-500"
+              ></i>
             </div>
+            <h2 class="text-2xl md:text-3xl font-bold text-white mb-2">
+              Quick Text to Blueprint
+            </h2>
+            <p class="text-gray-400 text-xs md:text-sm">
+              Convert plain text into Factorio lamp arrays instantly.
+            </p>
+          </div>
+
+          <div
+            class="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-8 mb-6 md:mb-8"
+          >
+            <div>
+              <label class="block text-sm font-medium text-gray-400 mb-2"
+                >Lamp Color</label
+              >
+              <div
+                class="flex gap-3 items-center h-12 w-full bg-gray-700/50 rounded-lg border border-gray-600 p-1.5 transition-colors hover:border-gray-500"
+              >
+                <input
+                  type="color"
+                  id="simple-color"
+                  value="#ff0000"
+                  class="w-16 h-full rounded cursor-pointer shadow-sm"
+                />
+                <span class="text-sm font-bold text-gray-200 ml-2">Color</span>
+              </div>
+            </div>
+            <div>
+              <label class="block text-sm font-medium text-gray-400 mb-2"
+                >Size (Blocks per Pixel)</label
+              >
+              <input
+                type="number"
+                id="simple-size"
+                value="1"
+                min="1"
+                max="10"
+                class="w-full h-12 bg-gray-700/50 border border-gray-600 rounded-lg px-4 text-white focus:ring-2 focus:ring-yellow-500 focus:border-transparent outline-none transition-all"
+              />
+              <p class="text-[10px] text-gray-500 mt-1.5 ml-1">
+                1 = 5x5 blocks per char.
+              </p>
+            </div>
+          </div>
+
+          <div class="mb-8 md:mb-10">
+            <label class="block text-sm font-medium text-gray-400 mb-2"
+              >Text Content</label
+            >
+            <textarea
+              id="simple-text-input"
+              rows="3"
+              placeholder="FACTORIO"
+              class="w-full p-4 md:p-5 bg-gray-900/80 border border-gray-600 rounded-xl text-yellow-500 font-mono text-xl md:text-2xl tracking-widest uppercase focus:ring-2 focus:ring-yellow-500 focus:border-transparent outline-none transition-all shadow-inner"
+            ></textarea>
+            <p class="text-xs text-gray-500 mt-2 text-right">
+              Supported: A-Z, 0-9
+            </p>
+          </div>
+
+          <button
+            onclick="generateSimpleBlueprint()"
+            class="w-full py-4 bg-gradient-to-r from-yellow-600 to-yellow-500 hover:from-yellow-500 hover:to-yellow-400 text-white font-bold text-lg rounded-xl shadow-lg flex items-center justify-center gap-3 transition-all transform hover:-translate-y-0.5 active:scale-[0.98]"
+          >
+            <i class="fa-solid fa-copy"></i> Generate & Copy Blueprint
+          </button>
+
+          <div
+            id="simple-msg"
+            class="mt-6 text-center text-sm min-h-[24px] font-medium transition-all duration-300"
+          ></div>
         </div>
+      </div>
 
-        <!-- VIEW 2: DRAWING STUDIO (Canvas Mode) -->
-        <div id="view-draw" class="absolute inset-0 flex hidden">
-            <!-- Toolbar Sidebar -->
-            <aside class="w-72 bg-gray-800 border-r border-gray-700 flex flex-col shrink-0 overflow-y-auto shadow-2xl z-10">
-                
-                <!-- Tools -->
-                <div class="p-6 border-b border-gray-700">
-                    <h3 class="text-xs font-bold text-gray-500 uppercase tracking-wider mb-4">Drawing Tools</h3>
-                    <div class="grid grid-cols-4 gap-3 mb-6">
-                        <button class="tool-btn active aspect-square flex items-center justify-center text-lg" id="btn-brush" onclick="setDrawTool('brush')" title="Brush (B)">
-                            <i class="fa-solid fa-pencil"></i>
-                        </button>
-                        <button class="tool-btn aspect-square flex items-center justify-center text-lg" id="btn-fill" onclick="setDrawTool('fill')" title="Fill (F)">
-                            <i class="fa-solid fa-fill-drip"></i>
-                        </button>
-                        <button class="tool-btn aspect-square flex items-center justify-center text-lg" id="btn-erase" onclick="setDrawTool('erase')" title="Eraser (E)">
-                            <i class="fa-solid fa-eraser"></i>
-                        </button>
-                        <button class="tool-btn aspect-square flex items-center justify-center text-lg text-red-400 hover:bg-red-900/30 hover:text-red-300 border-red-900/30" onclick="clearCanvas()" title="Clear All">
-                            <i class="fa-solid fa-trash"></i>
-                        </button>
-                    </div>
+      <!-- VIEW 2: DRAWING STUDIO (Canvas Mode) -->
+      <div
+        id="view-draw"
+        class="absolute inset-0 flex flex-col md:flex-row hidden"
+      >
+        <!-- Main Canvas Area (Top on Mobile, Right on Desktop) -->
+        <main
+          class="flex-1 flex flex-col relative bg-gray-950 order-1 md:order-2 h-[60vh] md:h-auto"
+        >
+          <div class="absolute top-4 right-4 z-10">
+            <button
+              onclick="generateDrawBlueprint()"
+              class="px-4 py-2 bg-yellow-600 hover:bg-yellow-500 text-white font-bold rounded-lg shadow-lg text-xs md:text-sm flex items-center gap-2 transition-transform hover:-translate-y-0.5 active:scale-95 border border-yellow-400/20 backdrop-blur-sm opacity-90 hover:opacity-100"
+            >
+              <i class="fa-solid fa-clipboard-check"></i>
+              <span class="hidden sm:inline">Copy Blueprint</span>
+            </button>
+          </div>
 
-                    <div class="flex gap-2">
-                        <button class="tool-btn flex-1 text-xs py-2" onclick="undo()" title="Ctrl+Z">
-                            <i class="fa-solid fa-rotate-left mr-1"></i> Undo
-                        </button>
-                        <button class="tool-btn flex-1 text-xs py-2" onclick="redo()" title="Ctrl+Shift+Z">
-                            <i class="fa-solid fa-rotate-right mr-1"></i> Redo
-                        </button>
-                    </div>
-                </div>
+          <div
+            id="stamp-hint"
+            class="absolute top-4 left-4 z-10 bg-blue-600/90 backdrop-blur text-white px-3 py-1.5 rounded-lg shadow-lg text-[10px] md:text-xs font-bold hidden border border-blue-400/30 flex items-center gap-2 pointer-events-none"
+          >
+            <i class="fa-solid fa-crosshairs animate-pulse"></i>
+            <span>Click to Stamp</span>
+          </div>
 
-                <!-- Color -->
-                <div class="p-6 border-b border-gray-700">
-                    <h3 class="text-xs font-bold text-gray-500 uppercase tracking-wider mb-3">Color Palette</h3>
-                    <div class="flex items-center gap-3 bg-gray-900/50 p-3 rounded-lg border border-gray-600">
-                        <div class="w-10 h-10 rounded-md overflow-hidden border border-gray-500 shadow-sm relative group">
-                            <input type="color" id="draw-color" value="#00ff00">
-                            <div class="absolute inset-0 flex items-center justify-center pointer-events-none opacity-0 group-hover:opacity-100 bg-black/20 transition-opacity">
-                                <i class="fa-solid fa-eye-dropper text-white text-xs shadow-black drop-shadow-md"></i>
-                            </div>
-                        </div>
-                        <div class="flex flex-col">
-                            <span class="text-xs font-bold text-gray-200">Selected Color</span>
-                            <span class="text-[10px] text-gray-500">Click swatch to change</span>
-                        </div>
-                    </div>
-                </div>
+          <div
+            class="flex-1 overflow-auto canvas-container flex items-center justify-center p-4 md:p-8"
+            id="viewport"
+          >
+            <canvas
+              id="gridCanvas"
+              class="shadow-2xl border border-gray-700"
+            ></canvas>
+          </div>
 
-                <!-- Generators (Stamps) -->
-                <div class="p-6 border-b border-gray-700">
-                    <h3 class="text-xs font-bold text-gray-500 uppercase tracking-wider mb-4">Stamps</h3>
-                    
-                    <!-- Text Stamp -->
-                    <div class="mb-5">
-                        <label class="text-[10px] font-bold text-gray-400 mb-1 block">TEXT STAMP</label>
-                        <div class="flex gap-2">
-                            <input type="text" id="draw-text-input" placeholder="ABC" class="flex-1 bg-gray-900 border border-gray-600 rounded px-3 py-1.5 text-xs uppercase font-mono text-yellow-500 focus:border-yellow-500 outline-none transition-colors">
-                            <button onclick="activateTextStamp()" class="px-3 bg-gray-700 hover:bg-gray-600 rounded border border-gray-500 text-xs transition-colors" title="Activate Stamp">
-                                <i class="fa-solid fa-stamp"></i>
-                            </button>
-                        </div>
-                    </div>
+          <div
+            class="h-6 md:h-8 bg-gray-900 border-t border-gray-800 flex items-center px-4 md:px-6 text-[10px] text-gray-500 justify-between shrink-0 font-mono"
+          >
+            <span id="coords" class="opacity-70">X: 0 Y: 0</span>
+            <span id="canvas-status" class="font-bold opacity-70">READY</span>
+          </div>
+        </main>
 
-                    <!-- Image Stamp -->
-                    <div>
-                        <label class="text-[10px] font-bold text-gray-400 mb-1 block">IMAGE STAMP</label>
-                        <label class="flex items-center justify-center w-full py-2.5 bg-gray-700 hover:bg-gray-600 rounded border border-gray-500 text-xs cursor-pointer gap-2 transition-colors">
-                            <i class="fa-solid fa-image text-gray-400"></i> <span>Select Image File...</span>
-                            <input type="file" id="img-upload" class="hidden" accept="image/*" onchange="activateImageStamp(this)">
-                        </label>
-                    </div>
-                </div>
+        <!-- Toolbar Sidebar (Bottom on Mobile, Left on Desktop) -->
+        <aside
+          class="w-full md:w-72 bg-gray-800 border-t md:border-t-0 md:border-r border-gray-700 flex flex-col shrink-0 overflow-y-auto shadow-2xl z-10 order-2 md:order-1 max-h-[40vh] md:max-h-full"
+        >
+          <div class="p-4 md:p-6 border-b border-gray-700">
+            <div class="flex justify-between items-center mb-2 md:mb-4">
+              <h3
+                class="text-[10px] md:text-xs font-bold text-gray-500 uppercase tracking-wider"
+              >
+                Drawing Tools
+              </h3>
+              <div class="flex gap-1">
+                <button
+                  class="tool-btn text-xs py-1 px-2"
+                  onclick="undo()"
+                  title="Undo"
+                >
+                  <i class="fa-solid fa-rotate-left"></i>
+                </button>
+                <button
+                  class="tool-btn text-xs py-1 px-2"
+                  onclick="redo()"
+                  title="Redo"
+                >
+                  <i class="fa-solid fa-rotate-right"></i>
+                </button>
+              </div>
+            </div>
 
-                <!-- Canvas Settings -->
-                <div class="p-6">
-                    <h3 class="text-xs font-bold text-gray-500 uppercase tracking-wider mb-3">Grid Dimensions</h3>
-                    <div class="flex items-center gap-2 bg-gray-900/50 p-2 rounded-lg border border-gray-600">
-                        <input type="number" id="grid-w" value="50" class="w-full bg-transparent text-center text-sm font-mono text-white focus:outline-none" onchange="resizeGrid()">
-                        <span class="text-gray-500 text-xs">x</span>
-                        <input type="number" id="grid-h" value="30" class="w-full bg-transparent text-center text-sm font-mono text-white focus:outline-none" onchange="resizeGrid()">
-                    </div>
-                </div>
+            <div class="grid grid-cols-4 gap-2 md:gap-3">
+              <button
+                class="tool-btn active aspect-square flex items-center justify-center text-lg"
+                id="btn-brush"
+                onclick="setDrawTool('brush')"
+                title="Brush (B)"
+              >
+                <i class="fa-solid fa-pencil"></i>
+              </button>
+              <button
+                class="tool-btn aspect-square flex items-center justify-center text-lg"
+                id="btn-fill"
+                onclick="setDrawTool('fill')"
+                title="Fill (F)"
+              >
+                <i class="fa-solid fa-fill-drip"></i>
+              </button>
+              <button
+                class="tool-btn aspect-square flex items-center justify-center text-lg"
+                id="btn-erase"
+                onclick="setDrawTool('erase')"
+                title="Eraser (E)"
+              >
+                <i class="fa-solid fa-eraser"></i>
+              </button>
+              <button
+                class="tool-btn aspect-square flex items-center justify-center text-lg text-red-400 hover:bg-red-900/30 hover:text-red-300 border-red-900/30"
+                onclick="clearCanvas()"
+                title="Clear All"
+              >
+                <i class="fa-solid fa-trash"></i>
+              </button>
+            </div>
+          </div>
 
-            </aside>
+          <div
+            class="p-4 md:p-6 border-b border-gray-700 flex items-center justify-between"
+          >
+            <div class="flex items-center gap-3">
+              <div
+                class="w-8 h-8 md:w-10 md:h-10 rounded-md overflow-hidden border border-gray-500 shadow-sm relative group"
+              >
+                <input type="color" id="draw-color" value="#00ff00" />
+              </div>
+              <div class="flex flex-col">
+                <span class="text-xs font-bold text-gray-200">Color</span>
+                <span class="text-[10px] text-gray-500 hidden md:inline"
+                  >Click swatch</span
+                >
+              </div>
+            </div>
 
-            <!-- Main Canvas Area -->
-            <main class="flex-1 flex flex-col relative bg-gray-950">
-                <!-- Toolbar overlay for quick access or status -->
-                <div class="absolute top-6 right-6 z-10">
-                    <button onclick="generateDrawBlueprint()" class="px-5 py-2.5 bg-yellow-600 hover:bg-yellow-500 text-white font-bold rounded-lg shadow-lg text-sm flex items-center gap-2 transition-transform hover:-translate-y-0.5 active:scale-95 border border-yellow-400/20">
-                        <i class="fa-solid fa-clipboard-check"></i> Copy Blueprint
-                    </button>
-                </div>
+            <div
+              class="flex items-center gap-1 bg-gray-900/50 p-1.5 rounded-lg border border-gray-600"
+            >
+              <input
+                type="number"
+                id="grid-w"
+                value="50"
+                class="w-8 md:w-12 bg-transparent text-center text-xs font-mono text-white focus:outline-none"
+                onchange="resizeGrid()"
+              />
+              <span class="text-gray-500 text-[10px]">x</span>
+              <input
+                type="number"
+                id="grid-h"
+                value="30"
+                class="w-8 md:w-12 bg-transparent text-center text-xs font-mono text-white focus:outline-none"
+                onchange="resizeGrid()"
+              />
+            </div>
+          </div>
 
-                <!-- Instructions Overlay (only visible in stamp mode) -->
-                <div id="stamp-hint" class="absolute top-6 left-6 z-10 bg-blue-600/90 backdrop-blur text-white px-4 py-2 rounded-lg shadow-lg text-xs font-bold hidden border border-blue-400/30 flex items-center gap-2">
-                    <i class="fa-solid fa-crosshairs animate-pulse"></i> 
-                    <span>Click to Stamp  <span class="opacity-50 mx-1">|</span>  ESC to Cancel</span>
-                </div>
-
-                <div class="flex-1 overflow-auto canvas-container flex items-center justify-center p-8" id="viewport">
-                    <canvas id="gridCanvas" class="shadow-2xl border border-gray-700"></canvas>
-                </div>
-
-                <div class="h-8 bg-gray-900 border-t border-gray-800 flex items-center px-6 text-[10px] text-gray-500 justify-between shrink-0 font-mono">
-                    <span id="coords" class="opacity-70">X: 0  Y: 0</span>
-                    <span id="canvas-status" class="font-bold opacity-70">READY</span>
-                </div>
-            </main>
-        </div>
-
+          <div class="p-4 md:p-6">
+            <h3
+              class="text-[10px] md:text-xs font-bold text-gray-500 uppercase tracking-wider mb-2 md:mb-4"
+            >
+              Stamps
+            </h3>
+            <div class="mb-3 md:mb-5">
+              <div class="flex gap-2">
+                <input
+                  type="text"
+                  id="draw-text-input"
+                  placeholder="TEXT"
+                  class="flex-1 bg-gray-900 border border-gray-600 rounded px-3 py-1.5 text-xs uppercase font-mono text-yellow-500 focus:border-yellow-500 outline-none transition-colors"
+                />
+                <button
+                  onclick="activateTextStamp()"
+                  class="px-3 bg-gray-700 hover:bg-gray-600 rounded border border-gray-500 text-xs transition-colors"
+                  title="Activate Stamp"
+                >
+                  <i class="fa-solid fa-font"></i>
+                </button>
+              </div>
+            </div>
+            <div>
+              <label
+                class="flex items-center justify-center w-full py-2 bg-gray-700 hover:bg-gray-600 rounded border border-gray-500 text-xs cursor-pointer gap-2 transition-colors"
+              >
+                <i class="fa-solid fa-image text-gray-400"></i>
+                <span>Import Image</span>
+                <input
+                  type="file"
+                  id="img-upload"
+                  class="hidden"
+                  accept="image/*"
+                  onchange="activateImageStamp(this)"
+                />
+              </label>
+            </div>
+          </div>
+        </aside>
+      </div>
     </main>
 
-    <!-- Hidden element for clipboard -->
-    <textarea id="clipboard-target" class="fixed top-0 left-0 opacity-0 pointer-events-none"></textarea>
+    <textarea
+      id="clipboard-target"
+      class="fixed top-0 left-0 opacity-0 pointer-events-none"
+    ></textarea>
 
     <script>
-        // --- Shared Factorio Font & Data ---
-        const FACTORIO_FONT = {
-            ' ': [0,0,0,0,0, 0,0,0,0,0, 0,0,0,0,0, 0,0,0,0,0, 0,0,0,0,0],
-            'A': [0,1,1,1,0, 1,0,0,0,1, 1,1,1,1,1, 1,0,0,0,1, 1,0,0,0,1],
-            'B': [1,1,1,1,0, 1,0,0,0,1, 1,1,1,1,0, 1,0,0,0,1, 1,1,1,1,0],
-            'C': [0,1,1,1,1, 1,0,0,0,0, 1,0,0,0,0, 1,0,0,0,0, 0,1,1,1,1],
-            'D': [1,1,1,1,0, 1,0,0,0,1, 1,0,0,0,1, 1,0,0,0,1, 1,1,1,1,0],
-            'E': [1,1,1,1,1, 1,0,0,0,0, 1,1,1,1,0, 1,0,0,0,0, 1,1,1,1,1],
-            'F': [1,1,1,1,1, 1,0,0,0,0, 1,1,1,1,0, 1,0,0,0,0, 1,0,0,0,0],
-            'G': [0,1,1,1,0, 1,0,0,0,1, 1,0,1,1,1, 1,0,0,0,1, 0,1,1,1,0],
-            'H': [1,0,0,0,1, 1,0,0,0,1, 1,1,1,1,1, 1,0,0,0,1, 1,0,0,0,1],
-            'I': [1,1,1,1,1, 0,0,1,0,0, 0,0,1,0,0, 0,0,1,0,0, 1,1,1,1,1],
-            'J': [0,0,0,0,1, 0,0,0,0,1, 0,0,0,0,1, 1,0,0,0,1, 0,1,1,1,0],
-            'K': [1,0,0,0,1, 1,0,0,1,0, 1,1,1,0,0, 1,0,0,1,0, 1,0,0,0,1],
-            'L': [1,0,0,0,0, 1,0,0,0,0, 1,0,0,0,0, 1,0,0,0,0, 1,1,1,1,1],
-            'M': [1,1,0,1,1, 1,0,1,0,1, 1,0,1,0,1, 1,0,0,0,1, 1,0,0,0,1],
-            'N': [1,0,0,0,1, 1,1,0,0,1, 1,0,1,0,1, 1,0,0,1,1, 1,0,0,0,1],
-            'O': [0,1,1,1,0, 1,0,0,0,1, 1,0,0,0,1, 1,0,0,0,1, 0,1,1,1,0],
-            'P': [1,1,1,1,0, 1,0,0,0,1, 1,1,1,1,0, 1,0,0,0,0, 1,0,0,0,0],
-            'Q': [0,1,1,1,0, 1,0,0,0,1, 1,0,0,0,1, 1,0,0,1,0, 0,1,1,0,1],
-            'R': [1,1,1,1,0, 1,0,0,0,1, 1,1,1,1,0, 1,0,0,1,0, 1,0,0,0,1],
-            'S': [0,1,1,1,1, 1,0,0,0,0, 0,1,1,1,0, 0,0,0,0,1, 1,1,1,1,0],
-            'T': [1,1,1,1,1, 0,0,1,0,0, 0,0,1,0,0, 0,0,1,0,0, 0,0,1,0,0],
-            'U': [1,0,0,0,1, 1,0,0,0,1, 1,0,0,0,1, 1,0,0,0,1, 0,1,1,1,0],
-            'V': [1,0,0,0,1, 1,0,0,0,1, 1,0,0,0,1, 0,1,0,1,0, 0,0,1,0,0],
-            'W': [1,0,0,0,1, 1,0,0,0,1, 1,0,1,0,1, 1,1,0,1,1, 1,0,0,0,1],
-            'X': [1,0,0,0,1, 0,1,0,1,0, 0,0,1,0,0, 0,1,0,1,0, 1,0,0,0,1],
-            'Y': [1,0,0,0,1, 0,1,0,1,0, 0,0,1,0,0, 0,0,1,0,0, 0,0,1,0,0],
-            'Z': [1,1,1,1,1, 0,0,0,1,0, 0,0,1,0,0, 0,1,0,0,0, 1,1,1,1,1],
-            '0': [0,1,1,1,0, 1,0,0,0,1, 1,0,0,1,1, 1,0,1,0,1, 0,1,1,1,0],
-            '1': [0,0,1,0,0, 0,1,1,0,0, 0,0,1,0,0, 0,0,1,0,0, 0,1,1,1,0],
-            '2': [1,1,1,1,1, 0,0,0,0,1, 0,1,1,1,0, 1,0,0,0,0, 1,1,1,1,1],
-            '3': [1,1,1,1,1, 0,0,0,0,1, 0,1,1,1,1, 0,0,0,0,1, 1,1,1,1,1],
-            '4': [1,0,0,0,1, 1,0,0,0,1, 1,1,1,1,1, 0,0,0,0,1, 0,0,0,0,1],
-            '5': [1,1,1,1,1, 1,0,0,0,0, 1,1,1,1,0, 0,0,0,0,1, 1,1,1,1,0],
-            '6': [1,1,1,1,0, 1,0,0,0,0, 1,1,1,1,0, 1,0,0,0,1, 0,1,1,1,0],
-            '7': [1,1,1,1,1, 0,0,0,0,1, 0,0,0,1,0, 0,0,1,0,0, 0,1,0,0,0],
-            '8': [0,1,1,1,0, 1,0,0,0,1, 0,1,1,1,0, 1,0,0,0,1, 0,1,1,1,0],
-            '9': [0,1,1,1,0, 1,0,0,0,1, 0,1,1,1,1, 0,0,0,0,1, 0,1,1,1,0],
-            '!': [0,0,1,0,0, 0,0,1,0,0, 0,0,1,0,0, 0,0,0,0,0, 0,0,1,0,0],
-            '.': [0,0,0,0,0, 0,0,0,0,0, 0,0,0,0,0, 0,0,0,0,0, 0,0,1,0,0],
-            ',': [0,0,0,0,0, 0,0,0,0,0, 0,0,0,0,0, 0,0,0,0,0, 0,0,1,0,0],
-            '?': [0,1,1,1,0, 1,0,0,0,1, 0,0,0,1,0, 0,0,0,0,0, 0,0,1,0,0],
+      // --- Shared Factorio Font & Data ---
+      const FACTORIO_FONT = {
+        " ": [
+          0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+          0, 0,
+        ],
+        A: [
+          0, 1, 1, 1, 0, 1, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 1, 1, 0, 0,
+          0, 1,
+        ],
+        B: [
+          1, 1, 1, 1, 0, 1, 0, 0, 0, 1, 1, 1, 1, 1, 0, 1, 0, 0, 0, 1, 1, 1, 1,
+          1, 0,
+        ],
+        C: [
+          0, 1, 1, 1, 1, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 1, 1,
+          1, 1,
+        ],
+        D: [
+          1, 1, 1, 1, 0, 1, 0, 0, 0, 1, 1, 0, 0, 0, 1, 1, 0, 0, 0, 1, 1, 1, 1,
+          1, 0,
+        ],
+        E: [
+          1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 1, 1, 1, 1, 0, 1, 0, 0, 0, 0, 1, 1, 1,
+          1, 1,
+        ],
+        F: [
+          1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 1, 1, 1, 1, 0, 1, 0, 0, 0, 0, 1, 0, 0,
+          0, 0,
+        ],
+        G: [
+          0, 1, 1, 1, 0, 1, 0, 0, 0, 1, 1, 0, 1, 1, 1, 1, 0, 0, 0, 1, 0, 1, 1,
+          1, 0,
+        ],
+        H: [
+          1, 0, 0, 0, 1, 1, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 1, 1, 0, 0,
+          0, 1,
+        ],
+        I: [
+          1, 1, 1, 1, 1, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 1, 1, 1,
+          1, 1,
+        ],
+        J: [
+          0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 1, 0, 0, 0, 1, 0, 1, 1,
+          1, 0,
+        ],
+        K: [
+          1, 0, 0, 0, 1, 1, 0, 0, 1, 0, 1, 1, 1, 0, 0, 1, 0, 0, 1, 0, 1, 0, 0,
+          0, 1,
+        ],
+        L: [
+          1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 1, 1,
+          1, 1,
+        ],
+        M: [
+          1, 1, 0, 1, 1, 1, 0, 1, 0, 1, 1, 0, 1, 0, 1, 1, 0, 0, 0, 1, 1, 0, 0,
+          0, 1,
+        ],
+        N: [
+          1, 0, 0, 0, 1, 1, 1, 0, 0, 1, 1, 0, 1, 0, 1, 1, 0, 0, 1, 1, 1, 0, 0,
+          0, 1,
+        ],
+        O: [
+          0, 1, 1, 1, 0, 1, 0, 0, 0, 1, 1, 0, 0, 0, 1, 1, 0, 0, 0, 1, 0, 1, 1,
+          1, 0,
+        ],
+        P: [
+          1, 1, 1, 1, 0, 1, 0, 0, 0, 1, 1, 1, 1, 1, 0, 1, 0, 0, 0, 0, 1, 0, 0,
+          0, 0,
+        ],
+        Q: [
+          0, 1, 1, 1, 0, 1, 0, 0, 0, 1, 1, 0, 0, 0, 1, 1, 0, 0, 1, 0, 0, 1, 1,
+          0, 1,
+        ],
+        R: [
+          1, 1, 1, 1, 0, 1, 0, 0, 0, 1, 1, 1, 1, 1, 0, 1, 0, 0, 1, 0, 1, 0, 0,
+          0, 1,
+        ],
+        S: [
+          0, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 1, 1, 1, 0, 0, 0, 0, 0, 1, 1, 1, 1,
+          1, 0,
+        ],
+        T: [
+          1, 1, 1, 1, 1, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1,
+          0, 0,
+        ],
+        U: [
+          1, 0, 0, 0, 1, 1, 0, 0, 0, 1, 1, 0, 0, 0, 1, 1, 0, 0, 0, 1, 0, 1, 1,
+          1, 0,
+        ],
+        V: [
+          1, 0, 0, 0, 1, 1, 0, 0, 0, 1, 1, 0, 0, 0, 1, 0, 1, 0, 1, 0, 0, 0, 1,
+          0, 0,
+        ],
+        W: [
+          1, 0, 0, 0, 1, 1, 0, 0, 0, 1, 1, 0, 1, 0, 1, 1, 1, 0, 1, 1, 1, 0, 0,
+          0, 1,
+        ],
+        X: [
+          1, 0, 0, 0, 1, 0, 1, 0, 1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1, 0, 1, 0, 0,
+          0, 1,
+        ],
+        Y: [
+          1, 0, 0, 0, 1, 0, 1, 0, 1, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1,
+          0, 0,
+        ],
+        Z: [
+          1, 1, 1, 1, 1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0, 1, 1, 1,
+          1, 1,
+        ],
+        0: [
+          0, 1, 1, 1, 0, 1, 0, 0, 0, 1, 1, 0, 0, 1, 1, 1, 0, 1, 0, 1, 0, 1, 1,
+          1, 0,
+        ],
+        1: [
+          0, 0, 1, 0, 0, 0, 1, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 1, 1,
+          1, 0,
+        ],
+        2: [
+          1, 1, 1, 1, 1, 0, 0, 0, 0, 1, 0, 1, 1, 1, 0, 1, 0, 0, 0, 0, 1, 1, 1,
+          1, 1,
+        ],
+        3: [
+          1, 1, 1, 1, 1, 0, 0, 0, 0, 1, 0, 1, 1, 1, 1, 0, 0, 0, 0, 1, 1, 1, 1,
+          1, 1,
+        ],
+        4: [
+          1, 0, 0, 0, 1, 1, 0, 0, 0, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 1, 0, 0, 0,
+          0, 1,
+        ],
+        5: [
+          1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 1, 1, 1, 1, 0, 0, 0, 0, 0, 1, 1, 1, 1,
+          1, 0,
+        ],
+        6: [
+          1, 1, 1, 1, 0, 1, 0, 0, 0, 0, 1, 1, 1, 1, 0, 1, 0, 0, 0, 1, 0, 1, 1,
+          1, 0,
+        ],
+        7: [
+          1, 1, 1, 1, 1, 0, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0, 1, 0,
+          0, 0,
+        ],
+        8: [
+          0, 1, 1, 1, 0, 1, 0, 0, 0, 1, 0, 1, 1, 1, 0, 1, 0, 0, 0, 1, 0, 1, 1,
+          1, 0,
+        ],
+        9: [
+          0, 1, 1, 1, 0, 1, 0, 0, 0, 1, 0, 1, 1, 1, 1, 0, 0, 0, 0, 1, 0, 1, 1,
+          1, 0,
+        ],
+        "!": [
+          0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1,
+          0, 0,
+        ],
+        ".": [
+          0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1,
+          0, 0,
+        ],
+        ",": [
+          0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1,
+          0, 0,
+        ],
+        "?": [
+          0, 1, 1, 1, 0, 1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 1,
+          0, 0,
+        ],
+      };
+
+      function hexToRgb(hex) {
+        const bigint = parseInt(hex.replace("#", ""), 16);
+        return {
+          r: (bigint >> 16) & 255,
+          g: (bigint >> 8) & 255,
+          b: bigint & 255,
+        };
+      }
+
+      function encodeBlueprint(blueprintJson) {
+        try {
+          const jsonString = JSON.stringify(blueprintJson);
+          const utf8Encoder = new TextEncoder();
+          const jsonBytes = utf8Encoder.encode(jsonString);
+          const compressed = pako.deflate(jsonBytes, { level: 9 });
+          const binaryString = Array.from(compressed)
+            .map((b) => String.fromCharCode(b))
+            .join("");
+          return "0" + btoa(binaryString);
+        } catch (e) {
+          console.error(e);
+          return null;
+        }
+      }
+
+      // --- GLOBAL APP STATE ---
+      let currentTab = "text";
+
+      function switchTab(tab, updateUrl = true) {
+        currentTab = tab;
+
+        // UI Updates - Button Styling
+        const btnText = document.getElementById("btn-mode-text");
+        const btnDraw = document.getElementById("btn-mode-draw");
+
+        if (tab === "text") {
+          btnText.classList.add("mode-btn-active");
+          btnText.classList.remove("mode-btn-inactive");
+          btnDraw.classList.add("mode-btn-inactive");
+          btnDraw.classList.remove("mode-btn-active");
+        } else {
+          btnText.classList.add("mode-btn-inactive");
+          btnText.classList.remove("mode-btn-active");
+          btnDraw.classList.add("mode-btn-active");
+          btnDraw.classList.remove("mode-btn-inactive");
+        }
+
+        document
+          .getElementById("view-text")
+          .classList.toggle("hidden", tab !== "text");
+        document
+          .getElementById("view-draw")
+          .classList.toggle("hidden", tab !== "draw");
+
+        if (tab === "draw") {
+          resizeGrid(); // Ensure canvas is sized correctly when made visible
+        }
+
+        // URL Updates using Query Params
+        if (updateUrl) {
+          const url = new URL(window.location);
+          url.searchParams.set("mode", tab);
+          window.history.replaceState(null, "", url); // Fixed: window.history
+        }
+      }
+
+      // Handle Back/Forward Browser Buttons
+      window.addEventListener("popstate", () => {
+        const params = new URLSearchParams(window.location.search);
+        const mode = params.get("mode");
+        if (mode === "draw" || mode === "text") {
+          switchTab(mode, false);
+        }
+      });
+
+      // --- PART 1: SIMPLE TEXT GENERATOR ---
+      function generateSimpleBlueprint() {
+        const text = document
+          .getElementById("simple-text-input")
+          .value.toUpperCase();
+        const hex = document.getElementById("simple-color").value;
+        const size =
+          parseInt(document.getElementById("simple-size").value) || 1;
+        const msg = document.getElementById("simple-msg");
+
+        if (!text) {
+          msg.textContent = "Please enter text.";
+          msg.className = "mt-4 text-center text-red-500 font-bold";
+          return;
+        }
+
+        const rgb = hexToRgb(hex);
+        const entities = [];
+        let entityId = 1;
+        let cursorX = 0;
+        const spacing = 2 * size;
+
+        for (const char of text) {
+          const map = FACTORIO_FONT[char];
+          if (!map) {
+            cursorX += spacing;
+            continue;
+          }
+
+          for (let r = 0; r < 5; r++) {
+            for (let c = 0; c < 5; c++) {
+              if (map[r * 5 + c] === 1) {
+                entities.push({
+                  entity_number: entityId++,
+                  name: "small-lamp",
+                  position: { x: cursorX + c * size, y: r * size },
+                  color: {
+                    r: rgb.r / 255,
+                    g: rgb.g / 255,
+                    b: rgb.b / 255,
+                    a: 1,
+                  },
+                  always_on: true,
+                });
+              }
+            }
+          }
+          cursorX += 5 * size + spacing;
+        }
+
+        const bp = {
+          blueprint: {
+            item: "blueprint",
+            label: text.substring(0, 20),
+            entities: entities,
+            icons: [{ signal: { type: "item", name: "small-lamp" }, index: 1 }],
+            version: 562949958139904,
+          },
         };
 
-        function hexToRgb(hex) {
-            const bigint = parseInt(hex.replace('#', ''), 16);
-            return { r: (bigint >> 16) & 255, g: (bigint >> 8) & 255, b: bigint & 255 };
-        }
+        const str = encodeBlueprint(bp);
+        copyToClipboard(str, msg);
+      }
 
-        function encodeBlueprint(blueprintJson) {
-            try {
-                const jsonString = JSON.stringify(blueprintJson);
-                const utf8Encoder = new TextEncoder();
-                const jsonBytes = utf8Encoder.encode(jsonString);
-                const compressed = pako.deflate(jsonBytes, { level: 9 });
-                const binaryString = Array.from(compressed).map(b => String.fromCharCode(b)).join('');
-                return '0' + btoa(binaryString);
-            } catch (e) {
-                console.error(e);
-                return null;
-            }
-        }
-
-        // --- GLOBAL APP STATE ---
-        let currentTab = 'text';
-
-        function switchTab(tab) {
-            currentTab = tab;
-            document.getElementById('tab-text').classList.toggle('active', tab === 'text');
-            document.getElementById('tab-draw').classList.toggle('active', tab === 'draw');
-            document.getElementById('view-text').classList.toggle('hidden', tab !== 'text');
-            document.getElementById('view-draw').classList.toggle('hidden', tab !== 'draw');
-            
-            if (tab === 'draw') {
-                resizeGrid(); // Ensure canvas is sized correctly when made visible
-            }
-        }
-
-        // --- PART 1: SIMPLE TEXT GENERATOR ---
-        function generateSimpleBlueprint() {
-            const text = document.getElementById('simple-text-input').value.toUpperCase();
-            const hex = document.getElementById('simple-color').value;
-            const size = parseInt(document.getElementById('simple-size').value) || 1;
-            const msg = document.getElementById('simple-msg');
-
-            if (!text) { msg.textContent = "Please enter text."; msg.className = "mt-4 text-center text-red-500 font-bold"; return; }
-
-            const rgb = hexToRgb(hex);
-            const entities = [];
-            let entityId = 1;
-            let cursorX = 0;
-            const spacing = 2 * size;
-
-            for (const char of text) {
-                const map = FACTORIO_FONT[char];
-                if (!map) { cursorX += spacing; continue; }
-
-                for (let r = 0; r < 5; r++) {
-                    for (let c = 0; c < 5; c++) {
-                        if (map[r*5 + c] === 1) {
-                            // NEW JSON STRUCTURE: direct 'color' and 'always_on' properties
-                            entities.push({
-                                entity_number: entityId++,
-                                name: "small-lamp",
-                                position: { x: cursorX + (c * size), y: (r * size) },
-                                color: { r: rgb.r/255, g: rgb.g/255, b: rgb.b/255, a: 1 },
-                                always_on: true
-                            });
-                        }
-                    }
-                }
-                cursorX += (5 * size) + spacing;
-            }
-
-            const bp = {
-                blueprint: {
-                    item: "blueprint",
-                    label: text.substring(0, 20),
-                    entities: entities,
-                    icons: [{ signal: { type: "item", name: "small-lamp" }, index: 1 }],
-                    version: 562949958139904 // Updated version
-                }
-            };
-
-            const str = encodeBlueprint(bp);
-            copyToClipboard(str, msg);
-        }
-
-        function copyToClipboard(str, msgElement) {
-            if (!str) return;
-            const area = document.getElementById('clipboard-target');
-            area.value = str;
-            area.select();
-            try {
-                document.execCommand('copy');
-                msgElement.textContent = "Blueprint Copied to Clipboard!";
-                msgElement.className = "mt-4 text-center text-green-400 font-bold animate-pulse";
-                // Hide message after 3 seconds
-                setTimeout(() => {
-                    msgElement.textContent = "";
-                    msgElement.className = "";
-                }, 3000);
-            } catch(e) {
-                msgElement.textContent = "Error copying. Check console.";
-                msgElement.className = "mt-4 text-center text-red-500";
-            }
-        }
-
-
-        // --- PART 2: DRAWING STUDIO ---
-        
-        // Canvas State
-        let GRID_W = 50;
-        let GRID_H = 30;
-        let PIXEL_SIZE = 15;
-        let gridData = [];
-        let history = [];
-        let historyIndex = -1;
-        let currentDrawTool = 'brush'; // brush, fill, erase
-        let isMouseDown = false;
-        
-        // Stamp State
-        let stampMode = null; // null, 'text', 'image'
-        let stampBuffer = null; // { w, h, data: [ {hex} or null ] }
-        let mouseX = 0;
-        let mouseY = 0;
-
-        const canvas = document.getElementById('gridCanvas');
-        const ctx = canvas.getContext('2d');
-
-        function initDraw() {
-            gridData = createEmptyGrid(GRID_W, GRID_H);
-            saveState(); // Initial state
-            renderCanvas();
-        }
-
-        function createEmptyGrid(w, h) {
-            return new Array(h).fill(null).map(() => new Array(w).fill(null));
-        }
-
-        function resizeGrid() {
-            const newW = parseInt(document.getElementById('grid-w').value) || 20;
-            const newH = parseInt(document.getElementById('grid-h').value) || 20;
-            
-            // Resize grid preserving data
-            const newGrid = createEmptyGrid(newW, newH);
-            for(let y=0; y<Math.min(GRID_H, newH); y++) {
-                for(let x=0; x<Math.min(GRID_W, newW); x++) {
-                    newGrid[y][x] = gridData[y][x];
-                }
-            }
-
-            GRID_W = newW;
-            GRID_H = newH;
-            gridData = newGrid;
-            
-            // Reset History logic to avoid complexity with resizing
-            history = [];
-            historyIndex = -1;
-            saveState();
-
-            canvas.width = GRID_W * PIXEL_SIZE;
-            canvas.height = GRID_H * PIXEL_SIZE;
-            renderCanvas();
-        }
-
-        function clearCanvas() {
-            gridData = createEmptyGrid(GRID_W, GRID_H);
-            saveState();
-            renderCanvas();
-        }
-
-        // History System
-        function saveState() {
-            // Remove any future history if we pushed new state in middle of stack
-            if (historyIndex < history.length - 1) {
-                history = history.slice(0, historyIndex + 1);
-            }
-            history.push(JSON.stringify(gridData));
-            if (history.length > 30) history.shift(); // Limit
-            historyIndex = history.length - 1;
-        }
-
-        function undo() {
-            if (historyIndex > 0) {
-                historyIndex--;
-                gridData = JSON.parse(history[historyIndex]);
-                renderCanvas();
-            }
-        }
-
-        function redo() {
-            if (historyIndex < history.length - 1) {
-                historyIndex++;
-                gridData = JSON.parse(history[historyIndex]);
-                renderCanvas();
-            }
-        }
-        
-        // Key bindings for undo/redo
-        document.addEventListener('keydown', (e) => {
-            if (currentTab !== 'draw') return;
-            if ((e.ctrlKey || e.metaKey) && e.key === 'z') {
-                e.preventDefault();
-                if (e.shiftKey) redo(); else undo();
-            }
-            if (e.key === 'Escape' && stampMode) {
-                stampMode = null;
-                document.getElementById('stamp-hint').classList.add('hidden');
-                canvas.style.cursor = 'crosshair';
-                renderCanvas();
-            }
-        });
-
-        // Rendering Loop
-        function renderCanvas() {
-            // Background
-            ctx.fillStyle = '#111827'; 
-            ctx.fillRect(0, 0, canvas.width, canvas.height);
-
-            // Grid Lines
-            ctx.strokeStyle = '#374151';
-            ctx.lineWidth = 1;
-            ctx.beginPath();
-            for (let x = 0; x <= GRID_W; x++) ctx.rect(x * PIXEL_SIZE, 0, 0, canvas.height);
-            for (let y = 0; y <= GRID_H; y++) ctx.rect(0, y * PIXEL_SIZE, canvas.width, 0);
-            ctx.stroke();
-
-            // Active Pixels
-            for (let y = 0; y < GRID_H; y++) {
-                for (let x = 0; x < GRID_W; x++) {
-                    if (gridData[y][x]) {
-                        ctx.fillStyle = gridData[y][x];
-                        ctx.fillRect(x * PIXEL_SIZE + 1, y * PIXEL_SIZE + 1, PIXEL_SIZE - 2, PIXEL_SIZE - 2);
-                    }
-                }
-            }
-
-            // Stamp Overlay (Ghost)
-            if (stampMode && stampBuffer) {
-                const cx = Math.floor(mouseX / PIXEL_SIZE);
-                const cy = Math.floor(mouseY / PIXEL_SIZE);
-                
-                // Center the stamp
-                const startX = cx - Math.floor(stampBuffer.w / 2);
-                const startY = cy - Math.floor(stampBuffer.h / 2);
-
-                ctx.globalAlpha = 0.5; // Ghost effect
-                for (let sy = 0; sy < stampBuffer.h; sy++) {
-                    for (let sx = 0; sx < stampBuffer.w; sx++) {
-                        const col = stampBuffer.data[sy][sx];
-                        if (col) {
-                            const gx = startX + sx;
-                            const gy = startY + sy;
-                            // Draw even if out of bounds to show it moving off screen
-                            ctx.fillStyle = col;
-                            ctx.fillRect(gx * PIXEL_SIZE, gy * PIXEL_SIZE, PIXEL_SIZE, PIXEL_SIZE);
-                        }
-                    }
-                }
-                ctx.globalAlpha = 1.0;
-                
-                // Draw bounding box
-                ctx.strokeStyle = '#fbbf24'; // Yellow
-                ctx.lineWidth = 2;
-                ctx.strokeRect(startX * PIXEL_SIZE, startY * PIXEL_SIZE, stampBuffer.w * PIXEL_SIZE, stampBuffer.h * PIXEL_SIZE);
-            }
-        }
-
-        // Tools Logic
-        function setDrawTool(tool) {
-            currentDrawTool = tool;
-            stampMode = null; // Cancel stamp
-            document.getElementById('stamp-hint').classList.add('hidden');
-            
-            ['brush', 'fill', 'erase'].forEach(t => document.getElementById(`btn-${t}`).classList.remove('active'));
-            document.getElementById(`btn-${tool}`).classList.add('active');
-            canvas.style.cursor = tool === 'fill' ? 'alias' : 'crosshair';
-        }
-
-        function useTool(x, y) {
-            if (x < 0 || x >= GRID_W || y < 0 || y >= GRID_H) return;
-            const color = document.getElementById('draw-color').value;
-
-            if (currentDrawTool === 'brush') {
-                if (gridData[y][x] !== color) {
-                    gridData[y][x] = color;
-                    renderCanvas();
-                }
-            } else if (currentDrawTool === 'erase') {
-                if (gridData[y][x] !== null) {
-                    gridData[y][x] = null;
-                    renderCanvas();
-                }
-            } else if (currentDrawTool === 'fill') {
-                floodFill(x, y, color);
-                renderCanvas();
-                saveState(); // Fill is single-click, save immediately
-            }
-        }
-
-        function floodFill(sx, sy, fillColor) {
-            const targetColor = gridData[sy][sx];
-            if (targetColor === fillColor) return;
-            
-            const stack = [[sx, sy]];
-            while(stack.length) {
-                const [x, y] = stack.pop();
-                if (x < 0 || x >= GRID_W || y < 0 || y >= GRID_H) continue;
-                if (gridData[y][x] !== targetColor) continue;
-                
-                gridData[y][x] = fillColor;
-                stack.push([x+1, y], [x-1, y], [x, y+1], [x, y-1]);
-            }
-        }
-
-        function commitStamp() {
-            if (!stampMode || !stampBuffer) return;
-            
-            const cx = Math.floor(mouseX / PIXEL_SIZE);
-            const cy = Math.floor(mouseY / PIXEL_SIZE);
-            const startX = cx - Math.floor(stampBuffer.w / 2);
-            const startY = cy - Math.floor(stampBuffer.h / 2);
-            
-            let changed = false;
-            for (let sy = 0; sy < stampBuffer.h; sy++) {
-                for (let sx = 0; sx < stampBuffer.w; sx++) {
-                    const col = stampBuffer.data[sy][sx];
-                    if (col) {
-                        const gx = startX + sx;
-                        const gy = startY + sy;
-                        if (gx >= 0 && gx < GRID_W && gy >= 0 && gy < GRID_H) {
-                            gridData[gy][gx] = col;
-                            changed = true;
-                        }
-                    }
-                }
-            }
-            
-            if (changed) {
-                saveState();
-                renderCanvas();
-            }
-            
-            // Auto cancel stamp after placement
-            stampMode = null;
-            document.getElementById('stamp-hint').classList.add('hidden');
-            canvas.style.cursor = 'crosshair';
-            renderCanvas();
-        }
-
-        // Mouse Events
-        function getCoords(e) {
-            const rect = canvas.getBoundingClientRect();
-            return {
-                x: e.clientX - rect.left,
-                y: e.clientY - rect.top
-            };
-        }
-
-        canvas.addEventListener('mousedown', (e) => {
-            const { x, y } = getCoords(e);
-            if (stampMode) {
-                commitStamp();
-            } else {
-                isMouseDown = true;
-                const gx = Math.floor(x / PIXEL_SIZE);
-                const gy = Math.floor(y / PIXEL_SIZE);
-                useTool(gx, gy);
-            }
-        });
-
-        canvas.addEventListener('mousemove', (e) => {
-            const pos = getCoords(e);
-            mouseX = pos.x;
-            mouseY = pos.y;
-            const gx = Math.floor(mouseX / PIXEL_SIZE);
-            const gy = Math.floor(mouseY / PIXEL_SIZE);
-
-            document.getElementById('coords').textContent = `X: ${gx}, Y: ${gy}`;
-
-            if (stampMode) {
-                renderCanvas(); // Redraw ghost
-            } else if (isMouseDown) {
-                useTool(gx, gy);
-            }
-        });
-
-        window.addEventListener('mouseup', () => {
-            if (isMouseDown) {
-                isMouseDown = false;
-                saveState(); // Save state after stroke finishes
-            }
-        });
-
-        // Stamp Generators
-        function activateTextStamp() {
-            const text = document.getElementById('draw-text-input').value.toUpperCase();
-            if(!text) return;
-            const color = document.getElementById('draw-color').value;
-
-            // Generate buffer
-            // Calculate width based on 5px char + 1px spacing
-            let w = 0;
-            const h = 5;
-            for(let c of text) w += (FACTORIO_FONT[c] ? 6 : 4);
-            
-            const buffer = new Array(h).fill(null).map(() => new Array(w).fill(null));
-            
-            let cursor = 0;
-            for(let char of text) {
-                const map = FACTORIO_FONT[char];
-                if(!map) { cursor += 4; continue; }
-                for(let r=0; r<5; r++) {
-                    for(let c=0; c<5; c++) {
-                        if(map[r*5+c]) buffer[r][cursor+c] = color;
-                    }
-                }
-                cursor += 6;
-            }
-
-            stampBuffer = { w, h, data: buffer };
-            stampMode = 'text';
-            document.getElementById('stamp-hint').classList.remove('hidden');
-            canvas.style.cursor = 'none'; // Hide default cursor so ghost is visible
-        }
-
-        function activateImageStamp(input) {
-            if (input.files && input.files[0]) {
-                const reader = new FileReader();
-                reader.onload = function(e) {
-                    const img = new Image();
-                    img.onload = function() {
-                        // Max stamp size 30x30 to prevent huge lag
-                        const scale = Math.min(1, 30/img.width, 30/img.height);
-                        const w = Math.floor(img.width * scale);
-                        const h = Math.floor(img.height * scale);
-
-                        const oc = document.createElement('canvas');
-                        oc.width = w; oc.height = h;
-                        const octx = oc.getContext('2d');
-                        octx.drawImage(img, 0, 0, w, h);
-                        const data = octx.getImageData(0, 0, w, h).data;
-                        
-                        const buffer = new Array(h).fill(null).map(() => new Array(w).fill(null));
-                        for(let y=0; y<h; y++) {
-                            for(let x=0; x<w; x++) {
-                                const i = (y*w + x)*4;
-                                const alpha = data[i+3];
-                                if(alpha > 128) {
-                                    // Convert to hex
-                                    const hex = "#" + ((1 << 24) + (data[i] << 16) + (data[i+1] << 8) + data[i+2]).toString(16).slice(1);
-                                    buffer[y][x] = hex;
-                                }
-                            }
-                        }
-                        
-                        stampBuffer = { w, h, data: buffer };
-                        stampMode = 'image';
-                        document.getElementById('stamp-hint').classList.remove('hidden');
-                        canvas.style.cursor = 'none';
-                        document.getElementById('img-upload').value = ''; // Reset
-                    };
-                    img.src = e.target.result;
-                };
-                reader.readAsDataURL(input.files[0]);
-            }
-        }
-
-        function generateDrawBlueprint() {
-            const entities = [];
-            let entityId = 1;
-            
-            for(let y=0; y<GRID_H; y++) {
-                for(let x=0; x<GRID_W; x++) {
-                    const hex = gridData[y][x];
-                    if(hex) {
-                        const rgb = hexToRgb(hex);
-                        // NEW JSON STRUCTURE for drawing mode as well
-                        entities.push({
-                            entity_number: entityId++,
-                            name: "small-lamp",
-                            position: { x: x, y: y },
-                            color: { r: rgb.r/255, g: rgb.g/255, b: rgb.b/255, a: 1 },
-                            always_on: true
-                        });
-                    }
-                }
-            }
-
-            if(entities.length === 0) {
-                alert("Canvas is empty!");
-                return;
-            }
-
-            const bp = {
-                blueprint: {
-                    item: "blueprint",
-                    label: "Factorio Art",
-                    entities: entities,
-                    icons: [{ signal: { type: "item", name: "small-lamp" }, index: 1 }],
-                    version: 562949958139904
-                }
-            };
-            
-            const area = document.getElementById('clipboard-target');
-            area.value = encodeBlueprint(bp);
-            area.select();
-            document.execCommand('copy');
-            
-            // Show status briefly
-            const statusEl = document.getElementById('canvas-status');
-            statusEl.textContent = "Blueprint Copied!";
-            statusEl.className = "text-green-400 font-bold";
+      function copyToClipboard(str, msgElement) {
+        if (!str) return;
+        const area = document.getElementById("clipboard-target");
+        area.value = str;
+        area.select();
+        try {
+          document.execCommand("copy");
+          if (msgElement) {
+            msgElement.textContent = "Blueprint Copied to Clipboard!";
+            msgElement.className =
+              "mt-4 text-center text-green-400 font-bold animate-pulse";
             setTimeout(() => {
-                statusEl.textContent = "READY";
-                statusEl.className = "font-bold opacity-70";
+              msgElement.textContent = "";
+              msgElement.className = "";
             }, 3000);
+          }
+        } catch (e) {
+          if (msgElement) {
+            msgElement.textContent = "Error copying. Check console.";
+            msgElement.className = "mt-4 text-center text-red-500";
+          }
+        }
+      }
+
+      // --- PART 2: DRAWING STUDIO ---
+
+      // Canvas State
+      let GRID_W = 50;
+      let GRID_H = 30;
+      let PIXEL_SIZE = 15;
+      let gridData = [];
+      let drawHistory = []; // Renamed to avoid collision with global history
+      let historyIndex = -1;
+      let currentDrawTool = "brush"; // brush, fill, erase
+      let isMouseDown = false;
+
+      // Stamp State
+      let stampMode = null; // null, 'text', 'image'
+      let stampBuffer = null; // { w, h, data: [ {hex} or null ] }
+      let mouseX = 0;
+      let mouseY = 0;
+
+      const canvas = document.getElementById("gridCanvas");
+      const ctx = canvas.getContext("2d");
+
+      function initDraw() {
+        gridData = createEmptyGrid(GRID_W, GRID_H);
+        saveState(); // Initial state
+        renderCanvas();
+      }
+
+      function createEmptyGrid(w, h) {
+        return new Array(h).fill(null).map(() => new Array(w).fill(null));
+      }
+
+      function resizeGrid() {
+        const newW = parseInt(document.getElementById("grid-w").value) || 20;
+        const newH = parseInt(document.getElementById("grid-h").value) || 20;
+
+        // Resize grid preserving data
+        const newGrid = createEmptyGrid(newW, newH);
+        for (let y = 0; y < Math.min(GRID_H, newH); y++) {
+          for (let x = 0; x < Math.min(GRID_W, newW); x++) {
+            newGrid[y][x] = gridData[y][x];
+          }
         }
 
-        // Init
-        initDraw();
-        switchTab('text'); // Default to simple mode
+        GRID_W = newW;
+        GRID_H = newH;
+        gridData = newGrid;
 
+        // Reset History logic to avoid complexity with resizing
+        drawHistory = [];
+        historyIndex = -1;
+        saveState();
+
+        canvas.width = GRID_W * PIXEL_SIZE;
+        canvas.height = GRID_H * PIXEL_SIZE;
+        renderCanvas();
+      }
+
+      function clearCanvas() {
+        gridData = createEmptyGrid(GRID_W, GRID_H);
+        saveState();
+        renderCanvas();
+      }
+
+      // History System
+      function saveState() {
+        // Remove any future history if we pushed new state in middle of stack
+        if (historyIndex < drawHistory.length - 1) {
+          drawHistory = drawHistory.slice(0, historyIndex + 1);
+        }
+        drawHistory.push(JSON.stringify(gridData));
+        if (drawHistory.length > 30) drawHistory.shift(); // Limit
+        historyIndex = drawHistory.length - 1;
+      }
+
+      function undo() {
+        if (historyIndex > 0) {
+          historyIndex--;
+          gridData = JSON.parse(drawHistory[historyIndex]);
+          renderCanvas();
+        }
+      }
+
+      function redo() {
+        if (historyIndex < drawHistory.length - 1) {
+          historyIndex++;
+          gridData = JSON.parse(drawHistory[historyIndex]);
+          renderCanvas();
+        }
+      }
+
+      // Key bindings for undo/redo
+      document.addEventListener("keydown", (e) => {
+        if (currentTab !== "draw") return;
+        if ((e.ctrlKey || e.metaKey) && e.key === "z") {
+          e.preventDefault();
+          if (e.shiftKey) redo();
+          else undo();
+        }
+        if (e.key === "Escape" && stampMode) {
+          stampMode = null;
+          document.getElementById("stamp-hint").classList.add("hidden");
+          canvas.style.cursor = "crosshair";
+          renderCanvas();
+        }
+      });
+
+      // Rendering Loop
+      function renderCanvas() {
+        // Background
+        ctx.fillStyle = "#111827";
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+        // Grid Lines
+        ctx.strokeStyle = "#374151";
+        ctx.lineWidth = 1;
+        ctx.beginPath();
+        for (let x = 0; x <= GRID_W; x++)
+          ctx.rect(x * PIXEL_SIZE, 0, 0, canvas.height);
+        for (let y = 0; y <= GRID_H; y++)
+          ctx.rect(0, y * PIXEL_SIZE, canvas.width, 0);
+        ctx.stroke();
+
+        // Active Pixels
+        for (let y = 0; y < GRID_H; y++) {
+          for (let x = 0; x < GRID_W; x++) {
+            if (gridData[y][x]) {
+              ctx.fillStyle = gridData[y][x];
+              ctx.fillRect(
+                x * PIXEL_SIZE + 1,
+                y * PIXEL_SIZE + 1,
+                PIXEL_SIZE - 2,
+                PIXEL_SIZE - 2
+              );
+            }
+          }
+        }
+
+        // Stamp Overlay (Ghost)
+        if (stampMode && stampBuffer) {
+          const cx = Math.floor(mouseX / PIXEL_SIZE);
+          const cy = Math.floor(mouseY / PIXEL_SIZE);
+
+          // Center the stamp
+          const startX = cx - Math.floor(stampBuffer.w / 2);
+          const startY = cy - Math.floor(stampBuffer.h / 2);
+
+          ctx.globalAlpha = 0.5; // Ghost effect
+          for (let sy = 0; sy < stampBuffer.h; sy++) {
+            for (let sx = 0; sx < stampBuffer.w; sx++) {
+              const col = stampBuffer.data[sy][sx];
+              if (col) {
+                const gx = startX + sx;
+                const gy = startY + sy;
+                // Draw even if out of bounds to show it moving off screen
+                ctx.fillStyle = col;
+                ctx.fillRect(
+                  gx * PIXEL_SIZE,
+                  gy * PIXEL_SIZE,
+                  PIXEL_SIZE,
+                  PIXEL_SIZE
+                );
+              }
+            }
+          }
+          ctx.globalAlpha = 1.0;
+
+          // Draw bounding box
+          ctx.strokeStyle = "#fbbf24"; // Yellow
+          ctx.lineWidth = 2;
+          ctx.strokeRect(
+            startX * PIXEL_SIZE,
+            startY * PIXEL_SIZE,
+            stampBuffer.w * PIXEL_SIZE,
+            stampBuffer.h * PIXEL_SIZE
+          );
+        }
+      }
+
+      // Tools Logic
+      function setDrawTool(tool) {
+        currentDrawTool = tool;
+        stampMode = null; // Cancel stamp
+        document.getElementById("stamp-hint").classList.add("hidden");
+
+        ["brush", "fill", "erase"].forEach((t) =>
+          document.getElementById(`btn-${t}`).classList.remove("active")
+        );
+        document.getElementById(`btn-${tool}`).classList.add("active");
+        canvas.style.cursor = tool === "fill" ? "alias" : "crosshair";
+      }
+
+      function useTool(x, y) {
+        if (x < 0 || x >= GRID_W || y < 0 || y >= GRID_H) return;
+        const color = document.getElementById("draw-color").value;
+
+        if (currentDrawTool === "brush") {
+          if (gridData[y][x] !== color) {
+            gridData[y][x] = color;
+            renderCanvas();
+          }
+        } else if (currentDrawTool === "erase") {
+          if (gridData[y][x] !== null) {
+            gridData[y][x] = null;
+            renderCanvas();
+          }
+        } else if (currentDrawTool === "fill") {
+          floodFill(x, y, color);
+          renderCanvas();
+          saveState(); // Fill is single-click, save immediately
+        }
+      }
+
+      function floodFill(sx, sy, fillColor) {
+        const targetColor = gridData[sy][sx];
+        if (targetColor === fillColor) return;
+
+        const stack = [[sx, sy]];
+        while (stack.length) {
+          const [x, y] = stack.pop();
+          if (x < 0 || x >= GRID_W || y < 0 || y >= GRID_H) continue;
+          if (gridData[y][x] !== targetColor) continue;
+
+          gridData[y][x] = fillColor;
+          stack.push([x + 1, y], [x - 1, y], [x, y + 1], [x, y - 1]);
+        }
+      }
+
+      function commitStamp() {
+        if (!stampMode || !stampBuffer) return;
+
+        const cx = Math.floor(mouseX / PIXEL_SIZE);
+        const cy = Math.floor(mouseY / PIXEL_SIZE);
+        const startX = cx - Math.floor(stampBuffer.w / 2);
+        const startY = cy - Math.floor(stampBuffer.h / 2);
+
+        let changed = false;
+        for (let sy = 0; sy < stampBuffer.h; sy++) {
+          for (let sx = 0; sx < stampBuffer.w; sx++) {
+            const col = stampBuffer.data[sy][sx];
+            if (col) {
+              const gx = startX + sx;
+              const gy = startY + sy;
+              if (gx >= 0 && gx < GRID_W && gy >= 0 && gy < GRID_H) {
+                gridData[gy][gx] = col;
+                changed = true;
+              }
+            }
+          }
+        }
+
+        if (changed) {
+          saveState();
+          renderCanvas();
+        }
+
+        // Auto cancel stamp after placement
+        stampMode = null;
+        document.getElementById("stamp-hint").classList.add("hidden");
+        canvas.style.cursor = "crosshair";
+        renderCanvas();
+      }
+
+      // Mouse Events
+      function getCoords(e) {
+        const rect = canvas.getBoundingClientRect();
+        // Handle both touch and mouse
+        const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+        const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+        return {
+          x: clientX - rect.left,
+          y: clientY - rect.top,
+        };
+      }
+
+      // Handle drawing events
+      function startDraw(e) {
+        const { x, y } = getCoords(e);
+        if (stampMode) {
+          commitStamp();
+        } else {
+          isMouseDown = true;
+          const gx = Math.floor(x / PIXEL_SIZE);
+          const gy = Math.floor(y / PIXEL_SIZE);
+          useTool(gx, gy);
+        }
+      }
+
+      function moveDraw(e) {
+        e.preventDefault(); // Prevent scrolling on touch
+        const pos = getCoords(e);
+        mouseX = pos.x;
+        mouseY = pos.y;
+        const gx = Math.floor(mouseX / PIXEL_SIZE);
+        const gy = Math.floor(mouseY / PIXEL_SIZE);
+
+        document.getElementById("coords").textContent = `X: ${gx}, Y: ${gy}`;
+
+        if (stampMode) {
+          renderCanvas(); // Redraw ghost
+        } else if (isMouseDown) {
+          useTool(gx, gy);
+        }
+      }
+
+      function endDraw() {
+        if (isMouseDown) {
+          isMouseDown = false;
+          saveState(); // Save state after stroke finishes
+        }
+      }
+
+      // Mouse Listeners
+      canvas.addEventListener("mousedown", startDraw);
+      canvas.addEventListener("mousemove", moveDraw);
+      window.addEventListener("mouseup", endDraw);
+
+      // Touch Listeners (Mobile support)
+      canvas.addEventListener(
+        "touchstart",
+        (e) => {
+          if (e.touches.length === 1) startDraw(e);
+        },
+        { passive: false }
+      );
+      canvas.addEventListener("touchmove", moveDraw, { passive: false });
+      canvas.addEventListener("touchend", endDraw);
+
+      // Stamp Generators
+      function activateTextStamp() {
+        const text = document
+          .getElementById("draw-text-input")
+          .value.toUpperCase();
+        if (!text) return;
+        const color = document.getElementById("draw-color").value;
+
+        // Generate buffer
+        // Calculate width based on 5px char + 1px spacing
+        let w = 0;
+        const h = 5;
+        for (let c of text) w += FACTORIO_FONT[c] ? 6 : 4;
+
+        const buffer = new Array(h)
+          .fill(null)
+          .map(() => new Array(w).fill(null));
+
+        let cursor = 0;
+        for (let char of text) {
+          const map = FACTORIO_FONT[char];
+          if (!map) {
+            cursor += 4;
+            continue;
+          }
+          for (let r = 0; r < 5; r++) {
+            for (let c = 0; c < 5; c++) {
+              if (map[r * 5 + c]) buffer[r][cursor + c] = color;
+            }
+          }
+          cursor += 6;
+        }
+
+        stampBuffer = { w, h, data: buffer };
+        stampMode = "text";
+        document.getElementById("stamp-hint").classList.remove("hidden");
+        canvas.style.cursor = "none"; // Hide default cursor so ghost is visible
+      }
+
+      function activateImageStamp(input) {
+        if (input.files && input.files[0]) {
+          const reader = new FileReader();
+          reader.onload = function (e) {
+            const img = new Image();
+            img.onload = function () {
+              // Max stamp size 30x30 to prevent huge lag
+              const scale = Math.min(1, 30 / img.width, 30 / img.height);
+              const w = Math.floor(img.width * scale);
+              const h = Math.floor(img.height * scale);
+
+              const oc = document.createElement("canvas");
+              oc.width = w;
+              oc.height = h;
+              const octx = oc.getContext("2d");
+              octx.drawImage(img, 0, 0, w, h);
+              const data = octx.getImageData(0, 0, w, h).data;
+
+              const buffer = new Array(h)
+                .fill(null)
+                .map(() => new Array(w).fill(null));
+              for (let y = 0; y < h; y++) {
+                for (let x = 0; x < w; x++) {
+                  const i = (y * w + x) * 4;
+                  const alpha = data[i + 3];
+                  if (alpha > 128) {
+                    // Convert to hex
+                    const hex =
+                      "#" +
+                      (
+                        (1 << 24) +
+                        (data[i] << 16) +
+                        (data[i + 1] << 8) +
+                        data[i + 2]
+                      )
+                        .toString(16)
+                        .slice(1);
+                    buffer[y][x] = hex;
+                  }
+                }
+              }
+
+              stampBuffer = { w, h, data: buffer };
+              stampMode = "image";
+              document.getElementById("stamp-hint").classList.remove("hidden");
+              canvas.style.cursor = "none";
+              document.getElementById("img-upload").value = ""; // Reset
+            };
+            img.src = e.target.result;
+          };
+          reader.readAsDataURL(input.files[0]);
+        }
+      }
+
+      function generateDrawBlueprint() {
+        const entities = [];
+        let entityId = 1;
+
+        for (let y = 0; y < GRID_H; y++) {
+          for (let x = 0; x < GRID_W; x++) {
+            const hex = gridData[y][x];
+            if (hex) {
+              const rgb = hexToRgb(hex);
+              // NEW JSON STRUCTURE for drawing mode as well
+              entities.push({
+                entity_number: entityId++,
+                name: "small-lamp",
+                position: { x: x, y: y },
+                color: { r: rgb.r / 255, g: rgb.g / 255, b: rgb.b / 255, a: 1 },
+                always_on: true,
+              });
+            }
+          }
+        }
+
+        if (entities.length === 0) {
+          alert("Canvas is empty!");
+          return;
+        }
+
+        const bp = {
+          blueprint: {
+            item: "blueprint",
+            label: "Factorio Art",
+            entities: entities,
+            icons: [{ signal: { type: "item", name: "small-lamp" }, index: 1 }],
+            version: 562949958139904,
+          },
+        };
+
+        const area = document.getElementById("clipboard-target");
+        area.value = encodeBlueprint(bp);
+        area.select();
+        document.execCommand("copy");
+
+        // Show status briefly
+        const statusEl = document.getElementById("canvas-status");
+        statusEl.textContent = "Blueprint Copied!";
+        statusEl.className = "text-green-400 font-bold";
+        setTimeout(() => {
+          statusEl.textContent = "READY";
+          statusEl.className = "font-bold opacity-70";
+        }, 3000);
+      }
+
+      // Init
+      initDraw();
+
+      // Check URL for initial tab (Query Param support)
+      const params = new URLSearchParams(window.location.search);
+      const initialMode = params.get("mode") === "draw" ? "draw" : "text";
+      switchTab(initialMode, false);
     </script>
-</body>
+  </body>
 </html>
