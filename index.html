@@ -63,7 +63,11 @@
         position: fixed;
         width: 3px;
         height: 3px;
-        background: linear-gradient(45deg, var(--accent-cyan), var(--accent-purple));
+        background: linear-gradient(
+          45deg,
+          var(--accent-cyan),
+          var(--accent-purple)
+        );
         border-radius: 50%;
         pointer-events: none;
         z-index: 1;
@@ -93,10 +97,8 @@
       }
 
       .text-glow {
-        text-shadow: 
-          0 0 30px rgba(14, 165, 233, 0.5),
-          0 0 60px rgba(14, 165, 233, 0.3),
-          0 0 90px rgba(168, 85, 247, 0.2);
+        text-shadow: 0 0 30px rgba(14, 165, 233, 0.5),
+          0 0 60px rgba(14, 165, 233, 0.3), 0 0 90px rgba(168, 85, 247, 0.2);
         background: linear-gradient(135deg, #ffffff, #06b6d4, #a855f7);
         background-size: 200% 200%;
         animation: gradient-shift 3s ease infinite;
@@ -105,8 +107,13 @@
       }
 
       @keyframes gradient-shift {
-        0%, 100% { background-position: 0% 50%; }
-        50% { background-position: 100% 50%; }
+        0%,
+        100% {
+          background-position: 0% 50%;
+        }
+        50% {
+          background-position: 100% 50%;
+        }
       }
 
       /* Grid with breathing effect */
@@ -152,8 +159,7 @@
       .game-card:hover {
         transform: translateY(-8px) scale(1.02);
         border-color: rgba(14, 165, 233, 0.6);
-        box-shadow: 
-          0 20px 60px rgba(14, 165, 233, 0.3),
+        box-shadow: 0 20px 60px rgba(14, 165, 233, 0.3),
           0 0 80px rgba(168, 85, 247, 0.2),
           inset 0 0 100px rgba(14, 165, 233, 0.05);
       }
@@ -180,8 +186,13 @@
       }
 
       @keyframes border-flow {
-        0%, 100% { background-position: 0% 50%; }
-        50% { background-position: 100% 50%; }
+        0%,
+        100% {
+          background-position: 0% 50%;
+        }
+        50% {
+          background-position: 100% 50%;
+        }
       }
 
       .game-card:hover::before {
@@ -228,7 +239,11 @@
         height: 60px;
         margin: 0 auto 1rem;
         border-radius: 50%;
-        background: linear-gradient(135deg, rgba(14, 165, 233, 0.1), rgba(168, 85, 247, 0.1));
+        background: linear-gradient(
+          135deg,
+          rgba(14, 165, 233, 0.1),
+          rgba(168, 85, 247, 0.1)
+        );
         border: 2px solid rgba(100, 116, 139, 0.3);
         display: flex;
         align-items: center;
@@ -242,7 +257,11 @@
         content: "";
         position: absolute;
         inset: 0;
-        background: linear-gradient(135deg, var(--accent-cyan), var(--accent-purple));
+        background: linear-gradient(
+          135deg,
+          var(--accent-cyan),
+          var(--accent-purple)
+        );
         opacity: 0;
         transition: opacity 0.4s;
       }
@@ -283,8 +302,7 @@
 
       .game-card:hover .game-title {
         color: #ffffff;
-        text-shadow: 
-          0 0 20px rgba(14, 165, 233, 0.8),
+        text-shadow: 0 0 20px rgba(14, 165, 233, 0.8),
           0 0 40px rgba(168, 85, 247, 0.4);
         letter-spacing: 0.15em;
       }
@@ -302,25 +320,23 @@
       }
 
       @keyframes titleGlitch {
-        0%, 100% { 
+        0%,
+        100% {
           transform: translate(0);
-          text-shadow: 
-            0 0 30px rgba(14, 165, 233, 0.5),
+          text-shadow: 0 0 30px rgba(14, 165, 233, 0.5),
             0 0 60px rgba(14, 165, 233, 0.3);
         }
-        20% { 
+        20% {
           transform: translate(-2px, 2px);
-          text-shadow: 
-            2px 0 var(--accent-cyan),
-            -2px 0 var(--accent-pink);
+          text-shadow: 2px 0 var(--accent-cyan), -2px 0 var(--accent-pink);
         }
-        40% { 
+        40% {
           transform: translate(-2px, -2px);
         }
-        60% { 
+        60% {
           transform: translate(2px, 2px);
         }
-        80% { 
+        80% {
           transform: translate(2px, -2px);
         }
       }
@@ -353,8 +369,7 @@
         font-size: 0.95rem;
         transition: all 0.4s cubic-bezier(0.23, 1, 0.32, 1);
         z-index: 1000;
-        box-shadow: 
-          0 10px 30px rgba(251, 191, 36, 0.3),
+        box-shadow: 0 10px 30px rgba(251, 191, 36, 0.3),
           0 0 0 0 rgba(251, 191, 36, 0.4);
         display: flex;
         align-items: center;
@@ -366,8 +381,7 @@
       .coffee-link:hover {
         background: linear-gradient(135deg, #fcd34d, #fbbf24);
         transform: translateY(-5px) scale(1.05);
-        box-shadow: 
-          0 20px 40px rgba(251, 191, 36, 0.5),
+        box-shadow: 0 20px 40px rgba(251, 191, 36, 0.5),
           0 0 0 10px rgba(251, 191, 36, 0.1);
         border-color: rgba(255, 255, 255, 0.4);
       }
@@ -385,15 +399,22 @@
     <canvas id="starfield"></canvas>
 
     <!-- Main Content -->
-    <main class="w-full max-w-7xl flex flex-col items-center z-10 pt-12 sm:pt-20">
+    <main
+      class="w-full max-w-7xl flex flex-col items-center z-10 pt-12 sm:pt-20"
+    >
       <!-- Header -->
       <header class="text-center mb-20 animate-enter">
         <div class="title-container">
-          <h1 class="orbitron text-5xl sm:text-7xl font-black mb-6 tracking-tight text-glow">
+          <h1
+            class="orbitron text-5xl sm:text-7xl font-black mb-6 tracking-tight text-glow"
+          >
             JOJKO'S GAMES
           </h1>
         </div>
-        <p class="text-slate-400 font-light text-lg tracking-wide max-w-lg mx-auto opacity-0 animate-enter" style="animation-delay: 0.2s">
+        <p
+          class="text-slate-400 font-light text-lg tracking-wide max-w-lg mx-auto opacity-0 animate-enter"
+          style="animation-delay: 0.2s"
+        >
           Choose your destination. Enter the arena.
         </p>
       </header>
@@ -423,6 +444,7 @@
         { name: "Pug Fiesta", url: "pugFiesta/index.html" },
         { name: "Zoopaloola", url: "https://zoopaloola.vercel.app/" },
         { name: "Factorio Lamp Text Builder", url: "factorioText/index.html" },
+        { name: "Combat Arena", url: "https://combatarena.onrender.com/" },
         { name: "Bluff Helper", url: "bluff/index.html" },
         { name: "Calendar Puzzle", url: "calendarPuzzle/index.html" },
         { name: "Pokemon Shooter", url: "pokemonShooter/index.html" },
@@ -439,36 +461,36 @@
       const maxParticles = 50; // Limit particles
       let particleCount = 0;
 
-      document.addEventListener('mousemove', (e) => {
+      document.addEventListener("mousemove", (e) => {
         const now = Date.now();
         if (now - lastParticleTime < 30) return; // Throttle
         lastParticleTime = now;
 
         // Remove old particles if at limit
         if (particleCount >= maxParticles) {
-          const oldParticle = document.querySelector('.particle');
+          const oldParticle = document.querySelector(".particle");
           if (oldParticle) {
             oldParticle.remove();
             particleCount--;
           }
         }
 
-        const particle = document.createElement('div');
-        particle.className = 'particle';
-        particle.style.left = e.clientX + 'px';
-        particle.style.top = e.clientY + 'px';
-        
+        const particle = document.createElement("div");
+        particle.className = "particle";
+        particle.style.left = e.clientX + "px";
+        particle.style.top = e.clientY + "px";
+
         // Random drift direction
         const driftX = (Math.random() - 0.5) * 100;
-        particle.style.setProperty('--drift-x', driftX + 'px');
-        
+        particle.style.setProperty("--drift-x", driftX + "px");
+
         // Random color variation
         const hue = Math.random() > 0.5 ? 190 : 280; // Cyan or Purple
         particle.style.background = `hsl(${hue}, 70%, 60%)`;
-        
+
         const duration = 2 + Math.random() * 2; // 2-4 seconds
         particle.style.animation = `float-particle ${duration}s ease-out forwards`;
-        
+
         document.body.appendChild(particle);
         particleCount++;
 
@@ -534,11 +556,11 @@
             card.style.transform = "";
           });
 
-          card.addEventListener('mouseenter', () => {
+          card.addEventListener("mouseenter", () => {
             // Hover effect handled by CSS
           });
 
-          card.addEventListener('mouseleave', () => {
+          card.addEventListener("mouseleave", () => {
             // Hover effect handled by CSS
           });
 
@@ -554,7 +576,8 @@
 
       let width, height;
       let stars = [];
-      let mouseX = 0, mouseY = 0;
+      let mouseX = 0,
+        mouseY = 0;
 
       function resize() {
         width = canvas.width = window.innerWidth;
@@ -616,7 +639,7 @@
       }
 
       function animate() {
-        ctx.fillStyle = 'rgba(3, 7, 18, 0.1)';
+        ctx.fillStyle = "rgba(3, 7, 18, 0.1)";
         ctx.fillRect(0, 0, width, height);
 
         stars.forEach((star) => {
