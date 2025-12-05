@@ -1,0 +1,402 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Factorio Lamp Text Blueprint Generator</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- pako (zlib implementation) for Factorio Blueprint compression -->
+    <script src="https://cdn.jsdelivr.net/npm/pako@2.0.4/dist/pako.min.js"></script>
+    <style>
+        /* Custom styles for better aesthetics */
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #0d0e12; /* Darker, factorio-like background */
+            color: #d1d5db;
+            min-height: 100vh;
+        }
+        .container {
+            max-width: 900px;
+        }
+        .btn-primary {
+            transition: all 0.15s ease-in-out;
+        }
+        .btn-primary:hover {
+            box-shadow: 0 4px 15px rgba(255, 204, 0, 0.4);
+            transform: translateY(-1px);
+        }
+        textarea {
+            resize: none;
+            font-family: monospace;
+        }
+        /* Custom scrollbar style */
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+        ::-webkit-scrollbar-thumb {
+            background-color: #a0a0a0;
+            border-radius: 4px;
+        }
+    </style>
+</head>
+<body class="p-4 sm:p-8">
+    <div class="container mx-auto">
+        <header class="text-center mb-10">
+            <h1 class="text-4xl font-extrabold text-yellow-400 mb-2">Factorio Lamp Sign Designer</h1>
+            <p class="text-xl text-gray-400">Convert text into a copyable blueprint string for RGB Lamps.</p>
+        </header>
+
+        <div class="bg-gray-800 p-6 sm:p-8 rounded-xl shadow-2xl">
+            <!-- Input Controls -->
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+                <!-- Size Selector -->
+                <div class="col-span-1">
+                    <label for="size-select" class="block text-sm font-medium text-gray-300 mb-2">Lamp Size (Blocks per letter)</label>
+                    <select id="size-select" class="w-full p-3 bg-gray-700 border border-gray-600 rounded-lg text-white focus:ring-yellow-500 focus:border-yellow-500">
+                        <option value="1">Small (5x5 pixels)</option>
+                        <option value="2" selected>Medium (10x10 pixels)</option>
+                        <option value="3">Large (15x15 pixels)</option>
+                    </select>
+                </div>
+
+                <!-- Color Selector -->
+                <div class="col-span-1">
+                    <label for="color-select" class="block text-sm font-medium text-gray-300 mb-2">Lamp Color</label>
+                    <select id="color-select" class="w-full p-3 bg-gray-700 border border-gray-600 rounded-lg text-white focus:ring-yellow-500 focus:border-yellow-500">
+                        <option value="red" class="text-red-400">Red</option>
+                        <option value="green" class="text-green-400">Green</option>
+                        <option value="blue" class="text-blue-400">Blue</option>
+                        <option value="yellow" selected class="text-yellow-400">Yellow</option>
+                        <option value="orange" class="text-orange-400">Orange</option>
+                        <option value="pink" class="text-pink-400">Pink</option>
+                        <option value="cyan" class="text-cyan-400">Cyan</option>
+                        <option value="white" class="text-white">White</option>
+                    </select>
+                </div>
+
+                <!-- Placeholder for spacing on mobile -->
+                <div class="col-span-1 hidden md:block"></div>
+            </div>
+
+            <!-- Text Input -->
+            <div class="mb-8">
+                <label for="text-input" class="block text-sm font-medium text-gray-300 mb-2">Text to Convert (A-Z, 0-9, Space only)</label>
+                <textarea id="text-input" rows="3" placeholder="ENTER YOUR FACTORIO TEXT HERE" class="w-full p-4 bg-gray-700 border border-gray-600 rounded-lg text-white placeholder-gray-500 focus:ring-yellow-500 focus:border-yellow-500 uppercase tracking-wider"></textarea>
+            </div>
+
+            <!-- Action Button -->
+            <button id="generate-button" class="btn-primary w-full py-4 text-xl font-bold bg-yellow-600 hover:bg-yellow-500 text-gray-900 rounded-lg shadow-lg">
+                Generate & Copy Blueprint Code
+            </button>
+
+            <!-- Output Area -->
+            <div class="mt-8">
+                <label for="output-code" class="block text-sm font-medium text-gray-300 mb-2">Generated Blueprint String</label>
+                <textarea id="output-code" rows="5" readonly placeholder="The blueprint code will appear here after generation." class="w-full p-4 bg-gray-900 border border-gray-700 rounded-lg text-green-400 font-mono text-sm select-all"></textarea>
+            </div>
+            
+            <!-- Message Box -->
+            <div id="message-box" class="mt-4 p-3 rounded-lg text-sm transition duration-300 ease-in-out hidden" role="alert"></div>
+        </div>
+    </div>
+
+    <script>
+        // --- Core Application Logic ---
+
+        // 1. Configuration and Constants
+        const COLOR_SIGNALS = {
+            red: { r: 1, g: 0, b: 0, a: 1 },
+            green: { r: 0, g: 1, b: 0, a: 1 },
+            blue: { r: 0, g: 0, b: 1, a: 1 },
+            yellow: { r: 1, g: 1, b: 0, a: 1 },
+            orange: { r: 1, g: 0.5, b: 0, a: 1 },
+            pink: { r: 1, g: 0, b: 1, a: 1 },
+            cyan: { r: 0, g: 1, b: 1, a: 1 },
+            white: { r: 1, g: 1, b: 1, a: 1 },
+        };
+
+        // Simple 5x5 ASCII font (25 elements per char, 1=on, 0=off)
+        // Rows: 1-5, Cols: 1-5. Read left-to-right, top-to-bottom.
+        const FACTORIO_FONT = {
+            ' ': [0,0,0,0,0, 0,0,0,0,0, 0,0,0,0,0, 0,0,0,0,0, 0,0,0,0,0],
+            'A': [0,1,1,1,0, 1,0,0,0,1, 1,1,1,1,1, 1,0,0,0,1, 1,0,0,0,1],
+            'B': [1,1,1,1,0, 1,0,0,0,1, 1,1,1,1,0, 1,0,0,0,1, 1,1,1,1,0],
+            'C': [0,1,1,1,1, 1,0,0,0,0, 1,0,0,0,0, 1,0,0,0,0, 0,1,1,1,1],
+            'D': [1,1,1,1,0, 1,0,0,0,1, 1,0,0,0,1, 1,0,0,0,1, 1,1,1,1,0],
+            'E': [1,1,1,1,1, 1,0,0,0,0, 1,1,1,1,0, 1,0,0,0,0, 1,1,1,1,1],
+            'F': [1,1,1,1,1, 1,0,0,0,0, 1,1,1,1,0, 1,0,0,0,0, 1,0,0,0,0],
+            'G': [0,1,1,1,0, 1,0,0,0,1, 1,0,1,1,1, 1,0,0,0,1, 0,1,1,1,0],
+            'H': [1,0,0,0,1, 1,0,0,0,1, 1,1,1,1,1, 1,0,0,0,1, 1,0,0,0,1],
+            'I': [1,1,1,1,1, 0,0,1,0,0, 0,0,1,0,0, 0,0,1,0,0, 1,1,1,1,1],
+            'J': [0,0,0,0,1, 0,0,0,0,1, 0,0,0,0,1, 1,0,0,0,1, 0,1,1,1,0],
+            'K': [1,0,0,0,1, 1,0,0,1,0, 1,1,1,0,0, 1,0,0,1,0, 1,0,0,0,1],
+            'L': [1,0,0,0,0, 1,0,0,0,0, 1,0,0,0,0, 1,0,0,0,0, 1,1,1,1,1],
+            'M': [1,1,0,1,1, 1,0,1,0,1, 1,0,1,0,1, 1,0,0,0,1, 1,0,0,0,1],
+            'N': [1,0,0,0,1, 1,1,0,0,1, 1,0,1,0,1, 1,0,0,1,1, 1,0,0,0,1],
+            'O': [0,1,1,1,0, 1,0,0,0,1, 1,0,0,0,1, 1,0,0,0,1, 0,1,1,1,0],
+            'P': [1,1,1,1,0, 1,0,0,0,1, 1,1,1,1,0, 1,0,0,0,0, 1,0,0,0,0],
+            'Q': [0,1,1,1,0, 1,0,0,0,1, 1,0,0,0,1, 1,0,0,1,0, 0,1,1,0,1],
+            'R': [1,1,1,1,0, 1,0,0,0,1, 1,1,1,1,0, 1,0,0,1,0, 1,0,0,0,1],
+            'S': [0,1,1,1,1, 1,0,0,0,0, 0,1,1,1,0, 0,0,0,0,1, 1,1,1,1,0],
+            'T': [1,1,1,1,1, 0,0,1,0,0, 0,0,1,0,0, 0,0,1,0,0, 0,0,1,0,0],
+            'U': [1,0,0,0,1, 1,0,0,0,1, 1,0,0,0,1, 1,0,0,0,1, 0,1,1,1,0],
+            'V': [1,0,0,0,1, 1,0,0,0,1, 1,0,0,0,1, 0,1,0,1,0, 0,0,1,0,0],
+            'W': [1,0,0,0,1, 1,0,0,0,1, 1,0,1,0,1, 1,1,0,1,1, 1,0,0,0,1],
+            'X': [1,0,0,0,1, 0,1,0,1,0, 0,0,1,0,0, 0,1,0,1,0, 1,0,0,0,1],
+            'Y': [1,0,0,0,1, 0,1,0,1,0, 0,0,1,0,0, 0,0,1,0,0, 0,0,1,0,0],
+            'Z': [1,1,1,1,1, 0,0,0,1,0, 0,0,1,0,0, 0,1,0,0,0, 1,1,1,1,1],
+
+            '0': [0,1,1,1,0, 1,0,0,0,1, 1,0,0,1,1, 1,0,1,0,1, 0,1,1,1,0],
+            '1': [0,0,1,0,0, 0,1,1,0,0, 0,0,1,0,0, 0,0,1,0,0, 0,1,1,1,0],
+            '2': [1,1,1,1,1, 0,0,0,0,1, 0,1,1,1,0, 1,0,0,0,0, 1,1,1,1,1],
+            '3': [1,1,1,1,1, 0,0,0,0,1, 0,1,1,1,1, 0,0,0,0,1, 1,1,1,1,1],
+            '4': [1,0,0,0,1, 1,0,0,0,1, 1,1,1,1,1, 0,0,0,0,1, 0,0,0,0,1],
+            '5': [1,1,1,1,1, 1,0,0,0,0, 1,1,1,1,0, 0,0,0,0,1, 1,1,1,1,0],
+            '6': [1,1,1,1,0, 1,0,0,0,0, 1,1,1,1,0, 1,0,0,0,1, 0,1,1,1,0],
+            '7': [1,1,1,1,1, 0,0,0,0,1, 0,0,0,1,0, 0,0,1,0,0, 0,1,0,0,0],
+            '8': [0,1,1,1,0, 1,0,0,0,1, 0,1,1,1,0, 1,0,0,0,1, 0,1,1,1,0],
+            '9': [0,1,1,1,0, 1,0,0,0,1, 0,1,1,1,1, 0,0,0,0,1, 0,1,1,1,0],
+            '!': [0,0,1,0,0, 0,0,1,0,0, 0,0,1,0,0, 0,0,0,0,0, 0,0,1,0,0],
+            '.': [0,0,0,0,0, 0,0,0,0,0, 0,0,0,0,0, 0,0,0,0,0, 0,0,1,0,0],
+            ',': [0,0,0,0,0, 0,0,0,0,0, 0,0,0,0,0, 0,0,0,0,0, 0,0,1,0,0], // Using same as . for simplicity
+            '?': [0,1,1,1,0, 1,0,0,0,1, 0,0,0,1,0, 0,0,0,0,0, 0,0,1,0,0],
+        };
+
+        // 2. Utility Functions
+        
+        // Custom message box function
+        function showMessage(message, type = 'success') {
+            const box = document.getElementById('message-box');
+            box.textContent = message;
+            box.classList.remove('hidden', 'bg-red-900', 'bg-green-900', 'border-red-600', 'border-green-600');
+            if (type === 'error') {
+                box.classList.add('bg-red-900', 'border-red-600', 'border');
+            } else {
+                box.classList.add('bg-green-900', 'border-green-600', 'border');
+            }
+            setTimeout(() => {
+                box.classList.add('hidden');
+            }, 5000);
+        }
+
+        // Converts a Factorio JSON object to a compressed and Base64 encoded blueprint string
+        function encodeBlueprint(blueprintJson) {
+            try {
+                // 1. Serialize to JSON string
+                const jsonString = JSON.stringify(blueprintJson);
+
+                // 2. Convert JSON string to Uint8Array (UTF-8 encoding)
+                const utf8Encoder = new TextEncoder();
+                const jsonBytes = utf8Encoder.encode(jsonString);
+
+                // 3. Compress using Zlib (pako.deflate)
+                const compressed = pako.deflate(jsonBytes, { level: 9 });
+
+                // 4. Base64 encode the compressed data
+                // This requires converting the Uint8Array to a binary string first
+                const binaryString = Array.from(compressed).map(b => String.fromCharCode(b)).join('');
+                const base64Encoded = btoa(binaryString);
+
+                // 5. Prepend the Factorio blueprint version prefix
+                // '0' is the Factorio version prefix
+                return '0' + base64Encoded;
+
+            } catch (e) {
+                console.error("Blueprint encoding failed:", e);
+                showMessage("An error occurred during blueprint compression/encoding.", 'error');
+                return '';
+            }
+        }
+
+        // 3. Main Generation Function
+        function generateBlueprint() {
+            const inputText = document.getElementById('text-input').value.toUpperCase().trim();
+            const size = parseInt(document.getElementById('size-select').value);
+            const colorKey = document.getElementById('color-select').value;
+            const outputArea = document.getElementById('output-code');
+            outputArea.value = '';
+
+            if (inputText.length === 0) {
+                showMessage('Please enter some text to convert.', 'error');
+                return;
+            }
+
+            // Sanitization: Only allow characters defined in the font
+            const allowedChars = Object.keys(FACTORIO_FONT);
+            let sanitizedText = '';
+            for (const char of inputText) {
+                if (allowedChars.includes(char)) {
+                    sanitizedText += char;
+                }
+            }
+
+            if (sanitizedText.length === 0) {
+                showMessage('The text you entered contained no supported characters (A-Z, 0-9, Space, !, ?, .).', 'error');
+                return;
+            }
+
+            // Blueprint structure initialization
+            const blueprint = {
+                blueprint: {
+                    item: "blueprint",
+                    label: `Lamp Sign: ${sanitizedText.substring(0, 20)}`,
+                    entities: [],
+                    tiles: [],
+                    icons: [{ signal: { type: "item", name: "combinator-constant" }, index: 1 }],
+                    version: 281474976710656 // Latest Factorio version
+                }
+            };
+
+            const lampName = "small-lamp";
+            let entityNumber = 1;
+            let currentXOffset = 0; // Current horizontal position for the start of the next character
+
+            const characterWidth = 5 * size; // 5 pixels wide * size multiplier
+            const characterHeight = 5 * size; // 5 pixels high * size multiplier
+            const spaceWidth = 2 * size; // 2 blocks of space between letters
+
+            // Color signal setup (Constant Combinator)
+            const colorSignal = COLOR_SIGNALS[colorKey];
+            
+            // The Constant Combinator entity (index 1)
+            blueprint.blueprint.entities.push({
+                entity_number: entityNumber++,
+                name: "constant-combinator",
+                position: { x: -1, y: -1 }, // Place it slightly off to the side
+                control_behavior: {
+                    circuits: {
+                        1: [ // Slot 1 for the color signal
+                            {
+                                signal: { type: "virtual", name: "signal-X" }, // Use signal X as the color signal
+                                count: 1
+                            }
+                        ]
+                    }
+                },
+                orientation: 0,
+                connections: {
+                    1: { // Used to connect to the lamps
+                        red: [{ entity_id: 0 }] // Placeholder, will be populated later
+                    }
+                }
+            });
+
+            // Map to store lamp entities that need to be connected to the combinator
+            const lampsToConnect = [];
+            const combinatorEntityId = entityNumber - 1;
+
+
+            // Iterate through each character in the input text
+            for (const char of sanitizedText) {
+                const fontMap = FACTORIO_FONT[char];
+
+                if (!fontMap) {
+                    // Should not happen due to sanitization, but good for safety
+                    currentXOffset += spaceWidth;
+                    continue;
+                }
+
+                // Iterate through the 5x5 grid (row = y, col = x)
+                for (let row = 0; row < 5; row++) {
+                    for (let col = 0; col < 5; col++) {
+                        const index = row * 5 + col;
+                        if (fontMap[index] === 1) {
+                            // This is a 'pixel' that needs a lamp
+
+                            // Calculate position based on current char offset, column, and row
+                            // Position is center of the lamp tile. Lamp size is 1x1.
+                            // X position: current character start + (column * size) + (size / 2)
+                            const posX = currentXOffset + (col * size) + (size / 2);
+                            // Y position: (row * size) + (size / 2)
+                            const posY = (row * size) + (size / 2);
+
+                            const lampEntity = {
+                                entity_number: entityNumber++,
+                                name: lampName,
+                                position: { x: posX, y: posY },
+                                control_behavior: {
+                                    light_control: {
+                                        // Set conditions for the lamp to turn on and its color
+                                        color: colorSignal,
+                                        circuit_condition: {
+                                            "first_signal": { "type": "virtual", "name": "signal-X" },
+                                            "constant": 0,
+                                            "comparator": ">"
+                                        },
+                                        use_colors: true
+                                    }
+                                }
+                            };
+                            blueprint.blueprint.entities.push(lampEntity);
+                            lampsToConnect.push(lampEntity.entity_number);
+                        }
+                    }
+                }
+
+                // Move offset to the start of the next character.
+                currentXOffset += characterWidth + spaceWidth;
+            }
+
+            // Now, connect all the lamps to the constant combinator (entity number 1)
+            // Factorio connections are in groups of 500. We will simplify and connect them all to the first combinator.
+            // The combinator is the first entity (index 0 in the array)
+
+            const combinatorIndex = 0; // The combinator is the first entity added
+
+            // We need to build the 'connections' object for the combinator
+            // This is complex because we need to know the index of the entity in the array, not the entity_number.
+            // Since we added the combinator first and then the lamps, we can use the entity_number directly,
+            // or modify the blueprint structure later. Let's modify the lamps' connection property directly.
+
+            lampsToConnect.forEach(lampId => {
+                const lampEntity = blueprint.blueprint.entities.find(e => e.entity_number === lampId);
+                if (lampEntity) {
+                    lampEntity.connections = {
+                        1: {
+                            red: [{ entity_id: combinatorEntityId }] // Connect to the constant combinator
+                        }
+                    };
+                }
+            });
+
+
+            // Final step: Encode the generated JSON into a blueprint string
+            const blueprintString = encodeBlueprint(blueprint);
+            outputArea.value = blueprintString;
+
+            // Copy to clipboard
+            if (blueprintString) {
+                // Use execCommand('copy') as navigator.clipboard might fail in certain iframe environments
+                outputArea.select();
+                outputArea.setSelectionRange(0, 99999); // For mobile devices
+                try {
+                    const successful = document.execCommand('copy');
+                    if (successful) {
+                        showMessage('Blueprint code copied to clipboard! Paste it into Factorio using Ctrl+V.', 'success');
+                    } else {
+                        showMessage('Failed to automatically copy. Please manually copy the text from the box.', 'error');
+                    }
+                } catch (err) {
+                    showMessage('Failed to automatically copy. Please manually copy the text from the box.', 'error');
+                }
+            }
+        }
+
+        // 4. Event Listeners
+        document.addEventListener('DOMContentLoaded', () => {
+            document.getElementById('generate-button').addEventListener('click', generateBlueprint);
+            // Optionally, select all text when clicking the output area
+            document.getElementById('output-code').addEventListener('click', (e) => {
+                e.target.select();
+            });
+            
+            // Set default text
+            document.getElementById('text-input').value = 'FACTORY';
+            
+            // Generate on load with default values
+            generateBlueprint();
+        });
+    </script>
+</body>
+</html>
