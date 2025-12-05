@@ -38,6 +38,21 @@
             background-color: #a0a0a0;
             border-radius: 4px;
         }
+        /* Color picker input style */
+        input[type="color"] {
+            -webkit-appearance: none;
+            border: none;
+            padding: 0;
+            overflow: hidden;
+            cursor: pointer;
+        }
+        input[type="color"]::-webkit-color-swatch-wrapper {
+            padding: 0;
+        }
+        input[type="color"]::-webkit-color-swatch {
+            border: none;
+            border-radius: 0.5rem;
+        }
     </style>
 </head>
 <body class="p-4 sm:p-8">
@@ -52,31 +67,23 @@
             <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
                 <!-- Size Selector -->
                 <div class="col-span-1">
-                    <label for="size-select" class="block text-sm font-medium text-gray-300 mb-2">Lamp Size (Blocks per letter)</label>
-                    <select id="size-select" class="w-full p-3 bg-gray-700 border border-gray-600 rounded-lg text-white focus:ring-yellow-500 focus:border-yellow-500">
-                        <option value="1">Small (5x5 pixels)</option>
-                        <option value="2" selected>Medium (10x10 pixels)</option>
-                        <option value="3">Large (15x15 pixels)</option>
-                    </select>
+                    <label for="size-input" class="block text-sm font-medium text-gray-300 mb-2">Unit Size (Blocks)</label>
+                    <input type="number" id="size-input" value="1" min="1" max="20" 
+                           class="w-full p-3 bg-gray-700 border border-gray-600 rounded-lg text-white focus:ring-yellow-500 focus:border-yellow-500"
+                           onchange="if(this.value < 1) this.value = 1;">
+                    <p class="text-xs text-gray-500 mt-1">Size of 1 = 5x5 total char size. Size of 2 = 10x10.</p>
                 </div>
 
-                <!-- Color Selector -->
+                <!-- Color Picker -->
                 <div class="col-span-1">
-                    <label for="color-select" class="block text-sm font-medium text-gray-300 mb-2">Lamp Color</label>
-                    <select id="color-select" class="w-full p-3 bg-gray-700 border border-gray-600 rounded-lg text-white focus:ring-yellow-500 focus:border-yellow-500">
-                        <option value="red" class="text-red-400">Red</option>
-                        <option value="green" class="text-green-400">Green</option>
-                        <option value="blue" class="text-blue-400">Blue</option>
-                        <option value="yellow" selected class="text-yellow-400">Yellow</option>
-                        <option value="orange" class="text-orange-400">Orange</option>
-                        <option value="pink" class="text-pink-400">Pink</option>
-                        <option value="cyan" class="text-cyan-400">Cyan</option>
-                        <option value="white" class="text-white">White</option>
-                    </select>
+                    <label for="color-picker" class="block text-sm font-medium text-gray-300 mb-2">Lamp Color</label>
+                    <input type="color" id="color-picker" value="#ff0000" class="w-full h-[50px] bg-transparent rounded-lg">
+                    <p class="text-xs text-gray-500 mt-1" id="color-match-text">Matches: Red Signal</p>
                 </div>
 
-                <!-- Placeholder for spacing on mobile -->
-                <div class="col-span-1 hidden md:block"></div>
+                <!-- Placeholder for spacing (Description removed) -->
+                <div class="col-span-1 hidden md:block">
+                </div>
             </div>
 
             <!-- Text Input -->
@@ -104,20 +111,18 @@
     <script>
         // --- Core Application Logic ---
 
-        // 1. Configuration and Constants
-        const COLOR_SIGNALS = {
-            red: { r: 1, g: 0, b: 0, a: 1 },
-            green: { r: 0, g: 1, b: 0, a: 1 },
-            blue: { r: 0, g: 0, b: 1, a: 1 },
-            yellow: { r: 1, g: 1, b: 0, a: 1 },
-            orange: { r: 1, g: 0.5, b: 0, a: 1 },
-            pink: { r: 1, g: 0, b: 1, a: 1 },
-            cyan: { r: 0, g: 1, b: 1, a: 1 },
-            white: { r: 1, g: 1, b: 1, a: 1 },
-        };
+        // Standard Factorio Color Signals with their RGB approximations
+        const FACTORIO_SIGNALS = [
+            { name: "signal-red",    hex: "#ff0000", r: 255, g: 0,   b: 0 },
+            { name: "signal-green",  hex: "#00ff00", r: 0,   g: 255, b: 0 },
+            { name: "signal-blue",   hex: "#0000ff", r: 0,   g: 0,   b: 255 },
+            { name: "signal-yellow", hex: "#ffff00", r: 255, g: 255, b: 0 },
+            { name: "signal-pink",   hex: "#ff00ff", r: 255, g: 0,   b: 255 },
+            { name: "signal-cyan",   hex: "#00ffff", r: 0,   g: 255, b: 255 },
+            { name: "signal-white",  hex: "#ffffff", r: 255, g: 255, b: 255 }
+        ];
 
         // Simple 5x5 ASCII font (25 elements per char, 1=on, 0=off)
-        // Rows: 1-5, Cols: 1-5. Read left-to-right, top-to-bottom.
         const FACTORIO_FONT = {
             ' ': [0,0,0,0,0, 0,0,0,0,0, 0,0,0,0,0, 0,0,0,0,0, 0,0,0,0,0],
             'A': [0,1,1,1,0, 1,0,0,0,1, 1,1,1,1,1, 1,0,0,0,1, 1,0,0,0,1],
@@ -146,7 +151,6 @@
             'X': [1,0,0,0,1, 0,1,0,1,0, 0,0,1,0,0, 0,1,0,1,0, 1,0,0,0,1],
             'Y': [1,0,0,0,1, 0,1,0,1,0, 0,0,1,0,0, 0,0,1,0,0, 0,0,1,0,0],
             'Z': [1,1,1,1,1, 0,0,0,1,0, 0,0,1,0,0, 0,1,0,0,0, 1,1,1,1,1],
-
             '0': [0,1,1,1,0, 1,0,0,0,1, 1,0,0,1,1, 1,0,1,0,1, 0,1,1,1,0],
             '1': [0,0,1,0,0, 0,1,1,0,0, 0,0,1,0,0, 0,0,1,0,0, 0,1,1,1,0],
             '2': [1,1,1,1,1, 0,0,0,0,1, 0,1,1,1,0, 1,0,0,0,0, 1,1,1,1,1],
@@ -159,13 +163,11 @@
             '9': [0,1,1,1,0, 1,0,0,0,1, 0,1,1,1,1, 0,0,0,0,1, 0,1,1,1,0],
             '!': [0,0,1,0,0, 0,0,1,0,0, 0,0,1,0,0, 0,0,0,0,0, 0,0,1,0,0],
             '.': [0,0,0,0,0, 0,0,0,0,0, 0,0,0,0,0, 0,0,0,0,0, 0,0,1,0,0],
-            ',': [0,0,0,0,0, 0,0,0,0,0, 0,0,0,0,0, 0,0,0,0,0, 0,0,1,0,0], // Using same as . for simplicity
+            ',': [0,0,0,0,0, 0,0,0,0,0, 0,0,0,0,0, 0,0,0,0,0, 0,0,1,0,0],
             '?': [0,1,1,1,0, 1,0,0,0,1, 0,0,0,1,0, 0,0,0,0,0, 0,0,1,0,0],
         };
 
         // 2. Utility Functions
-        
-        // Custom message box function
         function showMessage(message, type = 'success') {
             const box = document.getElementById('message-box');
             box.textContent = message;
@@ -180,28 +182,53 @@
             }, 5000);
         }
 
-        // Converts a Factorio JSON object to a compressed and Base64 encoded blueprint string
+        function hexToRgbVals(hex) {
+            hex = hex.replace(/^#/, '');
+            let bigint = parseInt(hex, 16);
+            return {
+                r: (bigint >> 16) & 255,
+                g: (bigint >> 8) & 255,
+                b: bigint & 255
+            };
+        }
+
+        // Find closest Factorio color signal to the user's picked color
+        function getNearestColorSignal(hex) {
+            const input = hexToRgbVals(hex);
+            let minDistance = Infinity;
+            let nearest = FACTORIO_SIGNALS[0];
+
+            FACTORIO_SIGNALS.forEach(sig => {
+                // Euclidean distance squared
+                const dist = Math.pow(input.r - sig.r, 2) + 
+                           Math.pow(input.g - sig.g, 2) + 
+                           Math.pow(input.b - sig.b, 2);
+                if (dist < minDistance) {
+                    minDistance = dist;
+                    nearest = sig;
+                }
+            });
+            return nearest;
+        }
+
+        // Update the helper text when color changes
+        document.getElementById('color-picker').addEventListener('input', (e) => {
+            const nearest = getNearestColorSignal(e.target.value);
+            // prettify signal name: "signal-red" -> "Red Signal"
+            const name = nearest.name.replace('signal-', '');
+            const prettyName = name.charAt(0).toUpperCase() + name.slice(1);
+            document.getElementById('color-match-text').textContent = `Matches: ${prettyName} Signal`;
+        });
+
         function encodeBlueprint(blueprintJson) {
             try {
-                // 1. Serialize to JSON string
                 const jsonString = JSON.stringify(blueprintJson);
-
-                // 2. Convert JSON string to Uint8Array (UTF-8 encoding)
                 const utf8Encoder = new TextEncoder();
                 const jsonBytes = utf8Encoder.encode(jsonString);
-
-                // 3. Compress using Zlib (pako.deflate)
                 const compressed = pako.deflate(jsonBytes, { level: 9 });
-
-                // 4. Base64 encode the compressed data
-                // This requires converting the Uint8Array to a binary string first
                 const binaryString = Array.from(compressed).map(b => String.fromCharCode(b)).join('');
                 const base64Encoded = btoa(binaryString);
-
-                // 5. Prepend the Factorio blueprint version prefix
-                // '0' is the Factorio version prefix
                 return '0' + base64Encoded;
-
             } catch (e) {
                 console.error("Blueprint encoding failed:", e);
                 showMessage("An error occurred during blueprint compression/encoding.", 'error');
@@ -212,17 +239,25 @@
         // 3. Main Generation Function
         function generateBlueprint() {
             const inputText = document.getElementById('text-input').value.toUpperCase().trim();
-            const size = parseInt(document.getElementById('size-select').value);
-            const colorKey = document.getElementById('color-select').value;
+            const hexColor = document.getElementById('color-picker').value;
             const outputArea = document.getElementById('output-code');
             outputArea.value = '';
+
+            const sizeInput = document.getElementById('size-input').value;
+            let size = parseInt(sizeInput);
+
+            if (isNaN(size) || size < 1) {
+                size = 1;
+                document.getElementById('size-input').value = 1;
+                showMessage('Invalid size. Defaulting to 1 block per pixel unit.', 'error');
+                return;
+            }
 
             if (inputText.length === 0) {
                 showMessage('Please enter some text to convert.', 'error');
                 return;
             }
 
-            // Sanitization: Only allow characters defined in the font
             const allowedChars = Object.keys(FACTORIO_FONT);
             let sanitizedText = '';
             for (const char of inputText) {
@@ -232,7 +267,7 @@
             }
 
             if (sanitizedText.length === 0) {
-                showMessage('The text you entered contained no supported characters (A-Z, 0-9, Space, !, ?, .).', 'error');
+                showMessage('The text you entered contained no supported characters.', 'error');
                 return;
             }
 
@@ -243,72 +278,56 @@
                     label: `Lamp Sign: ${sanitizedText.substring(0, 20)}`,
                     entities: [],
                     tiles: [],
-                    icons: [{ signal: { type: "item", name: "combinator-constant" }, index: 1 }],
+                    icons: [{ signal: { type: "item", name: "small-lamp" }, index: 1 }],
                     version: 281474976710656 // Latest Factorio version
                 }
             };
 
             const lampName = "small-lamp";
             let entityNumber = 1;
-            let currentXOffset = 0; // Current horizontal position for the start of the next character
+            let currentXOffset = 0;
+            const characterWidth = 5 * size; 
+            const spaceWidth = 2 * size;
 
-            const characterWidth = 5 * size; // 5 pixels wide * size multiplier
-            const characterHeight = 5 * size; // 5 pixels high * size multiplier
-            const spaceWidth = 2 * size; // 2 blocks of space between letters
-
-            // Color signal setup (Constant Combinator)
-            const colorSignal = COLOR_SIGNALS[colorKey];
+            // Determine correct signal
+            const targetSignal = getNearestColorSignal(hexColor);
             
-            // The Constant Combinator entity (index 1)
+            // 1. Create Constant Combinator
+            const combinatorEntityId = entityNumber;
             blueprint.blueprint.entities.push({
                 entity_number: entityNumber++,
                 name: "constant-combinator",
-                position: { x: -1, y: -1 }, // Place it slightly off to the side
+                position: { x: -2, y: -2 },
                 control_behavior: {
-                    circuits: {
-                        1: [ // Slot 1 for the color signal
-                            {
-                                signal: { type: "virtual", name: "signal-X" }, // Use signal X as the color signal
-                                count: 1
-                            }
-                        ]
-                    }
+                    // Classic "Method 2" Output
+                    filters: [
+                        {
+                            signal: { type: "virtual", name: targetSignal.name },
+                            count: 1,
+                            index: 1
+                        }
+                    ]
                 },
-                orientation: 0,
                 connections: {
-                    1: { // Used to connect to the lamps
-                        red: [{ entity_id: 0 }] // Placeholder, will be populated later
-                    }
+                    1: { red: [] } // Will connect to first lamp
                 }
             });
 
-            // Map to store lamp entities that need to be connected to the combinator
-            const lampsToConnect = [];
-            const combinatorEntityId = entityNumber - 1;
+            const lamps = [];
 
-
-            // Iterate through each character in the input text
+            // 2. Generate Lamps
             for (const char of sanitizedText) {
                 const fontMap = FACTORIO_FONT[char];
-
                 if (!fontMap) {
-                    // Should not happen due to sanitization, but good for safety
                     currentXOffset += spaceWidth;
                     continue;
                 }
 
-                // Iterate through the 5x5 grid (row = y, col = x)
                 for (let row = 0; row < 5; row++) {
                     for (let col = 0; col < 5; col++) {
                         const index = row * 5 + col;
                         if (fontMap[index] === 1) {
-                            // This is a 'pixel' that needs a lamp
-
-                            // Calculate position based on current char offset, column, and row
-                            // Position is center of the lamp tile. Lamp size is 1x1.
-                            // X position: current character start + (column * size) + (size / 2)
                             const posX = currentXOffset + (col * size) + (size / 2);
-                            // Y position: (row * size) + (size / 2)
                             const posY = (row * size) + (size / 2);
 
                             const lampEntity = {
@@ -316,85 +335,69 @@
                                 name: lampName,
                                 position: { x: posX, y: posY },
                                 control_behavior: {
-                                    light_control: {
-                                        // Set conditions for the lamp to turn on and its color
-                                        color: colorSignal,
-                                        circuit_condition: {
-                                            "first_signal": { "type": "virtual", "name": "signal-X" },
-                                            "constant": 0,
-                                            "comparator": ">"
-                                        },
-                                        use_colors: true
+                                    use_colors: true, // Method 2 Requirement
+                                    always_on: true,  // Extra safety for 2.0
+                                    circuit_condition: {
+                                        // Condition: If Signal > 0
+                                        first_signal: { type: "virtual", name: targetSignal.name },
+                                        constant: 0,
+                                        comparator: ">"
                                     }
+                                },
+                                connections: {
+                                    1: { red: [] }
                                 }
                             };
                             blueprint.blueprint.entities.push(lampEntity);
-                            lampsToConnect.push(lampEntity.entity_number);
+                            lamps.push(lampEntity);
                         }
                     }
                 }
-
-                // Move offset to the start of the next character.
                 currentXOffset += characterWidth + spaceWidth;
             }
 
-            // Now, connect all the lamps to the constant combinator (entity number 1)
-            // Factorio connections are in groups of 500. We will simplify and connect them all to the first combinator.
-            // The combinator is the first entity (index 0 in the array)
+            // 3. Connect Wires (Daisy Chain)
+            if (lamps.length > 0) {
+                // Connect Combinator -> First Lamp
+                blueprint.blueprint.entities[0].connections['1'].red.push({ entity_id: lamps[0].entity_number });
+                lamps[0].connections['1'].red.push({ entity_id: combinatorEntityId });
 
-            const combinatorIndex = 0; // The combinator is the first entity added
-
-            // We need to build the 'connections' object for the combinator
-            // This is complex because we need to know the index of the entity in the array, not the entity_number.
-            // Since we added the combinator first and then the lamps, we can use the entity_number directly,
-            // or modify the blueprint structure later. Let's modify the lamps' connection property directly.
-
-            lampsToConnect.forEach(lampId => {
-                const lampEntity = blueprint.blueprint.entities.find(e => e.entity_number === lampId);
-                if (lampEntity) {
-                    lampEntity.connections = {
-                        1: {
-                            red: [{ entity_id: combinatorEntityId }] // Connect to the constant combinator
-                        }
-                    };
+                // Connect Lamp i -> Lamp i+1
+                for (let i = 0; i < lamps.length - 1; i++) {
+                    const currentLamp = lamps[i];
+                    const nextLamp = lamps[i+1];
+                    currentLamp.connections['1'].red.push({ entity_id: nextLamp.entity_number });
+                    nextLamp.connections['1'].red.push({ entity_id: currentLamp.entity_number });
                 }
-            });
+            }
 
-
-            // Final step: Encode the generated JSON into a blueprint string
             const blueprintString = encodeBlueprint(blueprint);
             outputArea.value = blueprintString;
 
-            // Copy to clipboard
             if (blueprintString) {
-                // Use execCommand('copy') as navigator.clipboard might fail in certain iframe environments
                 outputArea.select();
-                outputArea.setSelectionRange(0, 99999); // For mobile devices
+                outputArea.setSelectionRange(0, 99999);
                 try {
                     const successful = document.execCommand('copy');
                     if (successful) {
-                        showMessage('Blueprint code copied to clipboard! Paste it into Factorio using Ctrl+V.', 'success');
+                        showMessage('Blueprint code copied to clipboard!', 'success');
                     } else {
-                        showMessage('Failed to automatically copy. Please manually copy the text from the box.', 'error');
+                        showMessage('Failed to automatically copy.', 'error');
                     }
                 } catch (err) {
-                    showMessage('Failed to automatically copy. Please manually copy the text from the box.', 'error');
+                    showMessage('Failed to automatically copy.', 'error');
                 }
             }
         }
 
-        // 4. Event Listeners
         document.addEventListener('DOMContentLoaded', () => {
             document.getElementById('generate-button').addEventListener('click', generateBlueprint);
-            // Optionally, select all text when clicking the output area
             document.getElementById('output-code').addEventListener('click', (e) => {
                 e.target.select();
             });
-            
-            // Set default text
             document.getElementById('text-input').value = 'FACTORY';
-            
-            // Generate on load with default values
+            // Init text label
+            document.getElementById('color-picker').dispatchEvent(new Event('input'));
             generateBlueprint();
         });
     </script>
