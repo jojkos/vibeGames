@@ -148,6 +148,15 @@
           </div>
         </div>
 
+        <button
+          onclick="toggleHelp()"
+          class="coffee-link bg-indigo-600 hover:bg-indigo-500 text-white border-transparent"
+          style="right: 200px; background-color: #4f46e5; color: white;"
+        >
+          <i class="fa-solid fa-circle-question text-lg"></i>
+          <span class="hidden sm:inline">Help</span>
+        </button>
+
         <!-- Buy Me a Coffee -->
         <a
           href="https://buymeacoffee.com/jojkos"
@@ -170,7 +179,7 @@
         class="absolute inset-0 flex flex-col md:flex-row w-full h-full"
       >        <!-- Main Canvas Area (Top on Mobile, Right on Desktop) -->
         <main
-          class="flex-1 flex flex-col relative bg-gray-950 order-1 md:order-2 h-[60vh] md:h-auto"
+          class="flex-1 flex flex-col relative bg-gray-950 order-1 md:order-2 h-[60vh] md:h-auto overflow-hidden"
         >
           <div class="absolute top-4 right-4 z-10">
             <button
@@ -191,15 +200,18 @@
           </div>
 
           <div
-            class="flex-1 overflow-auto canvas-container relative bg-gray-950 grid place-items-center"
+            class="flex-1 overflow-auto canvas-container flex relative min-h-0"
             id="viewport"
           >
-            <!-- Grid place-items-center handles centering + overflow safely -->
+            <!-- Flex + m-auto is the robust way to Center when small, Scroll when large (without clipping top/left) -->
+            <!-- flex-none ensures canvas doesn't shrink, forcing scrollbars if needed -->
+            <!-- min-h-0 ensures this flex child can shrink below its content height (allowing internal scroll) -->
             <canvas
               id="gridCanvas"
-              class="shadow-2xl border border-gray-700"
+              class="shadow-2xl border border-gray-700 m-auto flex-none"
             ></canvas>
           </div>
+
 
           <div
             class="h-6 md:h-8 bg-gray-900 border-t border-gray-800 flex items-center px-4 md:px-6 text-[10px] text-gray-500 justify-between shrink-0 font-mono"
@@ -356,6 +368,53 @@
       id="clipboard-target"
       class="fixed top-0 left-0 opacity-0 pointer-events-none"
     ></textarea>
+
+    <!-- Help Modal -->
+    <div id="help-modal" class="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4" onclick="toggleHelp()">
+       <div class="bg-gray-800 border border-gray-600 rounded-xl shadow-2xl max-w-lg w-full p-6 relative" onclick="event.stopPropagation()">
+          <button onclick="toggleHelp()" class="absolute top-4 right-4 text-gray-400 hover:text-white">
+             <i class="fa-solid fa-xmark text-xl"></i>
+          </button>
+          
+          <h2 class="text-xl font-bold text-white mb-4 flex items-center gap-2">
+             <i class="fa-solid fa-book-open text-yellow-500"></i> Quick Guide
+          </h2>
+          
+          <div class="space-y-4 text-sm text-gray-300">
+             <div>
+                <h3 class="font-bold text-gray-100 mb-1">Canvas Controls</h3>
+                <ul class="list-disc pl-5 space-y-1">
+                   <li><strong class="text-indigo-400">Left Click:</strong> Draw or Place Stamp</li>
+                   <li><strong class="text-indigo-400">Right Click (Drag):</strong> Pan Canvas</li>
+                   <li><strong class="text-indigo-400">Drag & Drop:</strong> Drop any image file securely to create a stamp</li>
+                </ul>
+             </div>
+             
+             <div>
+                <h3 class="font-bold text-gray-100 mb-1">Hotkeys</h3>
+                <div class="grid grid-cols-2 gap-2 font-mono text-xs">
+                   <div class="bg-gray-700/50 p-1.5 rounded flex justify-between"><span>Brush</span> <span class="text-yellow-500">B</span></div>
+                   <div class="bg-gray-700/50 p-1.5 rounded flex justify-between"><span>Fill</span> <span class="text-yellow-500">F</span></div>
+                   <div class="bg-gray-700/50 p-1.5 rounded flex justify-between"><span>Eraser</span> <span class="text-yellow-500">E</span></div>
+                   <div class="bg-gray-700/50 p-1.5 rounded flex justify-between"><span>Undo/Redo</span> <span class="text-yellow-500">Ctrl+Z</span></div>
+                </div>
+             </div>
+             
+             <div>
+                <h3 class="font-bold text-gray-100 mb-1">Stamping</h3>
+                <ul class="list-disc pl-5 space-y-1">
+                   <li>Use <strong>Mouse Wheel</strong> or <strong>+/-</strong> to scale stamps.</li>
+                   <li>Transparent images are supported (transparent pixels are ignored).</li>
+                   <li>Press <strong>ESC</strong> to cancel.</li>
+                </ul>
+             </div>
+          </div>
+          
+          <div class="mt-6 text-center">
+             <button onclick="toggleHelp()" class="px-6 py-2 bg-yellow-600 hover:bg-yellow-500 text-white font-bold rounded-lg transition-colors">Got it!</button>
+          </div>
+       </div>
+    </div>
 
     <script>
       // --- Shared Factorio Font & Data ---
@@ -602,8 +661,13 @@
 
       // Panning State
       let isPanning = false;
-      let panStart = { x: 0, y: 0 };
-      let scrollStart = { x: 0, y: 0 };
+      let panStartX = 0;
+      let panStartY = 0;
+      let panScrollLeft = 0;
+      let panScrollTop = 0;
+      
+      const viewport = document.getElementById("viewport");
+
 
       const canvas = document.getElementById("gridCanvas");
       const ctx = canvas.getContext("2d");
@@ -772,6 +836,7 @@
       // Wheel for Scaling Ghost
       window.addEventListener("wheel", (e) => {
         if (!stampMode) return;
+        e.preventDefault(); // Prevent page scroll when scaling stamp
         const delta = e.deltaY < 0 ? 1 : -1;
         
         if (stampMode === 'text') {
@@ -785,7 +850,8 @@
            refreshStampBuffer();
         }
         renderCanvas();
-      }, { passive: true });
+        renderCanvas();
+      }, { passive: false });
 
       // Rendering Loop
       function renderCanvas() {
@@ -999,13 +1065,14 @@
       // Handle drawing events
       // Handle drawing events
       function startDraw(e) {
-        // Panning Detection (Right Click or Middle Click)
-        if (e.button === 2 || e.button === 1) {
+        // Panning Detection (Right Click)
+        if (e.button === 2) {
            e.preventDefault();
            isPanning = true;
-           panStart = { x: e.clientX, y: e.clientY };
-           const viewport = document.getElementById("viewport");
-           scrollStart = { x: viewport.scrollLeft, y: viewport.scrollTop };
+           panStartX = e.clientX;
+           panStartY = e.clientY;
+           panScrollLeft = viewport.scrollLeft;
+           panScrollTop = viewport.scrollTop;
            return;
         }
         
@@ -1035,11 +1102,10 @@
         e.preventDefault(); // Prevent scrolling on touch
         
         if (isPanning) {
-           const dx = e.clientX - panStart.x;
-           const dy = e.clientY - panStart.y;
-           const viewport = document.getElementById("viewport");
-           viewport.scrollLeft = scrollStart.x - dx;
-           viewport.scrollTop = scrollStart.y - dy;
+           const dx = e.clientX - panStartX;
+           const dy = e.clientY - panStartY;
+           viewport.scrollLeft = panScrollLeft - dx;
+           viewport.scrollTop = panScrollTop - dy;
            return;
         }
 
@@ -1138,16 +1204,19 @@
 
       function activateImageStamp(input) {
         if (input.files && input.files[0]) {
-          const reader = new FileReader();
-          reader.onload = function (e) {
+           processImageFile(input.files[0]);
+           input.value = ""; // Reset
+        }
+      }
+      
+      function processImageFile(file) {
+         const reader = new FileReader();
+         reader.onload = function(e) {
             const img = new Image();
-            img.onload = function () {
-              stampSourceImage = img; // Save original
+            img.onload = function() {
+              stampSourceImage = img;
               
-              // Determine Base "1.0" fit
-              // Max stamp size 30x30 to prevent huge lag for Base, but user can scale up
               const fitInfo = Math.min(1, 30 / img.width, 30 / img.height);
-              
               const baseW = Math.floor(img.width * fitInfo);
               const baseH = Math.floor(img.height * fitInfo);
               
@@ -1159,12 +1228,32 @@
 
               document.getElementById("stamp-hint").classList.remove("hidden");
               canvas.style.cursor = "none";
-              document.getElementById("img-upload").value = ""; // Reset
             };
             img.src = e.target.result;
-          };
-          reader.readAsDataURL(input.files[0]);
-        }
+         }
+         reader.readAsDataURL(file);
+      }
+      
+      // Drag & Drop
+      document.body.addEventListener('dragover', (e) => {
+         e.preventDefault(); 
+         e.stopPropagation();
+      });
+      document.body.addEventListener('drop', (e) => {
+         e.preventDefault();
+         e.stopPropagation();
+         if(e.dataTransfer.files && e.dataTransfer.files[0]) {
+            const file = e.dataTransfer.files[0];
+            if(file.type.startsWith('image/')) {
+               processImageFile(file);
+            }
+         }
+      });
+      
+      // Help
+      function toggleHelp() {
+         const modal = document.getElementById('help-modal');
+         modal.classList.toggle('hidden');
       }
 
       function generateDrawBlueprint() {
