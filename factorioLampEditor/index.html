@@ -489,7 +489,11 @@
       }
 
       document.addEventListener("keydown", (e) => {
-         if (document.activeElement.tagName === "INPUT" || document.activeElement.tagName === "TEXTAREA") return;
+         // Allow hotkeys unless typing in a text field
+         const tag = document.activeElement.tagName;
+         const type = document.activeElement.type;
+         const isTextInput = tag === "TEXTAREA" || (tag === "INPUT" && /^(text|number|password|email|search)$/i.test(type));
+         if (isTextInput) return;
          const key = e.key.toLowerCase();
          if (key === "h") setDrawTool('pan');
          if (key === "b") setDrawTool('brush');
@@ -1280,15 +1284,13 @@
            const activePoles = calculateActivePoles(poleType, poleCoverage, minX, minY, maxX, maxY);
            
            activePoles.forEach(p => {
-               // Check if pole is within content bounds
-               if (p.x + poleSize > minX && p.x <= maxX && p.y + poleSize > minY && p.y <= maxY) { 
-                   entities.push({
-                      entity_number: entityId++,
-                      name: poleName,
-                      position: { x: p.x - minX, y: p.y - minY },
-                   });
-                   poles.push(p);
-               }
+               // Trust calculateActivePoles to only return needed poles (it uses areaHasLamp)
+               entities.push({
+                  entity_number: entityId++,
+                  name: poleName,
+                  position: { x: p.x - minX, y: p.y - minY },
+               });
+               poles.push(p);
            });
         }
         
