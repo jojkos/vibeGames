@@ -638,8 +638,8 @@
       });
 
       const PIXEL_SIZE = 20;
-      const GRID_W = 500;
-      const GRID_H = 500;
+      const GRID_W = 513;
+      const GRID_H = 513;
       
       // --- Quality & Pole Data (Factorio 2.0) ---
       const POLE_DATA = {
@@ -795,7 +795,7 @@
          ctx.stroke();
 
          // Normal Grid Lines (Every 1 tile) - Faint
-         if (cameraZoom > 0.4) { // Only draw detailed grid if zoomed in enough
+         if (cameraZoom > MIN_DETAIL_ZOOM) { // Only draw detailed grid if zoomed in enough
              ctx.strokeStyle = "#1f2937";
              ctx.lineWidth = 1 / cameraZoom;
              ctx.beginPath();
@@ -1131,6 +1131,15 @@
          // Draw OR Pan Tool (Left Click)
          if (e.button === 0) {
              e.preventDefault(); // Prevent default drag/select behavior
+             
+             // 1. Stamp Mode takes priority over tools
+             if (stampMode) {
+                 // Wait for release to commit (or if we want 'click to stamp', handle it in endDraw or here)
+                 // Just returning ensures we don't start panning or drawing strokes.
+                 return;
+             }
+
+             // 2. Pan Tool
              if (currentDrawTool === 'pan') {
                  isPanning = true;
                  panStart = { x: e.clientX, y: e.clientY };
@@ -1143,18 +1152,28 @@
              const gx = Math.floor(world.x / PIXEL_SIZE);
              const gy = Math.floor(world.y / PIXEL_SIZE);
              
-             if (stampMode) {
-                 // Wait for release to commit
+             if (currentDrawTool === 'fill') {
+                 useTool(gx, gy);
              } else {
-                 if (currentDrawTool === 'fill') {
-                     useTool(gx, gy);
-                 } else {
-                     isMouseDown = true;
-                     useTool(gx, gy);
-                 }
+                 isMouseDown = true;
+                 useTool(gx, gy);
              }
          }
       }
+
+      // Paste Handler
+      window.addEventListener('paste', (e) => {
+          const items = (e.clipboardData || e.originalEvent.clipboardData).items;
+          for (const item of items) {
+              if (item.type.indexOf('image') !== -1) {
+                  const blob = item.getAsFile();
+                  processImageFile(blob);
+                  // Switch to stamp mode automatically logic is inside processImageFile
+                  // But we might need to reset tool if it was 'pan'? 
+                  // processImageFile sets stampMode='image', which now overrides pan in startDraw.
+              }
+          }
+      });
 
       function moveDraw(e) {
          lastMouseEvt = e;
@@ -1207,8 +1226,9 @@
       }
       
        // Zoom
-       const MIN_ZOOM = 0.41;
+       const MIN_ZOOM = 0.1;
        const MAX_ZOOM = 3.0;
+       const MIN_DETAIL_ZOOM = 0.3;
 
        window.addEventListener("wheel", (e) => {
           e.preventDefault();

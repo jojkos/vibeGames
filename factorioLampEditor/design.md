@@ -10,7 +10,7 @@ The **Factorio Lamp Editor** is a lightweight, web-based tool designed to create
 - **Structure**: Single-file architecture (`index.html`) containing logic, styles, and markup.
 - **Rendering**: accelerated HTML5 Canvas rendering loop using `requestAnimationFrame`.
 - **State Management**:
-  - `gridData`: A 500x500 sparse matrix (2D Array) storing hex color codes or `null`.
+  - `gridData`: A GRID_W x GRID_H sparse matrix (2D Array) storing hex color codes or `null`.
   - `drawHistory`: Simple stack-based undo/redo system.
 
 ## 3. Key Features
@@ -79,7 +79,7 @@ The app supports "stamping" patterns onto the grid.
 
 ## 5. Technical Constraints & Rules
 
-1.  **Grid Limit**: Fixed at 500x500 pixels.
+1.  **Grid Limit**: Fixed at GRID_W x GRID_H pixels.
 2.  **Color Palette**: User can pick any Hex color. Factorio lamps support RGB colors.
 3.  **Coordinate System**: (0,0) is top-left of the internal grid. Blueprint exports center relatively to the selection.
 4.  **Performance**:
