@@ -1491,12 +1491,70 @@
         if (autoPole) {
            const activePoles = calculateActivePoles(poleType, poleCoverage, minX, minY, maxX, maxY);
            
-           activePoles.forEach(p => {
-               // Trust calculateActivePoles to only return needed poles (it uses areaHasLamp)
+           // --- MST Wiring Logic (Kruskal's) ---
+           // 1. Generate all valid edges
+           const edges = [];
+           const reach = poleType === 'substation' ? 18 : 9;
+           // Optimize: N^2 might be slow for large N, but usually poles < 1000.
+           // Limit check to reasonable proximity? 
+           // For now, simple N^2 check on activePoles is robust.
+           for(let i=0; i<activePoles.length; i++) {
+              for(let j=i+1; j<activePoles.length; j++) {
+                  const p1 = activePoles[i];
+                  const p2 = activePoles[j];
+                  const d2 = Math.pow(p1.x - p2.x, 2) + Math.pow(p1.y - p2.y, 2);
+                  if (d2 <= reach * reach) {
+                      edges.push({ u: i, v: j, dist: d2 });
+                  }
+              }
+           }
+           
+           // 2. Sort by distance
+           edges.sort((a, b) => a.dist - b.dist);
+           
+           // 3. Union-Find to build MST
+           const parent = new Array(activePoles.length).fill(0).map((_, i) => i);
+           const find = (i) => {
+               if (parent[i] !== i) parent[i] = find(parent[i]);
+               return parent[i];
+           };
+           const union = (i, j) => {
+               const rootI = find(i);
+               const rootJ = find(j);
+               if (rootI !== rootJ) {
+                   parent[rootI] = rootJ;
+                   return true;
+               }
+               return false;
+           };
+           
+           // Initialize adjacency for export
+           activePoles.forEach(p => p.neighbours = []);
+           
+           // Build Tree
+           edges.forEach(edge => {
+               if (union(edge.u, edge.v)) {
+                   // Add connection
+                   activePoles[edge.u].neighbours.push(edge.v);
+                   activePoles[edge.v].neighbours.push(edge.u);
+               }
+           });
+           // ------------------------------------
+
+           activePoles.forEach((p, idx) => {
+               // Assign entity IDs here to ensure we know them for neighbours
+               p.entity_number = entityId++;
+           });
+
+           activePoles.forEach((p, idx) => {
+               // Map neighbor indices to entity numbers
+               const neighbourIds = p.neighbours.map(nIdx => activePoles[nIdx].entity_number);
+               
                entities.push({
-                  entity_number: entityId++,
+                  entity_number: p.entity_number,
                   name: poleName,
                   position: { x: p.x - minX, y: p.y - minY },
+                  neighbours: neighbourIds
                });
                poles.push(p);
            });
