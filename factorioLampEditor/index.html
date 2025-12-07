@@ -390,7 +390,7 @@
                    <i class="fa-solid fa-arrows-up-down-left-right text-indigo-400"></i> Navigation
                 </h3>
                 <div class="grid grid-cols-2 gap-x-4 gap-y-2">
-                   <div class="flex justify-between"><span>Pan Canvas</span> <span class="bg-gray-700 px-1.5 rounded text-xs text-white">Right Click</span></div>
+                   <div class="flex justify-between"><span>Pan Canvas</span> <span class="bg-gray-700 px-1.5 rounded text-xs text-white">Right Click Drag</span></div>
                    <div class="flex justify-between"><span>Zoom</span> <span class="bg-gray-700 px-1.5 rounded text-xs text-white">Scroll</span></div>
                    <div class="flex justify-between"><span>Pan Tool</span> <span class="bg-gray-700 px-1.5 rounded text-xs text-yellow-500 font-mono">H</span></div>
                 </div>
@@ -399,7 +399,7 @@
              <!-- Tools -->
              <div>
                 <h3 class="font-bold text-gray-100 mb-2 border-b border-gray-700 pb-1 flex items-center gap-2">
-                   <i class="fa-solid fa-pen-ruler text-indigo-400"></i> Tools & Hotkeys
+                   <i class="fa-solid fa-pen-ruler text-indigo-400"></i> Drawing Tools
                 </h3>
                 <div class="grid grid-cols-2 gap-x-4 gap-y-2">
                    <div class="flex items-center gap-2">
@@ -409,7 +409,7 @@
                    </div>
                    <div class="flex items-center gap-2">
                       <i class="fa-solid fa-fill-drip text-gray-500"></i>
-                      <span>Fill</span> 
+                      <span>Fill (Flood)</span> 
                       <span class="ml-auto bg-gray-700 px-1.5 rounded text-xs text-yellow-500 font-mono">F</span>
                    </div>
                    <div class="flex items-center gap-2">
@@ -419,8 +419,8 @@
                    </div>
                    <div class="flex items-center gap-2">
                       <i class="fa-solid fa-rotate-left text-gray-500"></i>
-                      <span>Undo</span> 
-                      <span class="ml-auto bg-gray-700 px-1.5 rounded text-xs text-yellow-500 font-mono">Ctrl+Z</span>
+                      <span>Undo / Redo</span> 
+                      <span class="ml-auto bg-gray-700 px-1.5 rounded text-xs text-yellow-500 font-mono">Ctrl+Z / Shift+Z</span>
                    </div>
                 </div>
              </div>
@@ -428,13 +428,31 @@
              <!-- Stamping -->
              <div>
                 <h3 class="font-bold text-gray-100 mb-2 border-b border-gray-700 pb-1 flex items-center gap-2">
-                   <i class="fa-solid fa-stamp text-indigo-400"></i> Stamping
+                   <i class="fa-solid fa-stamp text-indigo-400"></i> Stamping (Text & Images)
                 </h3>
-                <ul class="space-y-1 pl-1">
-                   <li class="flex items-center gap-2"><i class="fa-solid fa-arrow-pointer text-gray-500 text-xs"></i> <span><strong>Left Click</strong> to place stamp</span></li>
-                   <li class="flex items-center gap-2"><i class="fa-solid fa-up-right-and-down-left-from-center text-gray-500 text-xs"></i> <span><strong>Mouse Wheel</strong> or <strong>+/-</strong> to resize</span></li>
-                   <li class="flex items-center gap-2"><i class="fa-solid fa-ban text-gray-500 text-xs"></i> <span><strong>ESC</strong> to cancel</span></li>
+                <ul class="space-y-2 pl-1">
+                   <li class="flex items-start gap-2">
+                      <i class="fa-solid fa-fingerprint text-gray-500 text-xs mt-1"></i>
+                      <span>
+                         <strong>Press & Hold</strong> to preview placement.<br>
+                         <strong>Drag</strong> to position precisely.<br>
+                         <strong>Release</strong> to stamp onto grid.
+                      </span>
+                   </li>
+                   <li class="flex items-center gap-2"><i class="fa-solid fa-up-right-and-down-left-from-center text-gray-500 text-xs"></i> <span><strong>Mouse Wheel</strong> or <strong>+/-</strong> to resize stamp</span></li>
+                   <li class="flex items-center gap-2"><i class="fa-solid fa-ban text-gray-500 text-xs"></i> <span><strong>ESC</strong> to cancel stamp mode</span></li>
                 </ul>
+             </div>
+
+             <!-- Blueprinting -->
+             <div>
+                <h3 class="font-bold text-gray-100 mb-2 border-b border-gray-700 pb-1 flex items-center gap-2">
+                   <i class="fa-solid fa-clipboard-check text-indigo-400"></i> Exporting
+                </h3>
+                <div class="text-xs text-gray-400">
+                   <p class="mb-1">Click <strong>Copy Blueprint</strong> to generate a Factorio string.</p>
+                   <p>Use <strong>Auto-place Poles</strong> to overlay Medium Poles or Substations automatically.</p>
+                </div>
              </div>
           </div>
           <div class="mt-6 text-center">
@@ -848,33 +866,19 @@
          ctx.restore();
       }
 
-      // Updated Smart Pole Logic with Bounds
+      // Updated Connected Pole Logic (Steiner Tree Approximation)
       function calculateActivePoles(type, coverage, boundsMinX, boundsMinY, boundsMaxX, boundsMaxY) {
-         // To catch poles that cover the view but originate outside, we expand bounds
+         // 1. Initial Scan: Find all "Required" poles to cover lamps
+         // We stick to the global grid alignment (start at offset) for consistency.
+         const offset = type === 'substation' ? 8 : 3;
+         const reach = type === 'substation' ? 18 : 9; // Max wire distance
+         
          const margin = coverage + 5;
          const searchMinX = Math.max(0, boundsMinX - margin);
          const searchMaxX = Math.min(GRID_W, boundsMaxX + margin);
          const searchMinY = Math.max(0, boundsMinY - margin);
          const searchMaxY = Math.min(GRID_H, boundsMaxY + margin);
-         
-         // Scan area setup (Center-based tiling)
-         // We need to align to global grid or bounding box?
-         // User requested optimal placement.
-         // Let's align to the *Global Content Bounding Box* but only return those in view.
-         
-         // 1. Find Search bounds of actual CONTENT (Global scanning might be needed for alignment?)
-         // If we want consistent alignment, we need a stable anchor. 
-         // Let's use (0,0) of the grid as the anchor for the pole grid. 
-         // Aligning to "content" changes if content changes, which makes poles jump. 
-         // Fixed Grid Alignment is better for "Infinite Canvas".
-         // The previous "Smart" logic aligned to minX/minY of content. 
-         // Let's use Grid Alignment (0,0) for stability in Infinite Mode.
-         
-         const offset = type === 'substation' ? 8 : 3;
-         // Pole Grid: Places a pole every `coverage`. Starting at offset to center coverage at 0,0?
-         // Let's say we simply tile starting at 0,0.
-         
-         // Helper: Windowed Area Check
+
          const areaHasLamp = (px, py, w, h) => {
              const sx = Math.max(0, px);
              const sy = Math.max(0, py);
@@ -888,21 +892,150 @@
              return false;
          };
          
-         const poles = [];
+         let activePoles = [];
          
-         // Align grid to 0
-         // First pole pos >= searchMinX
+         // Align grid to 0,0
          const startX = Math.floor((searchMinX) / coverage) * coverage + offset;
          const startY = Math.floor((searchMinY) / coverage) * coverage + offset;
          
          for(let y = startY; y <= searchMaxY; y+=coverage) {
              for(let x = startX; x <= searchMaxX; x+=coverage) {
                  if (areaHasLamp(x - offset, y - offset, coverage, coverage)) {
-                     poles.push({x, y});
+                     activePoles.push({x, y, id: activePoles.length, group: activePoles.length});
                  }
              }
          }
-         return poles;
+
+         if (activePoles.length === 0) return [];
+
+         // 2. Connectivity Graph - Union-Find Components
+         // We need to connect all these islands.
+         // Simple strategy: Merge closest components until 1 remains.
+         
+         // Helper to find distances
+         const getDist = (p1, p2) => Math.abs(p1.x - p2.x) + Math.abs(p1.y - p2.y); // Manhattan is good for grid
+         const getWireDist = (p1, p2) => Math.max(Math.abs(p1.x - p2.x), Math.abs(p1.y - p2.y)); // Chebyshev for square reach? No, Factorio is Euclidean-ish but logic checks max axial usually? Actually Factorio wire reach is circular/Euclidean. 
+         // Medium Pole: Range 9 (Euclidean). sqrt(dx^2 + dy^2) <= 9. 
+         // For grid placement (rectilinear), let's stick to simple placement.
+         // If we place poles every REACH distance in a line, they connect.
+         
+         // Group management
+         let groups = []; 
+         activePoles.forEach(p => {
+             p.group = groups.length;
+             groups.push([p]);
+         });
+
+         const findGroup = (pole) => {
+             for(let i=0; i<groups.length; i++) {
+                 if(groups[i].includes(pole)) return i;
+             }
+             return -1;
+         };
+
+         // Initial Merge based on strict range (are they already connected?)
+         // This is O(N^2), but N (poles) is usually small (<1000).
+         for (let i = 0; i < activePoles.length; i++) {
+             for (let j = i + 1; j < activePoles.length; j++) {
+                 const p1 = activePoles[i];
+                 const p2 = activePoles[j];
+                 const dist = Math.sqrt(Math.pow(p1.x - p2.x, 2) + Math.pow(p1.y - p2.y, 2));
+                 if (dist <= reach) {
+                     // Merge groups
+                     const g1 = findGroup(p1);
+                     const g2 = findGroup(p2);
+                     if (g1 !== g2) {
+                         const merged = groups[g1].concat(groups[g2]);
+                         groups[g2] = []; // clear old
+                         groups[g1] = merged; // update new
+                     }
+                 }
+             }
+         }
+         // Cleanup empty groups
+         groups = groups.filter(g => g.length > 0);
+
+         // 3. Bridge the Gap
+         // While > 1 group, find closest pair of nodes from distinct groups and build a bridge.
+         while(groups.length > 1) {
+             let minD = Infinity;
+             let bestPair = null;
+             let bestG1 = -1;
+             let bestG2 = -1;
+
+             // Find closest groups
+             for(let i=0; i<groups.length; i++) {
+                 for(let j=i+1; j<groups.length; j++) {
+                     // Check all pairs? Optimization: Check centroids? No, edges might be closer.
+                     // Brute force is safe for reasonable N.
+                     for(let p1 of groups[i]) {
+                         for(let p2 of groups[j]) {
+                             const d = Math.abs(p1.x - p2.x) + Math.abs(p1.y - p2.y);
+                             if (d < minD) {
+                                 minD = d;
+                                 bestPair = {p1, p2};
+                                 bestG1 = i;
+                                 bestG2 = j;
+                             }
+                         }
+                     }
+                 }
+             }
+
+             if (!bestPair) break; // Should not happen
+
+             // Build Bridge
+             const start = bestPair.p1;
+             const end = bestPair.p2;
+             
+             // Simple L-shape routing
+             // We step by `reach` (or slightly less to be safe) to place bridge poles.
+             // Safe reach step = reach - 0.5? Logic:
+             const step = type === 'substation' ? 18 : 9; 
+             
+             let cx = start.x;
+             let cy = start.y;
+             
+             const bridgePoles = [];
+             
+             // Move X
+             while (Math.abs(cx - end.x) > step) {
+                 cx += Math.sign(end.x - cx) * step;
+                 bridgePoles.push({x: cx, y: cy});
+             }
+             cx = end.x;
+             // Corner pole if needed (if we turned)? 
+             // Actually if we move X then Y, we might need a pole at the corner (end.x, start.y)
+             // Check if dist from last point to (end.x, start.y) is ok.
+             
+             // If we just snapped cx to end.x, check dist.
+             // If distance from (prevX, cy) to (end.x, cy) > reach, we added intermediate.
+             // Now we are at (end.x, cy).
+             
+             // Move Y
+             while (Math.abs(cy - end.y) > step) {
+                 cy += Math.sign(end.y - cy) * step;
+                 bridgePoles.push({x: cx, y: cy});
+             }
+             
+             // Add bridge poles to G1 and merge G1/G2
+             // Filter duplicates?
+             bridgePoles.forEach(bp => {
+                 // Check if valid? (Bounds? Overlap?)
+                 // Add to result if unique
+                 if (!activePoles.some(ap => ap.x === bp.x && ap.y === bp.y)) {
+                     const newPole = {x: bp.x, y: bp.y, id: -1}; // temporary ID
+                     activePoles.push(newPole);
+                     groups[bestG1].push(newPole);
+                 }
+             });
+             
+             // Merge
+             groups[bestG1] = groups[bestG1].concat(groups[bestG2]);
+             groups.splice(bestG2, 1);
+         }
+         
+         return activePoles;
       }
 
       // --- Interaction Logic ---
