@@ -36,24 +36,25 @@ The app supports "stamping" patterns onto the grid.
 
 - **Text Stamp**:
   - Uses a custom 5x5 internal pixel font (`FACTORIO_FONT`).
-  - Supports A-Z (Case-insensitive visually, but input allows both), 0-9, and basic symbols.
+  - Supports `A-Z`, `a-z`, `0-9`, and basic symbols.
   - **Scaling**: Text can be scaled up (using `+`/`-` keys).
 - **Image Stamp**:
-  - Imports user uploaded images.
+  - Imports user uploaded images or **Pasted (Ctrl+V)** images.
   - Automatically resizes to fit reasonable bounds (~30px max dimension initially).
   - Converts image pixels to closest hex color.
 - **Interaction Model**:
-  - **Phase 1 (Aiming)**: Press and hold (Mouse/Touch) to grab the ghost of the stamp.
-  - **Phase 2 (Positioning)**: Drag to position the stamp precisely.
-  - **Phase 3 (Commit)**: Release the button/finger to paint the stamp onto the grid.
+  - **Priority**: Stamp Mode takes precedence over other tools (like Pan).
+  - **Phase 1 (Aiming)**: Move mouse to preview stamp.
+  - **Phase 2 (Commit)**: Click to paint the stamp onto the grid.
 
 ### 3.4 Blueprint Generation
 
 - **Entities**: Generates `small-lamp` entities with `always_on: true` and specific `color` (RGB).
 - **Power Poles**:
   - **Auto-place Poles**: Optional feature to automatically overlay power poles.
-  - **Types**: Supports "Medium Electric Pole" and "Substation".
-  - **Logic**: Uses a coverage-based grid algorithm to ensure all lamps are powered, prioritizing alignment.
+  - **Types**: Supports "Small", "Medium", "Big" Electric Poles, and "Substation".
+  - **Quality**: Supports Factorio 2.0 Quality (Normal to Legendary).
+  - **Logic**: Uses a coverage-based grid algorithm to place poles and Minimum Spanning Tree (MST) for wiring.
 - **Encoding**:
   1.  JSON structure creation.
   2.  `TextEncoder` (UTF-8).
@@ -67,6 +68,7 @@ The app supports "stamping" patterns onto the grid.
 | **Draw**         | Left Click / Drag     | -              |
 | **Pan**          | Right Click Drag      | `H` (Tool)     |
 | **Zoom**         | Wheel                 | -              |
+| **Paste Image**  | -                     | `Ctrl+V`       |
 | **Undo**         | -                     | `Ctrl+Z`       |
 | **Redo**         | -                     | `Ctrl+Shift+Z` |
 | **Resize Stamp** | Wheel (in stamp mode) | `+` / `-`      |
