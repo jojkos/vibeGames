@@ -5,25 +5,16 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Jojko's Game Portal</title>
     <link
-      href="https://fonts.googleapis.com/css2?family=Orbitron:wght@500;700;900&family=VT323&family=Inter:wght@400;500&display=swap"
+      href="https://fonts.googleapis.com/css2?family=Orbitron:wght@500;700;900&family=Inter:wght@400;500&display=swap"
       rel="stylesheet"
     />
     <style>
-      /* ============================================
-         DESIGN TOKENS
-      ============================================ */
       :root {
         --neon-cyan: #00fff5;
         --neon-magenta: #ff00ff;
-        --neon-yellow: #ffff00;
-        --neon-blue: #0ea5e9;
-        --neon-purple: #a855f7;
-        --neon-pink: #ec4899;
         --deep-void: #0a0a0f;
-        --grid-blue: #1a1a3e;
-        --glow-white: rgba(255, 255, 255, 0.9);
-        --card-bg: rgba(10, 10, 20, 0.8);
-        --card-border: rgba(0, 255, 245, 0.2);
+        --card-bg: rgba(15, 15, 25, 0.9);
+        --card-border: rgba(0, 255, 245, 0.15);
       }
 
       * {
@@ -32,160 +23,61 @@
         padding: 0;
       }
 
-      html {
-        scroll-behavior: smooth;
-      }
-
       body {
         background: var(--deep-void);
         color: #fff;
         font-family: "Inter", sans-serif;
-        overflow-x: hidden;
         min-height: 100vh;
-        cursor: none;
+        background-image: radial-gradient(
+            ellipse at 50% 0%,
+            rgba(0, 255, 245, 0.08) 0%,
+            transparent 50%
+          ),
+          linear-gradient(180deg, #0a0a0f 0%, #0f0f1a 100%);
       }
 
-      /* ============================================
-         CUSTOM CURSOR
-      ============================================ */
-      .cursor {
-        position: fixed;
-        width: 20px;
-        height: 20px;
-        border: 2px solid var(--neon-cyan);
-        border-radius: 50%;
-        pointer-events: none;
-        z-index: 10000;
-        transition: transform 0.1s ease, width 0.2s, height 0.2s,
-          border-color 0.2s;
-        mix-blend-mode: difference;
-      }
-
-      .cursor-dot {
-        position: fixed;
-        width: 6px;
-        height: 6px;
-        background: var(--neon-cyan);
-        border-radius: 50%;
-        pointer-events: none;
-        z-index: 10001;
-      }
-
-      .cursor.hover {
-        width: 50px;
-        height: 50px;
-        border-color: var(--neon-magenta);
-        background: rgba(255, 0, 255, 0.1);
-      }
-
-      /* ============================================
-         SCANLINES OVERLAY
-      ============================================ */
-      @keyframes gradient-shift {
-        0%,
-        100% {
-          background-position: 0% 50%;
-        }
-        50% {
-          background-position: 100% 50%;
-        }
-      }
-
-      .scanlines {
-        position: fixed;
-        inset: 0;
-        pointer-events: none;
-        z-index: 9998;
-        background: repeating-linear-gradient(
-          0deg,
-          rgba(0, 0, 0, 0.1) 0px,
-          rgba(0, 0, 0, 0.1) 1px,
-          transparent 1px,
-          transparent 3px
-        );
-        opacity: 0.3;
-      }
-
-      /* ============================================
-         GRID FLOOR BACKGROUND
-      ============================================ */
-      .grid-floor {
+      /* Simple grid pattern - pure CSS, no JS */
+      .grid-bg {
         position: fixed;
         inset: 0;
         z-index: -1;
-        overflow: hidden;
-        perspective: 500px;
-      }
-
-      .grid-floor canvas {
-        position: absolute;
-        bottom: 0;
-        left: 0;
-        width: 100%;
-        height: 70%;
-        transform: rotateX(60deg);
-        transform-origin: bottom center;
-      }
-
-      .ambient-glow {
-        position: fixed;
-        width: 600px;
-        height: 600px;
-        border-radius: 50%;
-        background: radial-gradient(
-          circle,
-          rgba(0, 255, 245, 0.15) 0%,
-          transparent 70%
+        background-image: linear-gradient(
+            rgba(0, 255, 245, 0.03) 1px,
+            transparent 1px
+          ),
+          linear-gradient(90deg, rgba(0, 255, 245, 0.03) 1px, transparent 1px);
+        background-size: 60px 60px;
+        mask-image: linear-gradient(
+          to bottom,
+          transparent 0%,
+          black 20%,
+          black 60%,
+          transparent 100%
         );
-        pointer-events: none;
-        z-index: 0;
-        transition: transform 0.3s ease-out;
-        filter: blur(40px);
+        -webkit-mask-image: linear-gradient(
+          to bottom,
+          transparent 0%,
+          black 20%,
+          black 60%,
+          transparent 100%
+        );
       }
 
-      /* ============================================
-         NOISE OVERLAY
-      ============================================ */
-      .noise-overlay {
-        position: fixed;
-        inset: 0;
-        pointer-events: none;
-        z-index: 100;
-        opacity: 0.03;
-        background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E");
-      }
-
-      /* ============================================
-         MAIN CONTENT
-      ============================================ */
       .main-content {
-        position: relative;
-        z-index: 10;
-        min-height: 100vh;
+        max-width: 1200px;
+        margin: 0 auto;
         padding: 2rem;
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        opacity: 0;
-        transition: opacity 0.8s ease;
+        min-height: 100vh;
       }
 
-      .main-content.visible {
-        opacity: 1;
-      }
-
-      /* ============================================
-         HEADER
-      ============================================ */
       header {
         text-align: center;
-        padding: 4rem 0 3rem;
-        position: relative;
+        padding: 3rem 0 2rem;
       }
 
       .title {
         font-family: "Orbitron", sans-serif;
-        font-size: clamp(2.5rem, 8vw, 5rem);
+        font-size: clamp(2rem, 7vw, 4rem);
         font-weight: 900;
         background: linear-gradient(
           135deg,
@@ -196,247 +88,65 @@
         background-size: 200% 200%;
         -webkit-background-clip: text;
         -webkit-text-fill-color: transparent;
-        animation: gradient-shift 4s ease infinite;
-        text-shadow: 0 0 60px rgba(0, 255, 245, 0.3);
-        position: relative;
-        display: inline-block;
+        background-clip: text;
+        animation: gradient-shift 6s ease infinite;
       }
 
-      .title::before,
-      .title::after {
-        content: attr(data-text);
-        position: absolute;
-        top: 0;
-        left: 0;
-        width: 100%;
-        height: 100%;
-        background: inherit;
-        -webkit-background-clip: text;
-        -webkit-text-fill-color: transparent;
-      }
-
-      .title::before {
-        animation: glitch-1 3s infinite linear alternate-reverse;
-        clip-path: polygon(0 0, 100% 0, 100% 35%, 0 35%);
-      }
-
-      .title::after {
-        animation: glitch-2 3s infinite linear alternate-reverse;
-        clip-path: polygon(0 65%, 100% 65%, 100% 100%, 0 100%);
-      }
-
-      @keyframes glitch-1 {
+      @keyframes gradient-shift {
         0%,
-        90%,
         100% {
-          transform: translate(0);
+          background-position: 0% 50%;
         }
-        92% {
-          transform: translate(-3px, 1px);
-        }
-        94% {
-          transform: translate(3px, -1px);
-        }
-        96% {
-          transform: translate(-2px, 0);
-        }
-        98% {
-          transform: translate(2px, 0);
-        }
-      }
-
-      @keyframes glitch-2 {
-        0%,
-        90%,
-        100% {
-          transform: translate(0);
-        }
-        91% {
-          transform: translate(3px, 1px);
-        }
-        93% {
-          transform: translate(-3px, -1px);
-        }
-        95% {
-          transform: translate(2px, 0);
-        }
-        97% {
-          transform: translate(-2px, 0);
+        50% {
+          background-position: 100% 50%;
         }
       }
 
       .subtitle {
-        font-family: "VT323", monospace;
-        font-size: 1.5rem;
-        color: rgba(255, 255, 255, 0.6);
-        margin-top: 1rem;
-        letter-spacing: 0.2em;
+        font-size: 1rem;
+        color: rgba(255, 255, 255, 0.5);
+        margin-top: 0.75rem;
+        letter-spacing: 0.15em;
+        text-transform: uppercase;
       }
 
-      .subtitle span {
-        display: inline-block;
-        opacity: 0;
-        transform: translateY(10px);
-        animation: typeIn 0.3s ease forwards;
-      }
-
-      @keyframes typeIn {
-        to {
-          opacity: 1;
-          transform: translateY(0);
-        }
-      }
-
-      /* ============================================
-         GAME GRID
-      ============================================ */
       .game-grid {
         display: grid;
-        grid-template-columns: repeat(1, 1fr);
-        gap: 2rem;
-        max-width: 1200px;
-        width: 100%;
-        padding: 2rem 0 6rem;
+        grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+        gap: 1.5rem;
+        padding: 2rem 0 4rem;
       }
 
-      @media (min-width: 640px) {
-        .game-grid {
-          grid-template-columns: repeat(2, 1fr);
-        }
-      }
-
-      @media (min-width: 1024px) {
-        .game-grid {
-          grid-template-columns: repeat(3, 1fr);
-        }
-      }
-
-      /* ============================================
-         GAME CARDS - HOLOGRAPHIC STYLE
-      ============================================ */
       .game-card {
         position: relative;
-        height: 220px;
         background: var(--card-bg);
         border: 1px solid var(--card-border);
-        border-radius: 16px;
-        cursor: none;
+        border-radius: 12px;
+        padding: 2rem 1.5rem;
+        text-decoration: none;
         display: flex;
         flex-direction: column;
         align-items: center;
-        justify-content: center;
-        text-decoration: none;
-        transition: all 0.4s cubic-bezier(0.23, 1, 0.32, 1);
-        transform-style: preserve-3d;
-        overflow: hidden;
-        backdrop-filter: blur(10px);
-        opacity: 0;
-        transform: translateY(50px) rotateX(-10deg);
-      }
-
-      .game-card.visible {
-        opacity: 1;
-        transform: translateY(0) rotateX(0);
-      }
-
-      /* Holographic shimmer */
-      .game-card::before {
-        content: "";
-        position: absolute;
-        inset: -2px;
-        background: linear-gradient(
-          45deg,
-          transparent 20%,
-          rgba(0, 255, 245, 0.3) 30%,
-          rgba(255, 0, 255, 0.3) 50%,
-          rgba(255, 255, 0, 0.2) 70%,
-          transparent 80%
-        );
-        background-size: 200% 200%;
-        border-radius: 18px;
-        opacity: 0;
-        z-index: -1;
-        transition: opacity 0.4s ease;
-        animation: shimmer 3s linear infinite;
-      }
-
-      @keyframes shimmer {
-        0% {
-          background-position: 200% 0;
-        }
-        100% {
-          background-position: -200% 0;
-        }
-      }
-
-      .game-card:hover::before {
-        opacity: 1;
-      }
-
-      /* Spotlight effect */
-      .game-card::after {
-        content: "";
-        position: absolute;
-        inset: 0;
-        background: radial-gradient(
-          400px circle at var(--mouse-x, 50%) var(--mouse-y, 50%),
-          rgba(0, 255, 245, 0.15),
-          transparent 50%
-        );
-        opacity: 0;
-        transition: opacity 0.3s;
-        border-radius: 16px;
-      }
-
-      .game-card:hover::after {
-        opacity: 1;
+        gap: 1rem;
+        transition: transform 0.2s ease, border-color 0.2s ease,
+          box-shadow 0.2s ease;
       }
 
       .game-card:hover {
-        transform: translateY(-12px) scale(1.02);
+        transform: translateY(-4px);
         border-color: var(--neon-cyan);
-        box-shadow: 0 20px 60px rgba(0, 255, 245, 0.2),
-          0 0 100px rgba(0, 255, 245, 0.1),
-          inset 0 0 60px rgba(0, 255, 245, 0.05);
+        box-shadow: 0 8px 32px rgba(0, 255, 245, 0.15);
       }
 
-      /* Reflection */
-      .game-card .reflection {
-        position: absolute;
-        bottom: -100%;
-        left: 0;
-        width: 100%;
-        height: 100%;
-        background: inherit;
-        transform: scaleY(-1);
-        opacity: 0.1;
-        filter: blur(4px);
-        mask-image: linear-gradient(to top, rgba(0, 0, 0, 0.3), transparent);
-        -webkit-mask-image: linear-gradient(
-          to top,
-          rgba(0, 0, 0, 0.3),
-          transparent
-        );
-        pointer-events: none;
+      .game-card:focus {
+        outline: none;
+        border-color: var(--neon-cyan);
+        box-shadow: 0 0 0 3px rgba(0, 255, 245, 0.2);
       }
 
-      /* Card content */
-      .card-content {
-        position: relative;
-        z-index: 2;
-        text-align: center;
-        transition: transform 0.4s cubic-bezier(0.23, 1, 0.32, 1);
-      }
-
-      .game-card:hover .card-content {
-        transform: translateZ(30px);
-      }
-
-      /* Play icon */
       .play-icon {
-        width: 70px;
-        height: 70px;
-        margin: 0 auto 1rem;
+        width: 56px;
+        height: 56px;
         border-radius: 50%;
         background: linear-gradient(
           135deg,
@@ -447,318 +157,141 @@
         display: flex;
         align-items: center;
         justify-content: center;
-        transition: all 0.4s cubic-bezier(0.23, 1, 0.32, 1);
-        position: relative;
-        overflow: hidden;
-      }
-
-      .play-icon::before {
-        content: "";
-        position: absolute;
-        inset: 0;
-        background: conic-gradient(
-          from 0deg,
-          var(--neon-cyan),
-          var(--neon-magenta),
-          var(--neon-yellow),
-          var(--neon-cyan)
-        );
-        opacity: 0;
-        transition: opacity 0.4s;
-        animation: rotate 3s linear infinite;
-      }
-
-      @keyframes rotate {
-        to {
-          transform: rotate(360deg);
-        }
-      }
-
-      .play-icon::after {
-        content: "";
-        position: absolute;
-        inset: 3px;
-        background: var(--deep-void);
-        border-radius: 50%;
+        transition: transform 0.2s ease, border-color 0.2s ease;
       }
 
       .game-card:hover .play-icon {
-        transform: scale(1.15);
+        transform: scale(1.1);
         border-color: var(--neon-cyan);
-        box-shadow: 0 0 40px rgba(0, 255, 245, 0.5);
-      }
-
-      .game-card:hover .play-icon::before {
-        opacity: 1;
       }
 
       .play-icon svg {
-        width: 28px;
-        height: 28px;
+        width: 24px;
+        height: 24px;
         fill: var(--neon-cyan);
-        position: relative;
-        z-index: 1;
-        transition: all 0.4s;
-        opacity: 0.7;
+        opacity: 0.8;
+        transition: opacity 0.2s ease;
       }
 
       .game-card:hover .play-icon svg {
-        fill: #fff;
         opacity: 1;
-        transform: translateX(2px) scale(1.1);
-        filter: drop-shadow(0 0 10px var(--neon-cyan));
       }
 
-      /* Game title */
       .game-title {
         font-family: "Orbitron", sans-serif;
-        font-size: 1.1rem;
+        font-size: 0.9rem;
         font-weight: 700;
-        color: rgba(255, 255, 255, 0.8);
-        letter-spacing: 0.1em;
-        transition: all 0.4s;
+        color: rgba(255, 255, 255, 0.85);
+        letter-spacing: 0.08em;
         text-transform: uppercase;
+        text-align: center;
+        transition: color 0.2s ease;
       }
 
       .game-card:hover .game-title {
         color: #fff;
-        text-shadow: 0 0 20px var(--neon-cyan), 0 0 40px var(--neon-magenta);
-        letter-spacing: 0.15em;
       }
 
-      /* Keyboard focus indicator */
-      .game-card.focused {
-        outline: none;
-        border-color: var(--neon-yellow);
-        box-shadow: 0 0 0 3px rgba(255, 255, 0, 0.3),
-          0 20px 60px rgba(255, 255, 0, 0.2);
-      }
-
-      .game-card.focused .play-icon {
-        border-color: var(--neon-yellow);
-      }
-
-      /* ============================================
-         PARTICLES
-      ============================================ */
-      .particle {
-        position: fixed;
-        pointer-events: none;
-        z-index: 50;
-        border-radius: 50%;
-        opacity: 0;
-      }
-
-      @keyframes particle-float {
-        0% {
-          opacity: 0;
-          transform: translateY(0) scale(0);
-        }
-        10% {
-          opacity: 1;
-        }
-        100% {
-          opacity: 0;
-          transform: translateY(-150px) translateX(var(--drift-x, 0)) scale(0.5);
-        }
-      }
-
-      /* Click burst particles */
-      @keyframes particle-burst {
-        0% {
-          opacity: 1;
-          transform: translate(0, 0) scale(1);
-        }
-        100% {
-          opacity: 0;
-          transform: translate(var(--burst-x), var(--burst-y)) scale(0);
-        }
-      }
-
-      /* ============================================
-         COFFEE BUTTON
-      ============================================ */
       .coffee-link {
         position: fixed;
-        bottom: 30px;
-        right: 30px;
-        padding: 14px 24px;
+        bottom: 24px;
+        right: 24px;
+        padding: 12px 20px;
         background: linear-gradient(135deg, #fbbf24, #f59e0b);
         color: #000;
         border-radius: 50px;
         text-decoration: none;
-        font-weight: 700;
-        font-size: 0.95rem;
-        transition: all 0.4s cubic-bezier(0.23, 1, 0.32, 1);
-        z-index: 1000;
-        box-shadow: 0 10px 30px rgba(251, 191, 36, 0.3);
+        font-weight: 600;
+        font-size: 0.9rem;
         display: flex;
         align-items: center;
         gap: 8px;
-        border: 2px solid rgba(255, 255, 255, 0.2);
-        cursor: none;
+        transition: transform 0.2s ease, box-shadow 0.2s ease;
+        z-index: 100;
+        box-shadow: 0 4px 16px rgba(251, 191, 36, 0.25);
       }
 
       .coffee-link:hover {
-        background: linear-gradient(135deg, #fcd34d, #fbbf24);
-        transform: translateY(-5px) scale(1.05);
-        box-shadow: 0 20px 40px rgba(251, 191, 36, 0.4);
+        transform: translateY(-2px);
+        box-shadow: 0 8px 24px rgba(251, 191, 36, 0.35);
       }
 
-      /* ============================================
-         SOUND TOGGLE
-      ============================================ */
-      .sound-toggle {
-        position: fixed;
-        top: 20px;
-        right: 20px;
-        width: 50px;
-        height: 50px;
-        background: rgba(10, 10, 20, 0.8);
-        border: 1px solid rgba(0, 255, 245, 0.3);
-        border-radius: 50%;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        cursor: none;
-        z-index: 1000;
-        transition: all 0.3s;
-        backdrop-filter: blur(10px);
-      }
-
-      .sound-toggle:hover {
-        border-color: var(--neon-cyan);
-        box-shadow: 0 0 20px rgba(0, 255, 245, 0.3);
-      }
-
-      .sound-toggle svg {
-        width: 24px;
-        height: 24px;
-        fill: var(--neon-cyan);
-        transition: all 0.3s;
-      }
-
-      .sound-toggle.muted svg {
-        fill: rgba(255, 255, 255, 0.3);
-      }
-
-      /* ============================================
-         KEYBOARD NAV HINT
-      ============================================ */
+      /* Keyboard navigation */
       .nav-hint {
         position: fixed;
-        bottom: 30px;
-        left: 30px;
-        font-family: "VT323", monospace;
-        font-size: 1rem;
-        color: rgba(255, 255, 255, 0.4);
+        bottom: 24px;
+        left: 24px;
+        font-size: 0.85rem;
+        color: rgba(255, 255, 255, 0.35);
         display: flex;
         gap: 1rem;
-        z-index: 1000;
+        z-index: 100;
       }
 
       .nav-hint kbd {
         display: inline-flex;
         align-items: center;
         justify-content: center;
-        min-width: 28px;
-        height: 28px;
+        min-width: 24px;
+        height: 24px;
         padding: 0 6px;
-        background: rgba(255, 255, 255, 0.1);
-        border: 1px solid rgba(255, 255, 255, 0.2);
+        background: rgba(255, 255, 255, 0.08);
+        border: 1px solid rgba(255, 255, 255, 0.15);
         border-radius: 4px;
         font-family: inherit;
-        font-size: 0.9rem;
+        font-size: 0.8rem;
       }
 
-      @media (max-width: 768px) {
+      @media (max-width: 640px) {
         .nav-hint {
           display: none;
         }
+        .coffee-link {
+          bottom: 16px;
+          right: 16px;
+          padding: 10px 16px;
+          font-size: 0.85rem;
+        }
       }
 
-      /* ============================================
-         REDUCED MOTION
-      ============================================ */
       @media (prefers-reduced-motion: reduce) {
         *,
         *::before,
         *::after {
           animation-duration: 0.01ms !important;
-          animation-iteration-count: 1 !important;
           transition-duration: 0.01ms !important;
         }
       }
     </style>
   </head>
   <body>
-    <!-- Custom Cursor -->
-    <div class="cursor"></div>
-    <div class="cursor-dot"></div>
+    <div class="grid-bg"></div>
 
-    <!-- Scanlines overlay -->
-    <div class="scanlines"></div>
-
-    <!-- Noise overlay -->
-    <div class="noise-overlay"></div>
-
-    <!-- Grid floor background -->
-    <div class="grid-floor">
-      <canvas id="grid-canvas"></canvas>
-    </div>
-
-    <!-- Ambient glow following cursor -->
-    <div class="ambient-glow"></div>
-
-    <!-- Sound toggle -->
-    <button
-      class="sound-toggle"
-      title="Toggle Sound"
-      aria-label="Toggle sound effects"
-    >
-      <svg viewBox="0 0 24 24" class="sound-on">
-        <path
-          d="M3 9v6h4l5 5V4L7 9H3zm13.5 3c0-1.77-1.02-3.29-2.5-4.03v8.05c1.48-.73 2.5-2.25 2.5-4.02zM14 3.23v2.06c2.89.86 5 3.54 5 6.71s-2.11 5.85-5 6.71v2.06c4.01-.91 7-4.49 7-8.77s-2.99-7.86-7-8.77z"
-        />
-      </svg>
-      <svg viewBox="0 0 24 24" class="sound-off" style="display: none">
-        <path
-          d="M16.5 12c0-1.77-1.02-3.29-2.5-4.03v2.21l2.45 2.45c.03-.2.05-.41.05-.63zm2.5 0c0 .94-.2 1.82-.54 2.64l1.51 1.51C20.63 14.91 21 13.5 21 12c0-4.28-2.99-7.86-7-8.77v2.06c2.89.86 5 3.54 5 6.71zM4.27 3L3 4.27 7.73 9H3v6h4l5 5v-6.73l4.25 4.25c-.67.52-1.42.93-2.25 1.18v2.06c1.38-.31 2.63-.95 3.69-1.81L19.73 21 21 19.73l-9-9L4.27 3zM12 4L9.91 6.09 12 8.18V4z"
-        />
-      </svg>
-    </button>
-
-    <!-- Main content -->
-    <main class="main-content visible">
+    <main class="main-content">
       <header>
-        <h1 class="title" data-text="JOJKO'S GAMES">JOJKO'S GAMES</h1>
-        <p class="subtitle"></p>
+        <h1 class="title">JOJKO'S GAMES</h1>
+        <p class="subtitle">Select Your Destination</p>
       </header>
 
       <div class="game-grid" id="game-grid"></div>
     </main>
 
-    <!-- Keyboard navigation hint -->
     <div class="nav-hint">
       <span><kbd>↑</kbd><kbd>↓</kbd><kbd>←</kbd><kbd>→</kbd> Navigate</span>
       <span><kbd>Enter</kbd> Select</span>
     </div>
 
-    <!-- Coffee button -->
     <a
       href="https://buymeacoffee.com/jojkos"
       target="_blank"
       rel="noopener noreferrer"
       class="coffee-link"
     >
-      <span style="font-size: 1.2rem">☕</span>
+      <span>☕</span>
       <span>Buy Me a Coffee</span>
     </a>
 
     <script>
-      // =========================================================
-      // CONFIGURATION
-      // =========================================================
       const games = [
         { name: "Pug Fiesta", url: "pugFiesta/index.html" },
         { name: "Zoopaloola", url: "https://zoopaloola.vercel.app/" },
@@ -780,528 +313,65 @@
         { name: "Guitar Tuner", url: "guitarTuner/index.html" },
       ];
 
-      const SUBTITLE_TEXT = "SELECT YOUR DESTINATION";
-
-      // =========================================================
-      // STATE
-      // =========================================================
-      let bootComplete = false;
-      let soundEnabled = true;
-      let selectedCardIndex = -1;
-      let mouseX = 0,
-        mouseY = 0;
-      let cursorX = 0,
-        cursorY = 0;
-
-      // Audio context for sounds
-      let audioCtx = null;
-      function getAudioContext() {
-        if (!audioCtx) {
-          audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-        }
-        return audioCtx;
-      }
-
-      // =========================================================
-      // SOUND EFFECTS
-      // =========================================================
-      function playSound(type) {
-        if (!soundEnabled) return;
-        try {
-          const ctx = getAudioContext();
-          const oscillator = ctx.createOscillator();
-          const gainNode = ctx.createGain();
-          oscillator.connect(gainNode);
-          gainNode.connect(ctx.destination);
-
-          switch (type) {
-            case "hover":
-              oscillator.frequency.value = 800;
-              oscillator.type = "sine";
-              gainNode.gain.value = 0.05;
-              oscillator.start();
-              oscillator.stop(ctx.currentTime + 0.05);
-              break;
-            case "select":
-              oscillator.frequency.value = 1200;
-              oscillator.type = "square";
-              gainNode.gain.value = 0.08;
-              oscillator.start();
-              oscillator.frequency.exponentialRampToValueAtTime(
-                600,
-                ctx.currentTime + 0.1
-              );
-              oscillator.stop(ctx.currentTime + 0.15);
-              break;
-            case "boot":
-              oscillator.frequency.value = 100;
-              oscillator.type = "sawtooth";
-              gainNode.gain.value = 0.1;
-              oscillator.start();
-              oscillator.frequency.exponentialRampToValueAtTime(
-                1000,
-                ctx.currentTime + 0.3
-              );
-              gainNode.gain.exponentialRampToValueAtTime(
-                0.01,
-                ctx.currentTime + 0.5
-              );
-              oscillator.stop(ctx.currentTime + 0.5);
-              break;
-          }
-        } catch (e) {
-          // Audio not available
-        }
-      }
-
-      // =========================================================
-      // CRT BOOT SEQUENCE
-      // =========================================================
-      const scanlines = document.querySelector(".scanlines");
-      const mainContent = document.querySelector(".main-content");
-
-      // =========================================================
-      // SUBTITLE ANIMATION
-      // =========================================================
-      function animateSubtitle() {
-        const subtitle = document.querySelector(".subtitle");
-        SUBTITLE_TEXT.split("").forEach((char, i) => {
-          const span = document.createElement("span");
-          span.textContent = char === " " ? "\u00A0" : char;
-          span.style.animationDelay = `${i * 0.05 + 0.5}s`;
-          subtitle.appendChild(span);
-        });
-      }
-
-      // =========================================================
-      // CARD CREATION
-      // =========================================================
-      function createCards() {
-        const grid = document.getElementById("game-grid");
-
-        games.forEach((game, index) => {
-          const card = document.createElement("a");
-          card.href = game.url;
-          card.className = "game-card";
-          card.setAttribute("data-index", index);
-          card.setAttribute("tabindex", "0");
-
-          card.innerHTML = `
-            <div class="card-content">
-              <div class="play-icon">
-                <svg viewBox="0 0 24 24">
-                  <path d="M8 5v14l11-7z"/>
-                </svg>
-              </div>
-              <h3 class="game-title">${game.name.toUpperCase()}</h3>
-            </div>
-            <div class="reflection"></div>
-          `;
-
-          // Mouse tracking for spotlight
-          card.addEventListener("mousemove", (e) => {
-            const rect = card.getBoundingClientRect();
-            const x = ((e.clientX - rect.left) / rect.width) * 100;
-            const y = ((e.clientY - rect.top) / rect.height) * 100;
-            card.style.setProperty("--mouse-x", `${x}%`);
-            card.style.setProperty("--mouse-y", `${y}%`);
-
-            // 3D tilt
-            const centerX = rect.width / 2;
-            const centerY = rect.height / 2;
-            const rotateX = (e.clientY - rect.top - centerY) / 15;
-            const rotateY = (centerX - (e.clientX - rect.left)) / 15;
-            card.style.transform = `
-              translateY(-12px) scale(1.02)
-              perspective(1000px)
-              rotateX(${rotateX}deg)
-              rotateY(${rotateY}deg)
-            `;
-          });
-
-          card.addEventListener("mouseleave", () => {
-            card.style.transform = "";
-          });
-
-          card.addEventListener("mouseenter", () => {
-            playSound("hover");
-          });
-
-          card.addEventListener("click", (e) => {
-            createBurstParticles(e.clientX, e.clientY);
-            playSound("select");
-          });
-
-          grid.appendChild(card);
-        });
-      }
-
-      // =========================================================
-      // REVEAL CARDS WITH SCROLL ANIMATION
-      // =========================================================
-      function revealCards() {
-        const cards = document.querySelectorAll(".game-card");
-
-        const observer = new IntersectionObserver(
-          (entries) => {
-            entries.forEach((entry, i) => {
-              if (entry.isIntersecting) {
-                setTimeout(() => {
-                  entry.target.classList.add("visible");
-                }, i * 80);
-                observer.unobserve(entry.target);
-              }
-            });
-          },
-          { threshold: 0.1, rootMargin: "50px" }
-        );
-
-        cards.forEach((card, index) => {
-          // Stagger initial reveal
-          setTimeout(() => {
-            observer.observe(card);
-          }, index * 50);
-        });
-      }
-
-      // =========================================================
-      // CUSTOM CURSOR
-      // =========================================================
-      const cursor = document.querySelector(".cursor");
-      const cursorDot = document.querySelector(".cursor-dot");
-
-      document.addEventListener("mousemove", (e) => {
-        mouseX = e.clientX;
-        mouseY = e.clientY;
+      // Create cards
+      const grid = document.getElementById("game-grid");
+      games.forEach((game, index) => {
+        const card = document.createElement("a");
+        card.href = game.url;
+        card.className = "game-card";
+        card.setAttribute("data-index", index);
+        card.innerHTML = `
+          <div class="play-icon">
+            <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
+          </div>
+          <h3 class="game-title">${game.name}</h3>
+        `;
+        grid.appendChild(card);
       });
 
-      function updateCursor() {
-        // Smooth follow for outer cursor
-        cursorX += (mouseX - cursorX) * 0.15;
-        cursorY += (mouseY - cursorY) * 0.15;
+      // Keyboard navigation
+      let selectedIndex = -1;
+      const cards = document.querySelectorAll(".game-card");
 
-        cursor.style.left = cursorX - 10 + "px";
-        cursor.style.top = cursorY - 10 + "px";
-
-        // Direct follow for dot
-        cursorDot.style.left = mouseX - 3 + "px";
-        cursorDot.style.top = mouseY - 3 + "px";
-
-        requestAnimationFrame(updateCursor);
-      }
-      updateCursor();
-
-      // Cursor hover effect on interactive elements
-      document.addEventListener("mouseover", (e) => {
-        if (e.target.closest(".game-card, .coffee-link, .sound-toggle")) {
-          cursor.classList.add("hover");
-        }
-      });
-
-      document.addEventListener("mouseout", (e) => {
-        if (e.target.closest(".game-card, .coffee-link, .sound-toggle")) {
-          cursor.classList.remove("hover");
-        }
-      });
-
-      // =========================================================
-      // AMBIENT GLOW FOLLOWING CURSOR
-      // =========================================================
-      const ambientGlow = document.querySelector(".ambient-glow");
-
-      function updateAmbientGlow() {
-        ambientGlow.style.transform = `translate(${mouseX - 300}px, ${
-          mouseY - 300
-        }px)`;
-        requestAnimationFrame(updateAmbientGlow);
-      }
-
-      // =========================================================
-      // PARTICLE SYSTEMS
-      // =========================================================
-      let particleCount = 0;
-      const maxParticles = 30;
-
-      // Mouse trail particles
-      let lastParticleTime = 0;
-      document.addEventListener("mousemove", (e) => {
-        const now = Date.now();
-        if (now - lastParticleTime < 50) return;
-        if (particleCount >= maxParticles) return;
-        lastParticleTime = now;
-
-        createTrailParticle(e.clientX, e.clientY);
-      });
-
-      function createTrailParticle(x, y) {
-        const particle = document.createElement("div");
-        particle.className = "particle";
-        particle.style.left = x + "px";
-        particle.style.top = y + "px";
-        particle.style.width = "4px";
-        particle.style.height = "4px";
-
-        const hue = Math.random() > 0.5 ? 180 : 300; // Cyan or magenta
-        particle.style.background = `hsl(${hue}, 100%, 60%)`;
-        particle.style.boxShadow = `0 0 10px hsl(${hue}, 100%, 60%)`;
-
-        const driftX = (Math.random() - 0.5) * 80;
-        particle.style.setProperty("--drift-x", driftX + "px");
-        particle.style.animation = "particle-float 1.5s ease-out forwards";
-
-        document.body.appendChild(particle);
-        particleCount++;
-
-        setTimeout(() => {
-          particle.remove();
-          particleCount--;
-        }, 1500);
-      }
-
-      // Click burst particles
-      function createBurstParticles(x, y) {
-        for (let i = 0; i < 12; i++) {
-          const particle = document.createElement("div");
-          particle.className = "particle";
-          particle.style.left = x + "px";
-          particle.style.top = y + "px";
-          particle.style.width = "6px";
-          particle.style.height = "6px";
-
-          const angle = (i / 12) * Math.PI * 2;
-          const distance = 80 + Math.random() * 40;
-          const burstX = Math.cos(angle) * distance;
-          const burstY = Math.sin(angle) * distance;
-
-          const hue = 180 + Math.random() * 120;
-          particle.style.background = `hsl(${hue}, 100%, 60%)`;
-          particle.style.boxShadow = `0 0 15px hsl(${hue}, 100%, 60%)`;
-
-          particle.style.setProperty("--burst-x", burstX + "px");
-          particle.style.setProperty("--burst-y", burstY + "px");
-          particle.style.animation = "particle-burst 0.6s ease-out forwards";
-
-          document.body.appendChild(particle);
-
-          setTimeout(() => particle.remove(), 600);
-        }
-      }
-
-      // =========================================================
-      // GRID FLOOR CANVAS
-      // =========================================================
-      const gridCanvas = document.getElementById("grid-canvas");
-      const gridCtx = gridCanvas.getContext("2d");
-      let gridWidth, gridHeight;
-
-      function resizeGridCanvas() {
-        gridWidth = gridCanvas.width = window.innerWidth;
-        gridHeight = gridCanvas.height = window.innerHeight * 0.7;
-      }
-
-      function drawGrid() {
-        gridCtx.clearRect(0, 0, gridWidth, gridHeight);
-
-        const gridSize = 60;
-        const horizonY = 0;
-        const vanishX = gridWidth / 2 + (mouseX - window.innerWidth / 2) * 0.1;
-
-        // Vertical lines (perspective)
-        const numVerticalLines = 30;
-        for (let i = -numVerticalLines; i <= numVerticalLines; i++) {
-          const baseX = vanishX + i * gridSize;
-
-          gridCtx.beginPath();
-          gridCtx.moveTo(vanishX, horizonY);
-          gridCtx.lineTo(baseX, gridHeight);
-
-          const distFromCenter = Math.abs(i) / numVerticalLines;
-          const alpha = 0.3 * (1 - distFromCenter * 0.7);
-
-          // Pulse effect near cursor
-          const cursorInfluence = Math.max(
-            0,
-            1 - Math.abs(baseX - mouseX) / 300
-          );
-          const finalAlpha = alpha + cursorInfluence * 0.3;
-
-          gridCtx.strokeStyle = `rgba(0, 255, 245, ${finalAlpha})`;
-          gridCtx.lineWidth = 1 + cursorInfluence;
-          gridCtx.stroke();
-        }
-
-        // Horizontal lines
-        const numHorizontalLines = 15;
-        for (let i = 0; i <= numHorizontalLines; i++) {
-          const progress = i / numHorizontalLines;
-          const y = horizonY + progress * progress * gridHeight;
-
-          gridCtx.beginPath();
-
-          // Calculate line width based on perspective
-          const perspectiveWidth = gridWidth * (0.1 + progress * 0.9);
-          const startX = (gridWidth - perspectiveWidth) / 2;
-          const endX = startX + perspectiveWidth;
-
-          gridCtx.moveTo(startX, y);
-          gridCtx.lineTo(endX, y);
-
-          const alpha = 0.2 + progress * 0.3;
-
-          // Pulse from mouse Y position
-          const cursorYInfluence = Math.max(
-            0,
-            1 - Math.abs(y - mouseY * 0.5) / 200
-          );
-
-          gridCtx.strokeStyle = `rgba(0, 255, 245, ${
-            alpha + cursorYInfluence * 0.3
-          })`;
-          gridCtx.lineWidth = 1 + cursorYInfluence * 2;
-          gridCtx.stroke();
-        }
-
-        // Glow at horizon
-        const gradient = gridCtx.createLinearGradient(
-          0,
-          0,
-          0,
-          gridHeight * 0.3
-        );
-        gradient.addColorStop(0, "rgba(0, 255, 245, 0.1)");
-        gradient.addColorStop(1, "transparent");
-        gridCtx.fillStyle = gradient;
-        gridCtx.fillRect(0, 0, gridWidth, gridHeight * 0.3);
-
-        requestAnimationFrame(drawGrid);
-      }
-
-      // =========================================================
-      // KEYBOARD NAVIGATION
-      // =========================================================
       document.addEventListener("keydown", (e) => {
-        const cards = document.querySelectorAll(".game-card");
         const numCards = cards.length;
         const cols =
           window.innerWidth >= 1024 ? 3 : window.innerWidth >= 640 ? 2 : 1;
+        const key = e.key;
 
-        // Remove previous focus
-        cards.forEach((c) => c.classList.remove("focused"));
+        let newIndex = selectedIndex;
 
-        const key = e.key.toLowerCase();
-
-        switch (e.key) {
-          case "ArrowRight":
-            e.preventDefault();
-            selectedCardIndex = Math.min(selectedCardIndex + 1, numCards - 1);
-            if (selectedCardIndex < 0) selectedCardIndex = 0;
-            playSound("hover");
-            break;
-          case "ArrowLeft":
-            e.preventDefault();
-            selectedCardIndex = Math.max(selectedCardIndex - 1, 0);
-            playSound("hover");
-            break;
-          case "ArrowDown":
-            e.preventDefault();
-            selectedCardIndex = Math.min(
-              selectedCardIndex + cols,
-              numCards - 1
-            );
-            if (selectedCardIndex < 0) selectedCardIndex = 0;
-            playSound("hover");
-            break;
-          case "ArrowUp":
-            e.preventDefault();
-            selectedCardIndex = Math.max(selectedCardIndex - cols, 0);
-            playSound("hover");
-            break;
-          case "Enter":
-            e.preventDefault();
-            if (selectedCardIndex >= 0) {
-              const card = cards[selectedCardIndex];
-              const rect = card.getBoundingClientRect();
-              createBurstParticles(
-                rect.left + rect.width / 2,
-                rect.top + rect.height / 2
-              );
-              playSound("select");
-              setTimeout(() => {
-                window.location.href = card.href;
-              }, 200);
-            }
-            break;
-          default:
-            // WASD support (case-insensitive)
-            if (key === "d") {
-              e.preventDefault();
-              selectedCardIndex = Math.min(selectedCardIndex + 1, numCards - 1);
-              if (selectedCardIndex < 0) selectedCardIndex = 0;
-              playSound("hover");
-            } else if (key === "a") {
-              e.preventDefault();
-              selectedCardIndex = Math.max(selectedCardIndex - 1, 0);
-              playSound("hover");
-            } else if (key === "s") {
-              e.preventDefault();
-              selectedCardIndex = Math.min(
-                selectedCardIndex + cols,
-                numCards - 1
-              );
-              if (selectedCardIndex < 0) selectedCardIndex = 0;
-              playSound("hover");
-            } else if (key === "w") {
-              e.preventDefault();
-              selectedCardIndex = Math.max(selectedCardIndex - cols, 0);
-              playSound("hover");
-            }
-            break;
+        if (key === "ArrowRight" || key === "d" || key === "D") {
+          e.preventDefault();
+          newIndex =
+            selectedIndex < 0 ? 0 : Math.min(selectedIndex + 1, numCards - 1);
+        } else if (key === "ArrowLeft" || key === "a" || key === "A") {
+          e.preventDefault();
+          newIndex = Math.max(selectedIndex - 1, 0);
+        } else if (key === "ArrowDown" || key === "s" || key === "S") {
+          e.preventDefault();
+          newIndex =
+            selectedIndex < 0
+              ? 0
+              : Math.min(selectedIndex + cols, numCards - 1);
+        } else if (key === "ArrowUp" || key === "w" || key === "W") {
+          e.preventDefault();
+          newIndex = Math.max(selectedIndex - cols, 0);
+        } else if (key === "Enter" && selectedIndex >= 0) {
+          e.preventDefault();
+          window.location.href = cards[selectedIndex].href;
+          return;
         }
 
-        if (selectedCardIndex >= 0) {
-          cards[selectedCardIndex].classList.add("focused");
-          cards[selectedCardIndex].scrollIntoView({
+        if (newIndex !== selectedIndex) {
+          selectedIndex = newIndex;
+          cards[selectedIndex].focus();
+          cards[selectedIndex].scrollIntoView({
             behavior: "smooth",
             block: "center",
           });
         }
       });
-
-      // =========================================================
-      // SOUND TOGGLE
-      // =========================================================
-      const soundToggle = document.querySelector(".sound-toggle");
-      const soundOnIcon = soundToggle.querySelector(".sound-on");
-      const soundOffIcon = soundToggle.querySelector(".sound-off");
-
-      soundToggle.addEventListener("click", () => {
-        soundEnabled = !soundEnabled;
-        soundToggle.classList.toggle("muted", !soundEnabled);
-        soundOnIcon.style.display = soundEnabled ? "block" : "none";
-        soundOffIcon.style.display = soundEnabled ? "none" : "block";
-        if (soundEnabled) playSound("hover");
-      });
-
-      // =========================================================
-      // INITIALIZATION
-      // =========================================================
-      window.addEventListener("DOMContentLoaded", () => {
-        createCards();
-        resizeGridCanvas();
-        drawGrid();
-        updateAmbientGlow();
-        revealCards();
-        animateSubtitle();
-      });
-
-      window.addEventListener("resize", resizeGridCanvas);
-
-      // Disable default cursor on touch devices
-      if ("ontouchstart" in window) {
-        document.body.style.cursor = "auto";
-        cursor.style.display = "none";
-        cursorDot.style.display = "none";
-      }
     </script>
   </body>
 </html>
