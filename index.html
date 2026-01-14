@@ -4,108 +4,83 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Jojko's Game Portal</title>
-    <script src="https://cdn.tailwindcss.com"></script>
     <link
-      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;900&family=Orbitron:wght@500;700;900&display=swap"
+      href="https://fonts.googleapis.com/css2?family=Orbitron:wght@500;700;900&family=VT323&family=Inter:wght@400;500&display=swap"
       rel="stylesheet"
     />
     <style>
+      /* ============================================
+         DESIGN TOKENS
+      ============================================ */
       :root {
-        --bg-color: #030712;
-        --card-bg: rgba(15, 23, 42, 0.6);
-        --card-border: rgba(100, 116, 139, 0.3);
-        --spotlight-color: rgba(14, 165, 233, 0.6);
-        --accent-cyan: #06b6d4;
-        --accent-purple: #a855f7;
-        --accent-pink: #ec4899;
+        --neon-cyan: #00fff5;
+        --neon-magenta: #ff00ff;
+        --neon-yellow: #ffff00;
+        --neon-blue: #0ea5e9;
+        --neon-purple: #a855f7;
+        --neon-pink: #ec4899;
+        --deep-void: #0a0a0f;
+        --grid-blue: #1a1a3e;
+        --glow-white: rgba(255, 255, 255, 0.9);
+        --card-bg: rgba(10, 10, 20, 0.8);
+        --card-border: rgba(0, 255, 245, 0.2);
       }
 
       * {
         box-sizing: border-box;
+        margin: 0;
+        padding: 0;
+      }
+
+      html {
+        scroll-behavior: smooth;
       }
 
       body {
-        background-color: var(--bg-color);
-        color: #ffffff;
+        background: var(--deep-void);
+        color: #fff;
         font-family: "Inter", sans-serif;
         overflow-x: hidden;
-        margin: 0;
-        cursor: default;
+        min-height: 100vh;
+        cursor: none;
       }
 
-      body {
-        cursor: default;
-      }
-
-      .noise-overlay {
+      /* ============================================
+         CUSTOM CURSOR
+      ============================================ */
+      .cursor {
         position: fixed;
-        top: 0;
-        left: 0;
-        width: 100%;
-        height: 100%;
-        pointer-events: none;
-        z-index: 50;
-        opacity: 0.03;
-        background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E");
-      }
-
-      #starfield {
-        position: fixed;
-        top: 0;
-        left: 0;
-        width: 100%;
-        height: 100%;
-        z-index: -1;
-      }
-
-      /* Floating Particles */
-      .particle {
-        position: fixed;
-        width: 3px;
-        height: 3px;
-        background: linear-gradient(
-          45deg,
-          var(--accent-cyan),
-          var(--accent-purple)
-        );
+        width: 20px;
+        height: 20px;
+        border: 2px solid var(--neon-cyan);
         border-radius: 50%;
         pointer-events: none;
-        z-index: 1;
-        opacity: 0;
-        box-shadow: 0 0 10px currentColor;
+        z-index: 10000;
+        transition: transform 0.1s ease, width 0.2s, height 0.2s,
+          border-color 0.2s;
+        mix-blend-mode: difference;
       }
 
-      @keyframes float-particle {
-        0% {
-          opacity: 0;
-          transform: translateY(0) translateX(0) scale(0);
-        }
-        10% {
-          opacity: 1;
-        }
-        90% {
-          opacity: 0.8;
-        }
-        100% {
-          opacity: 0;
-          transform: translateY(-150px) translateX(var(--drift-x)) scale(1.5);
-        }
+      .cursor-dot {
+        position: fixed;
+        width: 6px;
+        height: 6px;
+        background: var(--neon-cyan);
+        border-radius: 50%;
+        pointer-events: none;
+        z-index: 10001;
       }
 
-      .orbitron {
-        font-family: "Orbitron", sans-serif;
+      .cursor.hover {
+        width: 50px;
+        height: 50px;
+        border-color: var(--neon-magenta);
+        background: rgba(255, 0, 255, 0.1);
       }
 
-      .text-glow {
-        text-shadow: 0 0 30px rgba(14, 165, 233, 0.5),
-          0 0 60px rgba(14, 165, 233, 0.3), 0 0 90px rgba(168, 85, 247, 0.2);
-        background: linear-gradient(135deg, #ffffff, #06b6d4, #a855f7);
-        background-size: 200% 200%;
-        animation: gradient-shift 3s ease infinite;
-        -webkit-background-clip: text;
-        -webkit-text-fill-color: transparent;
-      }
-
+      /* ============================================
+         SCANLINES OVERLAY
+      ============================================ */
       @keyframes gradient-shift {
         0%,
         100% {
@@ -116,15 +91,212 @@
         }
       }
 
-      /* Grid with breathing effect */
+      .scanlines {
+        position: fixed;
+        inset: 0;
+        pointer-events: none;
+        z-index: 9998;
+        background: repeating-linear-gradient(
+          0deg,
+          rgba(0, 0, 0, 0.1) 0px,
+          rgba(0, 0, 0, 0.1) 1px,
+          transparent 1px,
+          transparent 3px
+        );
+        opacity: 0.3;
+      }
+
+      /* ============================================
+         GRID FLOOR BACKGROUND
+      ============================================ */
+      .grid-floor {
+        position: fixed;
+        inset: 0;
+        z-index: -1;
+        overflow: hidden;
+        perspective: 500px;
+      }
+
+      .grid-floor canvas {
+        position: absolute;
+        bottom: 0;
+        left: 0;
+        width: 100%;
+        height: 70%;
+        transform: rotateX(60deg);
+        transform-origin: bottom center;
+      }
+
+      .ambient-glow {
+        position: fixed;
+        width: 600px;
+        height: 600px;
+        border-radius: 50%;
+        background: radial-gradient(
+          circle,
+          rgba(0, 255, 245, 0.15) 0%,
+          transparent 70%
+        );
+        pointer-events: none;
+        z-index: 0;
+        transition: transform 0.3s ease-out;
+        filter: blur(40px);
+      }
+
+      /* ============================================
+         NOISE OVERLAY
+      ============================================ */
+      .noise-overlay {
+        position: fixed;
+        inset: 0;
+        pointer-events: none;
+        z-index: 100;
+        opacity: 0.03;
+        background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E");
+      }
+
+      /* ============================================
+         MAIN CONTENT
+      ============================================ */
+      .main-content {
+        position: relative;
+        z-index: 10;
+        min-height: 100vh;
+        padding: 2rem;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        opacity: 0;
+        transition: opacity 0.8s ease;
+      }
+
+      .main-content.visible {
+        opacity: 1;
+      }
+
+      /* ============================================
+         HEADER
+      ============================================ */
+      header {
+        text-align: center;
+        padding: 4rem 0 3rem;
+        position: relative;
+      }
+
+      .title {
+        font-family: "Orbitron", sans-serif;
+        font-size: clamp(2.5rem, 8vw, 5rem);
+        font-weight: 900;
+        background: linear-gradient(
+          135deg,
+          #fff,
+          var(--neon-cyan),
+          var(--neon-magenta)
+        );
+        background-size: 200% 200%;
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        animation: gradient-shift 4s ease infinite;
+        text-shadow: 0 0 60px rgba(0, 255, 245, 0.3);
+        position: relative;
+        display: inline-block;
+      }
+
+      .title::before,
+      .title::after {
+        content: attr(data-text);
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: inherit;
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+      }
+
+      .title::before {
+        animation: glitch-1 3s infinite linear alternate-reverse;
+        clip-path: polygon(0 0, 100% 0, 100% 35%, 0 35%);
+      }
+
+      .title::after {
+        animation: glitch-2 3s infinite linear alternate-reverse;
+        clip-path: polygon(0 65%, 100% 65%, 100% 100%, 0 100%);
+      }
+
+      @keyframes glitch-1 {
+        0%,
+        90%,
+        100% {
+          transform: translate(0);
+        }
+        92% {
+          transform: translate(-3px, 1px);
+        }
+        94% {
+          transform: translate(3px, -1px);
+        }
+        96% {
+          transform: translate(-2px, 0);
+        }
+        98% {
+          transform: translate(2px, 0);
+        }
+      }
+
+      @keyframes glitch-2 {
+        0%,
+        90%,
+        100% {
+          transform: translate(0);
+        }
+        91% {
+          transform: translate(3px, 1px);
+        }
+        93% {
+          transform: translate(-3px, -1px);
+        }
+        95% {
+          transform: translate(2px, 0);
+        }
+        97% {
+          transform: translate(-2px, 0);
+        }
+      }
+
+      .subtitle {
+        font-family: "VT323", monospace;
+        font-size: 1.5rem;
+        color: rgba(255, 255, 255, 0.6);
+        margin-top: 1rem;
+        letter-spacing: 0.2em;
+      }
+
+      .subtitle span {
+        display: inline-block;
+        opacity: 0;
+        transform: translateY(10px);
+        animation: typeIn 0.3s ease forwards;
+      }
+
+      @keyframes typeIn {
+        to {
+          opacity: 1;
+          transform: translateY(0);
+        }
+      }
+
+      /* ============================================
+         GAME GRID
+      ============================================ */
       .game-grid {
         display: grid;
         grid-template-columns: repeat(1, 1fr);
         gap: 2rem;
+        max-width: 1200px;
         width: 100%;
-        max-width: 1100px;
-        position: relative;
-        z-index: 10;
+        padding: 2rem 0 6rem;
       }
 
       @media (min-width: 640px) {
@@ -132,119 +304,146 @@
           grid-template-columns: repeat(2, 1fr);
         }
       }
+
       @media (min-width: 1024px) {
         .game-grid {
           grid-template-columns: repeat(3, 1fr);
         }
       }
 
+      /* ============================================
+         GAME CARDS - HOLOGRAPHIC STYLE
+      ============================================ */
       .game-card {
         position: relative;
-        height: 200px;
+        height: 220px;
         background: var(--card-bg);
-        backdrop-filter: blur(10px);
         border: 1px solid var(--card-border);
-        border-radius: 20px;
-        cursor: pointer;
+        border-radius: 16px;
+        cursor: none;
         display: flex;
         flex-direction: column;
         align-items: center;
         justify-content: center;
         text-decoration: none;
         transition: all 0.4s cubic-bezier(0.23, 1, 0.32, 1);
-        overflow: hidden;
         transform-style: preserve-3d;
+        overflow: hidden;
+        backdrop-filter: blur(10px);
+        opacity: 0;
+        transform: translateY(50px) rotateX(-10deg);
       }
 
-      .game-card:hover {
-        transform: translateY(-8px) scale(1.02);
-        border-color: rgba(14, 165, 233, 0.6);
-        box-shadow: 0 20px 60px rgba(14, 165, 233, 0.3),
-          0 0 80px rgba(168, 85, 247, 0.2),
-          inset 0 0 100px rgba(14, 165, 233, 0.05);
+      .game-card.visible {
+        opacity: 1;
+        transform: translateY(0) rotateX(0);
       }
 
-      /* Animated gradient border */
+      /* Holographic shimmer */
       .game-card::before {
         content: "";
         position: absolute;
         inset: -2px;
         background: linear-gradient(
           45deg,
-          transparent,
-          var(--accent-cyan),
-          var(--accent-purple),
-          var(--accent-pink),
-          transparent
+          transparent 20%,
+          rgba(0, 255, 245, 0.3) 30%,
+          rgba(255, 0, 255, 0.3) 50%,
+          rgba(255, 255, 0, 0.2) 70%,
+          transparent 80%
         );
-        background-size: 400% 400%;
-        border-radius: 20px;
+        background-size: 200% 200%;
+        border-radius: 18px;
         opacity: 0;
-        transition: opacity 0.5s;
         z-index: -1;
-        animation: border-flow 8s linear infinite;
+        transition: opacity 0.4s ease;
+        animation: shimmer 3s linear infinite;
       }
 
-      @keyframes border-flow {
-        0%,
-        100% {
-          background-position: 0% 50%;
+      @keyframes shimmer {
+        0% {
+          background-position: 200% 0;
         }
-        50% {
-          background-position: 100% 50%;
+        100% {
+          background-position: -200% 0;
         }
       }
 
       .game-card:hover::before {
-        opacity: 0.6;
+        opacity: 1;
       }
 
       /* Spotlight effect */
       .game-card::after {
         content: "";
         position: absolute;
-        height: 100%;
-        width: 100%;
-        top: 0;
-        left: 0;
+        inset: 0;
         background: radial-gradient(
-          500px circle at var(--mouse-x) var(--mouse-y),
-          rgba(14, 165, 233, 0.15),
+          400px circle at var(--mouse-x, 50%) var(--mouse-y, 50%),
+          rgba(0, 255, 245, 0.15),
           transparent 50%
         );
         opacity: 0;
         transition: opacity 0.3s;
-        z-index: 1;
-        pointer-events: none;
+        border-radius: 16px;
       }
 
       .game-card:hover::after {
         opacity: 1;
       }
 
+      .game-card:hover {
+        transform: translateY(-12px) scale(1.02);
+        border-color: var(--neon-cyan);
+        box-shadow: 0 20px 60px rgba(0, 255, 245, 0.2),
+          0 0 100px rgba(0, 255, 245, 0.1),
+          inset 0 0 60px rgba(0, 255, 245, 0.05);
+      }
+
+      /* Reflection */
+      .game-card .reflection {
+        position: absolute;
+        bottom: -100%;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: inherit;
+        transform: scaleY(-1);
+        opacity: 0.1;
+        filter: blur(4px);
+        mask-image: linear-gradient(to top, rgba(0, 0, 0, 0.3), transparent);
+        -webkit-mask-image: linear-gradient(
+          to top,
+          rgba(0, 0, 0, 0.3),
+          transparent
+        );
+        pointer-events: none;
+      }
+
+      /* Card content */
       .card-content {
         position: relative;
-        z-index: 3;
+        z-index: 2;
         text-align: center;
-        pointer-events: none;
-        transition: all 0.4s cubic-bezier(0.23, 1, 0.32, 1);
+        transition: transform 0.4s cubic-bezier(0.23, 1, 0.32, 1);
       }
 
       .game-card:hover .card-content {
-        transform: translateZ(20px);
+        transform: translateZ(30px);
       }
 
+      /* Play icon */
       .play-icon {
-        width: 60px;
-        height: 60px;
+        width: 70px;
+        height: 70px;
         margin: 0 auto 1rem;
         border-radius: 50%;
         background: linear-gradient(
           135deg,
-          rgba(14, 165, 233, 0.1),
-          rgba(168, 85, 247, 0.1)
+          rgba(0, 255, 245, 0.1),
+          rgba(255, 0, 255, 0.1)
         );
-        border: 2px solid rgba(100, 116, 139, 0.3);
+        border: 2px solid rgba(0, 255, 245, 0.3);
         display: flex;
         align-items: center;
         justify-content: center;
@@ -257,175 +456,295 @@
         content: "";
         position: absolute;
         inset: 0;
-        background: linear-gradient(
-          135deg,
-          var(--accent-cyan),
-          var(--accent-purple)
+        background: conic-gradient(
+          from 0deg,
+          var(--neon-cyan),
+          var(--neon-magenta),
+          var(--neon-yellow),
+          var(--neon-cyan)
         );
         opacity: 0;
         transition: opacity 0.4s;
+        animation: rotate 3s linear infinite;
+      }
+
+      @keyframes rotate {
+        to {
+          transform: rotate(360deg);
+        }
+      }
+
+      .play-icon::after {
+        content: "";
+        position: absolute;
+        inset: 3px;
+        background: var(--deep-void);
+        border-radius: 50%;
       }
 
       .game-card:hover .play-icon {
-        transform: scale(1.1) rotate(10deg);
-        border-color: var(--accent-cyan);
-        box-shadow: 0 0 30px rgba(14, 165, 233, 0.5);
+        transform: scale(1.15);
+        border-color: var(--neon-cyan);
+        box-shadow: 0 0 40px rgba(0, 255, 245, 0.5);
       }
 
       .game-card:hover .play-icon::before {
-        opacity: 0.2;
+        opacity: 1;
       }
 
       .play-icon svg {
-        width: 24px;
-        height: 24px;
-        fill: #94a3b8;
-        transition: all 0.4s;
+        width: 28px;
+        height: 28px;
+        fill: var(--neon-cyan);
         position: relative;
         z-index: 1;
+        transition: all 0.4s;
+        opacity: 0.7;
       }
 
       .game-card:hover .play-icon svg {
-        fill: var(--accent-cyan);
-        transform: translateX(2px);
+        fill: #fff;
+        opacity: 1;
+        transform: translateX(2px) scale(1.1);
+        filter: drop-shadow(0 0 10px var(--neon-cyan));
       }
 
+      /* Game title */
       .game-title {
         font-family: "Orbitron", sans-serif;
-        font-size: 1.25rem;
+        font-size: 1.1rem;
         font-weight: 700;
-        color: #cbd5e1;
+        color: rgba(255, 255, 255, 0.8);
         letter-spacing: 0.1em;
-        transition: all 0.4s cubic-bezier(0.23, 1, 0.32, 1);
-        text-shadow: 0 2px 10px rgba(0, 0, 0, 0.5);
+        transition: all 0.4s;
+        text-transform: uppercase;
       }
 
       .game-card:hover .game-title {
-        color: #ffffff;
-        text-shadow: 0 0 20px rgba(14, 165, 233, 0.8),
-          0 0 40px rgba(168, 85, 247, 0.4);
+        color: #fff;
+        text-shadow: 0 0 20px var(--neon-cyan), 0 0 40px var(--neon-magenta);
         letter-spacing: 0.15em;
       }
 
-      /* Entrance animations */
-      @keyframes slideUpFade {
-        from {
-          opacity: 0;
-          transform: translateY(60px) scale(0.95);
-        }
-        to {
-          opacity: 1;
-          transform: translateY(0) scale(1);
-        }
+      /* Keyboard focus indicator */
+      .game-card.focused {
+        outline: none;
+        border-color: var(--neon-yellow);
+        box-shadow: 0 0 0 3px rgba(255, 255, 0, 0.3),
+          0 20px 60px rgba(255, 255, 0, 0.2);
       }
 
-      @keyframes titleGlitch {
-        0%,
-        100% {
-          transform: translate(0);
-          text-shadow: 0 0 30px rgba(14, 165, 233, 0.5),
-            0 0 60px rgba(14, 165, 233, 0.3);
-        }
-        20% {
-          transform: translate(-2px, 2px);
-          text-shadow: 2px 0 var(--accent-cyan), -2px 0 var(--accent-pink);
-        }
-        40% {
-          transform: translate(-2px, -2px);
-        }
-        60% {
-          transform: translate(2px, 2px);
-        }
-        80% {
-          transform: translate(2px, -2px);
-        }
+      .game-card.focused .play-icon {
+        border-color: var(--neon-yellow);
       }
 
-      .animate-enter {
+      /* ============================================
+         PARTICLES
+      ============================================ */
+      .particle {
+        position: fixed;
+        pointer-events: none;
+        z-index: 50;
+        border-radius: 50%;
         opacity: 0;
-        animation: slideUpFade 1s cubic-bezier(0.16, 1, 0.3, 1) forwards;
       }
 
-      .title-container {
-        position: relative;
-        display: inline-block;
+      @keyframes particle-float {
+        0% {
+          opacity: 0;
+          transform: translateY(0) scale(0);
+        }
+        10% {
+          opacity: 1;
+        }
+        100% {
+          opacity: 0;
+          transform: translateY(-150px) translateX(var(--drift-x, 0)) scale(0.5);
+        }
       }
 
-      .title-container:hover .text-glow {
-        animation: titleGlitch 0.5s ease;
+      /* Click burst particles */
+      @keyframes particle-burst {
+        0% {
+          opacity: 1;
+          transform: translate(0, 0) scale(1);
+        }
+        100% {
+          opacity: 0;
+          transform: translate(var(--burst-x), var(--burst-y)) scale(0);
+        }
       }
 
-      /* Coffee button upgrade */
+      /* ============================================
+         COFFEE BUTTON
+      ============================================ */
       .coffee-link {
         position: fixed;
         bottom: 30px;
         right: 30px;
         padding: 14px 24px;
         background: linear-gradient(135deg, #fbbf24, #f59e0b);
-        color: #1a1a2e;
+        color: #000;
         border-radius: 50px;
         text-decoration: none;
         font-weight: 700;
         font-size: 0.95rem;
         transition: all 0.4s cubic-bezier(0.23, 1, 0.32, 1);
         z-index: 1000;
-        box-shadow: 0 10px 30px rgba(251, 191, 36, 0.3),
-          0 0 0 0 rgba(251, 191, 36, 0.4);
+        box-shadow: 0 10px 30px rgba(251, 191, 36, 0.3);
         display: flex;
         align-items: center;
         gap: 8px;
         border: 2px solid rgba(255, 255, 255, 0.2);
-        backdrop-filter: blur(10px);
+        cursor: none;
       }
 
       .coffee-link:hover {
         background: linear-gradient(135deg, #fcd34d, #fbbf24);
         transform: translateY(-5px) scale(1.05);
-        box-shadow: 0 20px 40px rgba(251, 191, 36, 0.5),
-          0 0 0 10px rgba(251, 191, 36, 0.1);
-        border-color: rgba(255, 255, 255, 0.4);
+        box-shadow: 0 20px 40px rgba(251, 191, 36, 0.4);
       }
 
-      .coffee-link:active {
-        transform: translateY(-2px) scale(1.02);
+      /* ============================================
+         SOUND TOGGLE
+      ============================================ */
+      .sound-toggle {
+        position: fixed;
+        top: 20px;
+        right: 20px;
+        width: 50px;
+        height: 50px;
+        background: rgba(10, 10, 20, 0.8);
+        border: 1px solid rgba(0, 255, 245, 0.3);
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        cursor: none;
+        z-index: 1000;
+        transition: all 0.3s;
+        backdrop-filter: blur(10px);
       }
 
-      /* Scan line effect - REMOVED */
+      .sound-toggle:hover {
+        border-color: var(--neon-cyan);
+        box-shadow: 0 0 20px rgba(0, 255, 245, 0.3);
+      }
+
+      .sound-toggle svg {
+        width: 24px;
+        height: 24px;
+        fill: var(--neon-cyan);
+        transition: all 0.3s;
+      }
+
+      .sound-toggle.muted svg {
+        fill: rgba(255, 255, 255, 0.3);
+      }
+
+      /* ============================================
+         KEYBOARD NAV HINT
+      ============================================ */
+      .nav-hint {
+        position: fixed;
+        bottom: 30px;
+        left: 30px;
+        font-family: "VT323", monospace;
+        font-size: 1rem;
+        color: rgba(255, 255, 255, 0.4);
+        display: flex;
+        gap: 1rem;
+        z-index: 1000;
+      }
+
+      .nav-hint kbd {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        min-width: 28px;
+        height: 28px;
+        padding: 0 6px;
+        background: rgba(255, 255, 255, 0.1);
+        border: 1px solid rgba(255, 255, 255, 0.2);
+        border-radius: 4px;
+        font-family: inherit;
+        font-size: 0.9rem;
+      }
+
+      @media (max-width: 768px) {
+        .nav-hint {
+          display: none;
+        }
+      }
+
+      /* ============================================
+         REDUCED MOTION
+      ============================================ */
+      @media (prefers-reduced-motion: reduce) {
+        *,
+        *::before,
+        *::after {
+          animation-duration: 0.01ms !important;
+          animation-iteration-count: 1 !important;
+          transition-duration: 0.01ms !important;
+        }
+      }
     </style>
   </head>
-  <body class="flex flex-col items-center min-h-screen p-4 sm:p-8">
-    <!-- Visual Layers -->
-    <div class="noise-overlay"></div>
-    <canvas id="starfield"></canvas>
+  <body>
+    <!-- Custom Cursor -->
+    <div class="cursor"></div>
+    <div class="cursor-dot"></div>
 
-    <!-- Main Content -->
-    <main
-      class="w-full max-w-7xl flex flex-col items-center z-10 pt-12 sm:pt-20"
+    <!-- Scanlines overlay -->
+    <div class="scanlines"></div>
+
+    <!-- Noise overlay -->
+    <div class="noise-overlay"></div>
+
+    <!-- Grid floor background -->
+    <div class="grid-floor">
+      <canvas id="grid-canvas"></canvas>
+    </div>
+
+    <!-- Ambient glow following cursor -->
+    <div class="ambient-glow"></div>
+
+    <!-- Sound toggle -->
+    <button
+      class="sound-toggle"
+      title="Toggle Sound"
+      aria-label="Toggle sound effects"
     >
-      <!-- Header -->
-      <header class="text-center mb-20 animate-enter">
-        <div class="title-container">
-          <h1
-            class="orbitron text-5xl sm:text-7xl font-black mb-6 tracking-tight text-glow"
-          >
-            JOJKO'S GAMES
-          </h1>
-        </div>
-        <p
-          class="text-slate-400 font-light text-lg tracking-wide max-w-lg mx-auto opacity-0 animate-enter"
-          style="animation-delay: 0.2s"
-        >
-          Choose your destination. Enter the arena.
-        </p>
+      <svg viewBox="0 0 24 24" class="sound-on">
+        <path
+          d="M3 9v6h4l5 5V4L7 9H3zm13.5 3c0-1.77-1.02-3.29-2.5-4.03v8.05c1.48-.73 2.5-2.25 2.5-4.02zM14 3.23v2.06c2.89.86 5 3.54 5 6.71s-2.11 5.85-5 6.71v2.06c4.01-.91 7-4.49 7-8.77s-2.99-7.86-7-8.77z"
+        />
+      </svg>
+      <svg viewBox="0 0 24 24" class="sound-off" style="display: none">
+        <path
+          d="M16.5 12c0-1.77-1.02-3.29-2.5-4.03v2.21l2.45 2.45c.03-.2.05-.41.05-.63zm2.5 0c0 .94-.2 1.82-.54 2.64l1.51 1.51C20.63 14.91 21 13.5 21 12c0-4.28-2.99-7.86-7-8.77v2.06c2.89.86 5 3.54 5 6.71zM4.27 3L3 4.27 7.73 9H3v6h4l5 5v-6.73l4.25 4.25c-.67.52-1.42.93-2.25 1.18v2.06c1.38-.31 2.63-.95 3.69-1.81L19.73 21 21 19.73l-9-9L4.27 3zM12 4L9.91 6.09 12 8.18V4z"
+        />
+      </svg>
+    </button>
+
+    <!-- Main content -->
+    <main class="main-content visible">
+      <header>
+        <h1 class="title" data-text="JOJKO'S GAMES">JOJKO'S GAMES</h1>
+        <p class="subtitle"></p>
       </header>
 
-      <!-- Dynamic Game Grid -->
-      <div id="game-grid-container" class="game-grid mb-24">
-        <!-- Javascript will inject cards here -->
-      </div>
+      <div class="game-grid" id="game-grid"></div>
     </main>
 
-    <!-- Enhanced Coffee Button -->
+    <!-- Keyboard navigation hint -->
+    <div class="nav-hint">
+      <span><kbd>↑</kbd><kbd>↓</kbd><kbd>←</kbd><kbd>→</kbd> Navigate</span>
+      <span><kbd>Enter</kbd> Select</span>
+    </div>
+
+    <!-- Coffee button -->
     <a
       href="https://buymeacoffee.com/jojkos"
       target="_blank"
@@ -437,16 +756,22 @@
     </a>
 
     <script>
-      // ---------------------------------------------------------
+      // =========================================================
       // CONFIGURATION
-      // ---------------------------------------------------------
+      // =========================================================
       const games = [
         { name: "Pug Fiesta", url: "pugFiesta/index.html" },
         { name: "Zoopaloola", url: "https://zoopaloola.vercel.app/" },
-        { name: "Factorio Lamp Editor", url: "https://factorio-lamp-editor.vercel.app/" },
+        {
+          name: "Factorio Lamp Editor",
+          url: "https://factorio-lamp-editor.vercel.app/",
+        },
         { name: "Combat Arena", url: "https://combatarena.onrender.com/" },
         { name: "Bluff Helper", url: "bluff/index.html" },
-        { name: "Calendar Puzzle", url: "https://calendar-puzzle2.vercel.app/" },
+        {
+          name: "Calendar Puzzle",
+          url: "https://calendar-puzzle2.vercel.app/",
+        },
         { name: "Pokemon Shooter", url: "pokemonShooter/index.html" },
         { name: "Tralala Clicker", url: "tralalaGame/index.html" },
         { name: "LoL Fusion loldle", url: "https://lol-fusion.vercel.app/" },
@@ -455,98 +780,139 @@
         { name: "Guitar Tuner", url: "guitarTuner/index.html" },
       ];
 
-      // ---------------------------------------------------------
-      // PARTICLE SYSTEM ON MOUSE MOVE
-      // ---------------------------------------------------------
-      let lastParticleTime = 0;
-      const maxParticles = 50; // Limit particles
-      let particleCount = 0;
+      const SUBTITLE_TEXT = "SELECT YOUR DESTINATION";
 
-      document.addEventListener("mousemove", (e) => {
-        const now = Date.now();
-        if (now - lastParticleTime < 30) return; // Throttle
-        lastParticleTime = now;
+      // =========================================================
+      // STATE
+      // =========================================================
+      let bootComplete = false;
+      let soundEnabled = true;
+      let selectedCardIndex = -1;
+      let mouseX = 0,
+        mouseY = 0;
+      let cursorX = 0,
+        cursorY = 0;
 
-        // Remove old particles if at limit
-        if (particleCount >= maxParticles) {
-          const oldParticle = document.querySelector(".particle");
-          if (oldParticle) {
-            oldParticle.remove();
-            particleCount--;
-          }
+      // Audio context for sounds
+      let audioCtx = null;
+      function getAudioContext() {
+        if (!audioCtx) {
+          audioCtx = new (window.AudioContext || window.webkitAudioContext)();
         }
+        return audioCtx;
+      }
 
-        const particle = document.createElement("div");
-        particle.className = "particle";
-        particle.style.left = e.clientX + "px";
-        particle.style.top = e.clientY + "px";
+      // =========================================================
+      // SOUND EFFECTS
+      // =========================================================
+      function playSound(type) {
+        if (!soundEnabled) return;
+        try {
+          const ctx = getAudioContext();
+          const oscillator = ctx.createOscillator();
+          const gainNode = ctx.createGain();
+          oscillator.connect(gainNode);
+          gainNode.connect(ctx.destination);
 
-        // Random drift direction
-        const driftX = (Math.random() - 0.5) * 100;
-        particle.style.setProperty("--drift-x", driftX + "px");
+          switch (type) {
+            case "hover":
+              oscillator.frequency.value = 800;
+              oscillator.type = "sine";
+              gainNode.gain.value = 0.05;
+              oscillator.start();
+              oscillator.stop(ctx.currentTime + 0.05);
+              break;
+            case "select":
+              oscillator.frequency.value = 1200;
+              oscillator.type = "square";
+              gainNode.gain.value = 0.08;
+              oscillator.start();
+              oscillator.frequency.exponentialRampToValueAtTime(
+                600,
+                ctx.currentTime + 0.1
+              );
+              oscillator.stop(ctx.currentTime + 0.15);
+              break;
+            case "boot":
+              oscillator.frequency.value = 100;
+              oscillator.type = "sawtooth";
+              gainNode.gain.value = 0.1;
+              oscillator.start();
+              oscillator.frequency.exponentialRampToValueAtTime(
+                1000,
+                ctx.currentTime + 0.3
+              );
+              gainNode.gain.exponentialRampToValueAtTime(
+                0.01,
+                ctx.currentTime + 0.5
+              );
+              oscillator.stop(ctx.currentTime + 0.5);
+              break;
+          }
+        } catch (e) {
+          // Audio not available
+        }
+      }
 
-        // Random color variation
-        const hue = Math.random() > 0.5 ? 190 : 280; // Cyan or Purple
-        particle.style.background = `hsl(${hue}, 70%, 60%)`;
+      // =========================================================
+      // CRT BOOT SEQUENCE
+      // =========================================================
+      const scanlines = document.querySelector(".scanlines");
+      const mainContent = document.querySelector(".main-content");
 
-        const duration = 2 + Math.random() * 2; // 2-4 seconds
-        particle.style.animation = `float-particle ${duration}s ease-out forwards`;
+      // =========================================================
+      // SUBTITLE ANIMATION
+      // =========================================================
+      function animateSubtitle() {
+        const subtitle = document.querySelector(".subtitle");
+        SUBTITLE_TEXT.split("").forEach((char, i) => {
+          const span = document.createElement("span");
+          span.textContent = char === " " ? "\u00A0" : char;
+          span.style.animationDelay = `${i * 0.05 + 0.5}s`;
+          subtitle.appendChild(span);
+        });
+      }
 
-        document.body.appendChild(particle);
-        particleCount++;
-
-        setTimeout(() => {
-          particle.remove();
-          particleCount--;
-        }, duration * 1000);
-      });
-
-      // ---------------------------------------------------------
-      // DOM GENERATION
-      // ---------------------------------------------------------
-      const gridContainer = document.getElementById("game-grid-container");
-
+      // =========================================================
+      // CARD CREATION
+      // =========================================================
       function createCards() {
-        let delay = 0.3;
+        const grid = document.getElementById("game-grid");
 
-        games.forEach((game) => {
+        games.forEach((game, index) => {
           const card = document.createElement("a");
           card.href = game.url;
-          card.className = "game-card animate-enter";
-          card.style.animationDelay = `${delay}s`;
-          delay += 0.08;
+          card.className = "game-card";
+          card.setAttribute("data-index", index);
+          card.setAttribute("tabindex", "0");
 
           card.innerHTML = `
             <div class="card-content">
               <div class="play-icon">
-                <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                <svg viewBox="0 0 24 24">
                   <path d="M8 5v14l11-7z"/>
                 </svg>
               </div>
-              <h3 class="game-title">
-                ${game.name.toUpperCase()}
-              </h3>
+              <h3 class="game-title">${game.name.toUpperCase()}</h3>
             </div>
+            <div class="reflection"></div>
           `;
 
-          // Spotlight + 3D tilt effect
+          // Mouse tracking for spotlight
           card.addEventListener("mousemove", (e) => {
             const rect = card.getBoundingClientRect();
-            const x = e.clientX - rect.left;
-            const y = e.clientY - rect.top;
-
-            card.style.setProperty("--mouse-x", `${x}px`);
-            card.style.setProperty("--mouse-y", `${y}px`);
+            const x = ((e.clientX - rect.left) / rect.width) * 100;
+            const y = ((e.clientY - rect.top) / rect.height) * 100;
+            card.style.setProperty("--mouse-x", `${x}%`);
+            card.style.setProperty("--mouse-y", `${y}%`);
 
             // 3D tilt
             const centerX = rect.width / 2;
             const centerY = rect.height / 2;
-            const rotateX = (y - centerY) / 10;
-            const rotateY = (centerX - x) / 10;
-
+            const rotateX = (e.clientY - rect.top - centerY) / 15;
+            const rotateY = (centerX - (e.clientX - rect.left)) / 15;
             card.style.transform = `
-              translateY(-8px) 
-              scale(1.02)
+              translateY(-12px) scale(1.02)
               perspective(1000px)
               rotateX(${rotateX}deg)
               rotateY(${rotateY}deg)
@@ -558,106 +924,384 @@
           });
 
           card.addEventListener("mouseenter", () => {
-            // Hover effect handled by CSS
+            playSound("hover");
           });
 
-          card.addEventListener("mouseleave", () => {
-            // Hover effect handled by CSS
+          card.addEventListener("click", (e) => {
+            createBurstParticles(e.clientX, e.clientY);
+            playSound("select");
           });
 
-          gridContainer.appendChild(card);
+          grid.appendChild(card);
         });
       }
 
-      // ---------------------------------------------------------
-      // CANVAS STARFIELD BACKGROUND
-      // ---------------------------------------------------------
-      const canvas = document.getElementById("starfield");
-      const ctx = canvas.getContext("2d");
+      // =========================================================
+      // REVEAL CARDS WITH SCROLL ANIMATION
+      // =========================================================
+      function revealCards() {
+        const cards = document.querySelectorAll(".game-card");
 
-      let width, height;
-      let stars = [];
-      let mouseX = 0,
-        mouseY = 0;
+        const observer = new IntersectionObserver(
+          (entries) => {
+            entries.forEach((entry, i) => {
+              if (entry.isIntersecting) {
+                setTimeout(() => {
+                  entry.target.classList.add("visible");
+                }, i * 80);
+                observer.unobserve(entry.target);
+              }
+            });
+          },
+          { threshold: 0.1, rootMargin: "50px" }
+        );
 
-      function resize() {
-        width = canvas.width = window.innerWidth;
-        height = canvas.height = window.innerHeight;
+        cards.forEach((card, index) => {
+          // Stagger initial reveal
+          setTimeout(() => {
+            observer.observe(card);
+          }, index * 50);
+        });
       }
-      window.addEventListener("resize", resize);
-      resize();
+
+      // =========================================================
+      // CUSTOM CURSOR
+      // =========================================================
+      const cursor = document.querySelector(".cursor");
+      const cursorDot = document.querySelector(".cursor-dot");
 
       document.addEventListener("mousemove", (e) => {
-        mouseX = (e.clientX - width / 2) * 0.05;
-        mouseY = (e.clientY - height / 2) * 0.05;
+        mouseX = e.clientX;
+        mouseY = e.clientY;
       });
 
-      class Star {
-        constructor() {
-          this.reset();
-          this.z = Math.random() * width;
+      function updateCursor() {
+        // Smooth follow for outer cursor
+        cursorX += (mouseX - cursorX) * 0.15;
+        cursorY += (mouseY - cursorY) * 0.15;
+
+        cursor.style.left = cursorX - 10 + "px";
+        cursor.style.top = cursorY - 10 + "px";
+
+        // Direct follow for dot
+        cursorDot.style.left = mouseX - 3 + "px";
+        cursorDot.style.top = mouseY - 3 + "px";
+
+        requestAnimationFrame(updateCursor);
+      }
+      updateCursor();
+
+      // Cursor hover effect on interactive elements
+      document.addEventListener("mouseover", (e) => {
+        if (e.target.closest(".game-card, .coffee-link, .sound-toggle")) {
+          cursor.classList.add("hover");
         }
+      });
 
-        reset() {
-          this.x = (Math.random() - 0.5) * width * 2;
-          this.y = (Math.random() - 0.5) * height * 2;
-          this.z = width;
-          this.size = Math.random() * 2 + 0.5;
+      document.addEventListener("mouseout", (e) => {
+        if (e.target.closest(".game-card, .coffee-link, .sound-toggle")) {
+          cursor.classList.remove("hover");
         }
+      });
 
-        update() {
-          this.z -= 2.5;
-          if (this.z <= 0) this.reset();
-        }
+      // =========================================================
+      // AMBIENT GLOW FOLLOWING CURSOR
+      // =========================================================
+      const ambientGlow = document.querySelector(".ambient-glow");
 
-        draw() {
-          const x = (this.x / this.z) * width + width / 2 - mouseX;
-          const y = (this.y / this.z) * height + height / 2 - mouseY;
-          const radius = (1 - this.z / width) * this.size * 2.5;
+      function updateAmbientGlow() {
+        ambientGlow.style.transform = `translate(${mouseX - 300}px, ${
+          mouseY - 300
+        }px)`;
+        requestAnimationFrame(updateAmbientGlow);
+      }
 
-          if (x < -50 || x > width + 50 || y < -50 || y > height + 50) return;
+      // =========================================================
+      // PARTICLE SYSTEMS
+      // =========================================================
+      let particleCount = 0;
+      const maxParticles = 30;
 
-          ctx.beginPath();
-          ctx.arc(x, y, radius, 0, Math.PI * 2);
+      // Mouse trail particles
+      let lastParticleTime = 0;
+      document.addEventListener("mousemove", (e) => {
+        const now = Date.now();
+        if (now - lastParticleTime < 50) return;
+        if (particleCount >= maxParticles) return;
+        lastParticleTime = now;
 
-          const alpha = 1 - this.z / width;
-          const hue = 200 + alpha * 60;
-          ctx.fillStyle = `hsla(${hue}, 70%, 70%, ${alpha * 0.8})`;
-          ctx.fill();
+        createTrailParticle(e.clientX, e.clientY);
+      });
 
-          // Glow effect
-          if (alpha > 0.7) {
-            ctx.shadowBlur = 15;
-            ctx.shadowColor = `hsla(${hue}, 100%, 60%, ${alpha})`;
-          } else {
-            ctx.shadowBlur = 0;
-          }
+      function createTrailParticle(x, y) {
+        const particle = document.createElement("div");
+        particle.className = "particle";
+        particle.style.left = x + "px";
+        particle.style.top = y + "px";
+        particle.style.width = "4px";
+        particle.style.height = "4px";
+
+        const hue = Math.random() > 0.5 ? 180 : 300; // Cyan or magenta
+        particle.style.background = `hsl(${hue}, 100%, 60%)`;
+        particle.style.boxShadow = `0 0 10px hsl(${hue}, 100%, 60%)`;
+
+        const driftX = (Math.random() - 0.5) * 80;
+        particle.style.setProperty("--drift-x", driftX + "px");
+        particle.style.animation = "particle-float 1.5s ease-out forwards";
+
+        document.body.appendChild(particle);
+        particleCount++;
+
+        setTimeout(() => {
+          particle.remove();
+          particleCount--;
+        }, 1500);
+      }
+
+      // Click burst particles
+      function createBurstParticles(x, y) {
+        for (let i = 0; i < 12; i++) {
+          const particle = document.createElement("div");
+          particle.className = "particle";
+          particle.style.left = x + "px";
+          particle.style.top = y + "px";
+          particle.style.width = "6px";
+          particle.style.height = "6px";
+
+          const angle = (i / 12) * Math.PI * 2;
+          const distance = 80 + Math.random() * 40;
+          const burstX = Math.cos(angle) * distance;
+          const burstY = Math.sin(angle) * distance;
+
+          const hue = 180 + Math.random() * 120;
+          particle.style.background = `hsl(${hue}, 100%, 60%)`;
+          particle.style.boxShadow = `0 0 15px hsl(${hue}, 100%, 60%)`;
+
+          particle.style.setProperty("--burst-x", burstX + "px");
+          particle.style.setProperty("--burst-y", burstY + "px");
+          particle.style.animation = "particle-burst 0.6s ease-out forwards";
+
+          document.body.appendChild(particle);
+
+          setTimeout(() => particle.remove(), 600);
         }
       }
 
-      for (let i = 0; i < 400; i++) {
-        stars.push(new Star());
+      // =========================================================
+      // GRID FLOOR CANVAS
+      // =========================================================
+      const gridCanvas = document.getElementById("grid-canvas");
+      const gridCtx = gridCanvas.getContext("2d");
+      let gridWidth, gridHeight;
+
+      function resizeGridCanvas() {
+        gridWidth = gridCanvas.width = window.innerWidth;
+        gridHeight = gridCanvas.height = window.innerHeight * 0.7;
       }
 
-      function animate() {
-        ctx.fillStyle = "rgba(3, 7, 18, 0.1)";
-        ctx.fillRect(0, 0, width, height);
+      function drawGrid() {
+        gridCtx.clearRect(0, 0, gridWidth, gridHeight);
 
-        stars.forEach((star) => {
-          star.update();
-          star.draw();
-        });
+        const gridSize = 60;
+        const horizonY = 0;
+        const vanishX = gridWidth / 2 + (mouseX - window.innerWidth / 2) * 0.1;
 
-        requestAnimationFrame(animate);
+        // Vertical lines (perspective)
+        const numVerticalLines = 30;
+        for (let i = -numVerticalLines; i <= numVerticalLines; i++) {
+          const baseX = vanishX + i * gridSize;
+
+          gridCtx.beginPath();
+          gridCtx.moveTo(vanishX, horizonY);
+          gridCtx.lineTo(baseX, gridHeight);
+
+          const distFromCenter = Math.abs(i) / numVerticalLines;
+          const alpha = 0.3 * (1 - distFromCenter * 0.7);
+
+          // Pulse effect near cursor
+          const cursorInfluence = Math.max(
+            0,
+            1 - Math.abs(baseX - mouseX) / 300
+          );
+          const finalAlpha = alpha + cursorInfluence * 0.3;
+
+          gridCtx.strokeStyle = `rgba(0, 255, 245, ${finalAlpha})`;
+          gridCtx.lineWidth = 1 + cursorInfluence;
+          gridCtx.stroke();
+        }
+
+        // Horizontal lines
+        const numHorizontalLines = 15;
+        for (let i = 0; i <= numHorizontalLines; i++) {
+          const progress = i / numHorizontalLines;
+          const y = horizonY + progress * progress * gridHeight;
+
+          gridCtx.beginPath();
+
+          // Calculate line width based on perspective
+          const perspectiveWidth = gridWidth * (0.1 + progress * 0.9);
+          const startX = (gridWidth - perspectiveWidth) / 2;
+          const endX = startX + perspectiveWidth;
+
+          gridCtx.moveTo(startX, y);
+          gridCtx.lineTo(endX, y);
+
+          const alpha = 0.2 + progress * 0.3;
+
+          // Pulse from mouse Y position
+          const cursorYInfluence = Math.max(
+            0,
+            1 - Math.abs(y - mouseY * 0.5) / 200
+          );
+
+          gridCtx.strokeStyle = `rgba(0, 255, 245, ${
+            alpha + cursorYInfluence * 0.3
+          })`;
+          gridCtx.lineWidth = 1 + cursorYInfluence * 2;
+          gridCtx.stroke();
+        }
+
+        // Glow at horizon
+        const gradient = gridCtx.createLinearGradient(
+          0,
+          0,
+          0,
+          gridHeight * 0.3
+        );
+        gradient.addColorStop(0, "rgba(0, 255, 245, 0.1)");
+        gradient.addColorStop(1, "transparent");
+        gridCtx.fillStyle = gradient;
+        gridCtx.fillRect(0, 0, gridWidth, gridHeight * 0.3);
+
+        requestAnimationFrame(drawGrid);
       }
-      animate();
 
-      // ---------------------------------------------------------
-      // INIT
-      // ---------------------------------------------------------
+      // =========================================================
+      // KEYBOARD NAVIGATION
+      // =========================================================
+      document.addEventListener("keydown", (e) => {
+        const cards = document.querySelectorAll(".game-card");
+        const numCards = cards.length;
+        const cols =
+          window.innerWidth >= 1024 ? 3 : window.innerWidth >= 640 ? 2 : 1;
+
+        // Remove previous focus
+        cards.forEach((c) => c.classList.remove("focused"));
+
+        const key = e.key.toLowerCase();
+
+        switch (e.key) {
+          case "ArrowRight":
+            e.preventDefault();
+            selectedCardIndex = Math.min(selectedCardIndex + 1, numCards - 1);
+            if (selectedCardIndex < 0) selectedCardIndex = 0;
+            playSound("hover");
+            break;
+          case "ArrowLeft":
+            e.preventDefault();
+            selectedCardIndex = Math.max(selectedCardIndex - 1, 0);
+            playSound("hover");
+            break;
+          case "ArrowDown":
+            e.preventDefault();
+            selectedCardIndex = Math.min(
+              selectedCardIndex + cols,
+              numCards - 1
+            );
+            if (selectedCardIndex < 0) selectedCardIndex = 0;
+            playSound("hover");
+            break;
+          case "ArrowUp":
+            e.preventDefault();
+            selectedCardIndex = Math.max(selectedCardIndex - cols, 0);
+            playSound("hover");
+            break;
+          case "Enter":
+            e.preventDefault();
+            if (selectedCardIndex >= 0) {
+              const card = cards[selectedCardIndex];
+              const rect = card.getBoundingClientRect();
+              createBurstParticles(
+                rect.left + rect.width / 2,
+                rect.top + rect.height / 2
+              );
+              playSound("select");
+              setTimeout(() => {
+                window.location.href = card.href;
+              }, 200);
+            }
+            break;
+          default:
+            // WASD support (case-insensitive)
+            if (key === "d") {
+              e.preventDefault();
+              selectedCardIndex = Math.min(selectedCardIndex + 1, numCards - 1);
+              if (selectedCardIndex < 0) selectedCardIndex = 0;
+              playSound("hover");
+            } else if (key === "a") {
+              e.preventDefault();
+              selectedCardIndex = Math.max(selectedCardIndex - 1, 0);
+              playSound("hover");
+            } else if (key === "s") {
+              e.preventDefault();
+              selectedCardIndex = Math.min(
+                selectedCardIndex + cols,
+                numCards - 1
+              );
+              if (selectedCardIndex < 0) selectedCardIndex = 0;
+              playSound("hover");
+            } else if (key === "w") {
+              e.preventDefault();
+              selectedCardIndex = Math.max(selectedCardIndex - cols, 0);
+              playSound("hover");
+            }
+            break;
+        }
+
+        if (selectedCardIndex >= 0) {
+          cards[selectedCardIndex].classList.add("focused");
+          cards[selectedCardIndex].scrollIntoView({
+            behavior: "smooth",
+            block: "center",
+          });
+        }
+      });
+
+      // =========================================================
+      // SOUND TOGGLE
+      // =========================================================
+      const soundToggle = document.querySelector(".sound-toggle");
+      const soundOnIcon = soundToggle.querySelector(".sound-on");
+      const soundOffIcon = soundToggle.querySelector(".sound-off");
+
+      soundToggle.addEventListener("click", () => {
+        soundEnabled = !soundEnabled;
+        soundToggle.classList.toggle("muted", !soundEnabled);
+        soundOnIcon.style.display = soundEnabled ? "block" : "none";
+        soundOffIcon.style.display = soundEnabled ? "none" : "block";
+        if (soundEnabled) playSound("hover");
+      });
+
+      // =========================================================
+      // INITIALIZATION
+      // =========================================================
       window.addEventListener("DOMContentLoaded", () => {
         createCards();
+        resizeGridCanvas();
+        drawGrid();
+        updateAmbientGlow();
+        revealCards();
+        animateSubtitle();
       });
+
+      window.addEventListener("resize", resizeGridCanvas);
+
+      // Disable default cursor on touch devices
+      if ("ontouchstart" in window) {
+        document.body.style.cursor = "auto";
+        cursor.style.display = "none";
+        cursorDot.style.display = "none";
+      }
     </script>
   </body>
 </html>
