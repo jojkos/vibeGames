@@ -10,11 +10,14 @@
     />
     <style>
       :root {
+        --matrix-green: #00ff41;
+        --matrix-green-dim: #008f11;
+        --matrix-green-glow: rgba(0, 255, 65, 0.6);
         --neon-cyan: #00fff5;
         --neon-magenta: #ff00ff;
         --deep-void: #0a0a0f;
-        --card-bg: rgba(15, 15, 25, 0.9);
-        --card-border: rgba(0, 255, 245, 0.15);
+        --card-bg: rgba(5, 15, 5, 0.85);
+        --card-border: rgba(0, 255, 65, 0.15);
       }
 
       * {
@@ -24,28 +27,106 @@
       }
 
       body {
-        background: var(--deep-void);
+        background: #000;
         color: #fff;
         font-family: "Inter", sans-serif;
         min-height: 100vh;
-        background-image: radial-gradient(
-            ellipse at 50% 0%,
-            rgba(0, 255, 245, 0.08) 0%,
-            transparent 50%
-          ),
-          linear-gradient(180deg, #0a0a0f 0%, #0f0f1a 100%);
+        overflow-x: hidden;
+        cursor: none;
       }
 
-      /* Simple grid pattern - pure CSS, no JS */
+      /* Custom cursor */
+      .custom-cursor {
+        position: fixed;
+        width: 20px;
+        height: 20px;
+        border: 2px solid var(--matrix-green);
+        border-radius: 50%;
+        pointer-events: none;
+        z-index: 9999;
+        transform: translate(-50%, -50%);
+        transition: width 0.15s, height 0.15s, border-color 0.15s;
+        box-shadow: 0 0 10px var(--matrix-green-glow),
+          inset 0 0 10px rgba(0, 255, 65, 0.1);
+      }
+
+      .custom-cursor.hovering {
+        width: 40px;
+        height: 40px;
+        border-color: var(--neon-cyan);
+        box-shadow: 0 0 20px rgba(0, 255, 245, 0.5),
+          inset 0 0 20px rgba(0, 255, 245, 0.1);
+      }
+
+      .cursor-dot {
+        position: fixed;
+        width: 4px;
+        height: 4px;
+        background: var(--matrix-green);
+        border-radius: 50%;
+        pointer-events: none;
+        z-index: 9999;
+        transform: translate(-50%, -50%);
+        box-shadow: 0 0 6px var(--matrix-green);
+      }
+
+      /* Matrix rain canvas */
+      #matrix-canvas {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        z-index: 0;
+        opacity: 0.4;
+      }
+
+      /* Mouse glow that follows cursor */
+      .mouse-glow {
+        position: fixed;
+        width: 400px;
+        height: 400px;
+        border-radius: 50%;
+        pointer-events: none;
+        z-index: 1;
+        background: radial-gradient(
+          circle,
+          rgba(0, 255, 65, 0.08) 0%,
+          transparent 70%
+        );
+        transform: translate(-50%, -50%);
+        transition: opacity 0.3s;
+      }
+
+      /* Scanline overlay */
+      .scanlines {
+        position: fixed;
+        inset: 0;
+        z-index: 2;
+        pointer-events: none;
+        background: repeating-linear-gradient(
+          0deg,
+          rgba(0, 0, 0, 0.03) 0px,
+          rgba(0, 0, 0, 0.03) 1px,
+          transparent 1px,
+          transparent 3px
+        );
+      }
+
+      /* Grid pattern */
       .grid-bg {
         position: fixed;
         inset: 0;
-        z-index: -1;
+        z-index: 1;
         background-image: linear-gradient(
-            rgba(0, 255, 245, 0.03) 1px,
+            rgba(0, 255, 65, 0.03) 1px,
             transparent 1px
           ),
-          linear-gradient(90deg, rgba(0, 255, 245, 0.03) 1px, transparent 1px);
+          linear-gradient(
+            90deg,
+            rgba(0, 255, 65, 0.03) 1px,
+            transparent 1px
+          );
         background-size: 60px 60px;
         mask-image: linear-gradient(
           to bottom,
@@ -64,6 +145,8 @@
       }
 
       .main-content {
+        position: relative;
+        z-index: 3;
         max-width: 1200px;
         margin: 0 auto;
         padding: 2rem;
@@ -75,39 +158,82 @@
         padding: 3rem 0 2rem;
       }
 
+      /* Glitch title */
       .title {
         font-family: "Orbitron", sans-serif;
         font-size: clamp(2rem, 7vw, 4rem);
         font-weight: 900;
-        background: linear-gradient(
-          135deg,
-          #fff,
-          var(--neon-cyan),
-          var(--neon-magenta)
-        );
-        background-size: 200% 200%;
-        -webkit-background-clip: text;
-        -webkit-text-fill-color: transparent;
-        background-clip: text;
-        animation: gradient-shift 6s ease infinite;
+        color: var(--matrix-green);
+        text-shadow: 0 0 10px var(--matrix-green-glow),
+          0 0 40px rgba(0, 255, 65, 0.3), 0 0 80px rgba(0, 255, 65, 0.1);
+        position: relative;
+        display: inline-block;
+        animation: text-flicker 4s infinite;
       }
 
-      @keyframes gradient-shift {
-        0%,
-        100% {
-          background-position: 0% 50%;
-        }
-        50% {
-          background-position: 100% 50%;
-        }
+      .title::before,
+      .title::after {
+        content: attr(data-text);
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        pointer-events: none;
+      }
+
+      .title::before {
+        color: var(--neon-cyan);
+        z-index: -1;
+        animation: glitch-1 3s infinite;
+        clip-path: inset(0 0 65% 0);
+      }
+
+      .title::after {
+        color: var(--neon-magenta);
+        z-index: -2;
+        animation: glitch-2 3s infinite;
+        clip-path: inset(40% 0 0 0);
+      }
+
+      @keyframes glitch-1 {
+        0%, 94%, 100% { transform: translate(0); }
+        95% { transform: translate(-3px, 1px); }
+        96% { transform: translate(3px, -1px); }
+        97% { transform: translate(-1px, 2px); }
+      }
+
+      @keyframes glitch-2 {
+        0%, 94%, 100% { transform: translate(0); }
+        95% { transform: translate(3px, -1px); }
+        96% { transform: translate(-3px, 1px); }
+        97% { transform: translate(2px, -2px); }
+      }
+
+      @keyframes text-flicker {
+        0%, 100% { opacity: 1; }
+        92% { opacity: 1; }
+        93% { opacity: 0.8; }
+        94% { opacity: 1; }
+        96% { opacity: 0.9; }
+        97% { opacity: 1; }
       }
 
       .subtitle {
         font-size: 1rem;
-        color: rgba(255, 255, 255, 0.5);
+        color: var(--matrix-green-dim);
         margin-top: 0.75rem;
-        letter-spacing: 0.15em;
+        letter-spacing: 0.3em;
         text-transform: uppercase;
+        text-shadow: 0 0 10px rgba(0, 143, 17, 0.5);
+        animation: subtitle-decode 2s steps(20) forwards;
+        overflow: hidden;
+      }
+
+      @keyframes subtitle-decode {
+        0% { max-width: 0; opacity: 0; }
+        10% { opacity: 1; }
+        100% { max-width: 100%; opacity: 1; }
       }
 
       .game-grid {
@@ -117,6 +243,7 @@
         padding: 2rem 0 4rem;
       }
 
+      /* Cards with reveal animation */
       .game-card {
         position: relative;
         background: var(--card-bg);
@@ -128,20 +255,91 @@
         flex-direction: column;
         align-items: center;
         gap: 1rem;
-        transition: transform 0.2s ease, border-color 0.2s ease,
-          box-shadow 0.2s ease;
+        transition: transform 0.3s ease, border-color 0.3s ease,
+          box-shadow 0.3s ease;
+        transform-style: preserve-3d;
+        perspective: 800px;
+        opacity: 0;
+        transform: translateY(40px);
+        overflow: hidden;
+      }
+
+      .game-card.visible {
+        animation: card-materialize 0.6s forwards;
+      }
+
+      @keyframes card-materialize {
+        0% {
+          opacity: 0;
+          transform: translateY(40px) scale(0.95);
+          filter: blur(4px);
+        }
+        60% {
+          opacity: 1;
+          filter: blur(0);
+        }
+        80% {
+          transform: translateY(-5px) scale(1.02);
+        }
+        100% {
+          opacity: 1;
+          transform: translateY(0) scale(1);
+          filter: blur(0);
+        }
+      }
+
+      /* Card hover glow line animation */
+      .game-card::before {
+        content: "";
+        position: absolute;
+        top: 0;
+        left: -100%;
+        width: 100%;
+        height: 2px;
+        background: linear-gradient(
+          90deg,
+          transparent,
+          var(--matrix-green),
+          transparent
+        );
+        transition: left 0.5s ease;
+      }
+
+      .game-card:hover::before {
+        left: 100%;
+      }
+
+      /* Card inner glow on hover */
+      .game-card::after {
+        content: "";
+        position: absolute;
+        inset: 0;
+        border-radius: 12px;
+        background: radial-gradient(
+          circle at var(--mouse-x, 50%) var(--mouse-y, 50%),
+          rgba(0, 255, 65, 0.08) 0%,
+          transparent 60%
+        );
+        opacity: 0;
+        transition: opacity 0.3s;
+        pointer-events: none;
+      }
+
+      .game-card:hover::after {
+        opacity: 1;
       }
 
       .game-card:hover {
-        transform: translateY(-4px);
-        border-color: var(--neon-cyan);
-        box-shadow: 0 8px 32px rgba(0, 255, 245, 0.15);
+        transform: translateY(-6px);
+        border-color: var(--matrix-green);
+        box-shadow: 0 0 15px rgba(0, 255, 65, 0.15),
+          0 8px 32px rgba(0, 255, 65, 0.1);
       }
 
       .game-card:focus {
         outline: none;
-        border-color: var(--neon-cyan);
-        box-shadow: 0 0 0 3px rgba(0, 255, 245, 0.2);
+        border-color: var(--matrix-green);
+        box-shadow: 0 0 0 3px rgba(0, 255, 65, 0.2);
       }
 
       .play-icon {
@@ -150,27 +348,30 @@
         border-radius: 50%;
         background: linear-gradient(
           135deg,
-          rgba(0, 255, 245, 0.1),
-          rgba(255, 0, 255, 0.1)
+          rgba(0, 255, 65, 0.1),
+          rgba(0, 255, 245, 0.05)
         );
-        border: 2px solid rgba(0, 255, 245, 0.3);
+        border: 2px solid rgba(0, 255, 65, 0.3);
         display: flex;
         align-items: center;
         justify-content: center;
-        transition: transform 0.2s ease, border-color 0.2s ease;
+        transition: transform 0.3s ease, border-color 0.3s ease,
+          box-shadow 0.3s ease;
       }
 
       .game-card:hover .play-icon {
-        transform: scale(1.1);
-        border-color: var(--neon-cyan);
+        transform: scale(1.15) rotate(360deg);
+        border-color: var(--matrix-green);
+        box-shadow: 0 0 20px rgba(0, 255, 65, 0.3);
       }
 
       .play-icon svg {
         width: 24px;
         height: 24px;
-        fill: var(--neon-cyan);
+        fill: var(--matrix-green);
         opacity: 0.8;
         transition: opacity 0.2s ease;
+        filter: drop-shadow(0 0 4px rgba(0, 255, 65, 0.5));
       }
 
       .game-card:hover .play-icon svg {
@@ -181,23 +382,38 @@
         font-family: "Orbitron", sans-serif;
         font-size: 0.9rem;
         font-weight: 700;
-        color: rgba(255, 255, 255, 0.85);
+        color: rgba(0, 255, 65, 0.7);
         letter-spacing: 0.08em;
         text-transform: uppercase;
         text-align: center;
-        transition: color 0.2s ease;
+        transition: color 0.3s ease, text-shadow 0.3s ease;
       }
 
       .game-card:hover .game-title {
-        color: #fff;
+        color: var(--matrix-green);
+        text-shadow: 0 0 8px var(--matrix-green-glow);
       }
 
+      /* Floating particles */
+      .particle {
+        position: fixed;
+        width: 2px;
+        height: 2px;
+        background: var(--matrix-green);
+        border-radius: 50%;
+        pointer-events: none;
+        z-index: 2;
+        opacity: 0;
+        box-shadow: 0 0 4px var(--matrix-green);
+      }
+
+      /* Coffee link */
       .coffee-link {
         position: fixed;
         bottom: 24px;
         right: 24px;
         padding: 12px 20px;
-        background: linear-gradient(135deg, #fbbf24, #f59e0b);
+        background: linear-gradient(135deg, #008f11, #00ff41);
         color: #000;
         border-radius: 50px;
         text-decoration: none;
@@ -208,21 +424,22 @@
         gap: 8px;
         transition: transform 0.2s ease, box-shadow 0.2s ease;
         z-index: 100;
-        box-shadow: 0 4px 16px rgba(251, 191, 36, 0.25);
+        box-shadow: 0 4px 16px rgba(0, 255, 65, 0.25);
+        cursor: none;
       }
 
       .coffee-link:hover {
         transform: translateY(-2px);
-        box-shadow: 0 8px 24px rgba(251, 191, 36, 0.35);
+        box-shadow: 0 8px 24px rgba(0, 255, 65, 0.4);
       }
 
-      /* Keyboard navigation */
+      /* Navigation hint */
       .nav-hint {
         position: fixed;
         bottom: 24px;
         left: 24px;
         font-size: 0.85rem;
-        color: rgba(255, 255, 255, 0.35);
+        color: rgba(0, 255, 65, 0.3);
         display: flex;
         gap: 1rem;
         z-index: 100;
@@ -235,23 +452,70 @@
         min-width: 24px;
         height: 24px;
         padding: 0 6px;
-        background: rgba(255, 255, 255, 0.08);
-        border: 1px solid rgba(255, 255, 255, 0.15);
+        background: rgba(0, 255, 65, 0.05);
+        border: 1px solid rgba(0, 255, 65, 0.15);
         border-radius: 4px;
         font-family: inherit;
         font-size: 0.8rem;
+        color: rgba(0, 255, 65, 0.5);
       }
 
+      /* Scroll progress bar */
+      .scroll-progress {
+        position: fixed;
+        top: 0;
+        left: 0;
+        height: 2px;
+        background: linear-gradient(90deg, var(--matrix-green), var(--neon-cyan));
+        z-index: 9999;
+        box-shadow: 0 0 10px var(--matrix-green-glow);
+        transition: width 0.1s;
+      }
+
+      /* Corner decorations */
+      .corner-deco {
+        position: fixed;
+        width: 40px;
+        height: 40px;
+        z-index: 4;
+        pointer-events: none;
+      }
+
+      .corner-deco::before,
+      .corner-deco::after {
+        content: "";
+        position: absolute;
+        background: var(--matrix-green);
+        opacity: 0.3;
+      }
+
+      .corner-deco.top-left { top: 16px; left: 16px; }
+      .corner-deco.top-left::before { width: 20px; height: 2px; top: 0; left: 0; }
+      .corner-deco.top-left::after { width: 2px; height: 20px; top: 0; left: 0; }
+
+      .corner-deco.top-right { top: 16px; right: 16px; }
+      .corner-deco.top-right::before { width: 20px; height: 2px; top: 0; right: 0; }
+      .corner-deco.top-right::after { width: 2px; height: 20px; top: 0; right: 0; }
+
+      .corner-deco.bottom-left { bottom: 16px; left: 16px; }
+      .corner-deco.bottom-left::before { width: 20px; height: 2px; bottom: 0; left: 0; }
+      .corner-deco.bottom-left::after { width: 2px; height: 20px; bottom: 0; left: 0; }
+
+      .corner-deco.bottom-right { bottom: 16px; right: 16px; }
+      .corner-deco.bottom-right::before { width: 20px; height: 2px; bottom: 0; right: 0; }
+      .corner-deco.bottom-right::after { width: 2px; height: 20px; bottom: 0; right: 0; }
+
       @media (max-width: 640px) {
-        .nav-hint {
-          display: none;
-        }
+        .nav-hint { display: none; }
         .coffee-link {
           bottom: 16px;
           right: 16px;
           padding: 10px 16px;
           font-size: 0.85rem;
         }
+        body { cursor: auto; }
+        .custom-cursor, .cursor-dot { display: none; }
+        .corner-deco { display: none; }
       }
 
       @media (prefers-reduced-motion: reduce) {
@@ -261,15 +525,44 @@
           animation-duration: 0.01ms !important;
           transition-duration: 0.01ms !important;
         }
+        .game-card {
+          opacity: 1;
+          transform: none;
+        }
+        #matrix-canvas { display: none; }
+        .scanlines { display: none; }
       }
     </style>
   </head>
   <body>
+    <!-- Matrix rain background -->
+    <canvas id="matrix-canvas"></canvas>
+
+    <!-- Scanline overlay -->
+    <div class="scanlines"></div>
+
+    <!-- Grid background -->
     <div class="grid-bg"></div>
+
+    <!-- Mouse glow -->
+    <div class="mouse-glow" id="mouse-glow"></div>
+
+    <!-- Custom cursor -->
+    <div class="custom-cursor" id="custom-cursor"></div>
+    <div class="cursor-dot" id="cursor-dot"></div>
+
+    <!-- Scroll progress -->
+    <div class="scroll-progress" id="scroll-progress"></div>
+
+    <!-- Corner decorations -->
+    <div class="corner-deco top-left"></div>
+    <div class="corner-deco top-right"></div>
+    <div class="corner-deco bottom-left"></div>
+    <div class="corner-deco bottom-right"></div>
 
     <main class="main-content">
       <header>
-        <h1 class="title">JOJKO'S GAMES</h1>
+        <h1 class="title" data-text="JOJKO'S GAMES">JOJKO'S GAMES</h1>
         <p class="subtitle">Select Your Destination</p>
       </header>
 
@@ -292,6 +585,156 @@
     </a>
 
     <script>
+      // ========== MATRIX RAIN ==========
+      const canvas = document.getElementById("matrix-canvas");
+      const ctx = canvas.getContext("2d");
+
+      function resizeCanvas() {
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight;
+      }
+      resizeCanvas();
+      window.addEventListener("resize", resizeCanvas);
+
+      const matrixChars =
+        "アイウエオカキクケコサシスセソタチツテトナニヌネノハヒフヘホマミムメモヤユヨラリルレロワヲン0123456789ABCDEF";
+      const fontSize = 14;
+      const columns = Math.floor(canvas.width / fontSize);
+      const drops = new Array(columns).fill(1);
+
+      // Randomize initial drop positions
+      for (let i = 0; i < drops.length; i++) {
+        drops[i] = Math.random() * (canvas.height / fontSize);
+      }
+
+      function drawMatrix() {
+        ctx.fillStyle = "rgba(0, 0, 0, 0.05)";
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+        ctx.fillStyle = "#00ff41";
+        ctx.font = fontSize + "px monospace";
+
+        for (let i = 0; i < drops.length; i++) {
+          const char = matrixChars[Math.floor(Math.random() * matrixChars.length)];
+          const x = i * fontSize;
+          const y = drops[i] * fontSize;
+
+          // Brighter green for leading character
+          if (Math.random() > 0.98) {
+            ctx.fillStyle = "#ffffff";
+          } else if (Math.random() > 0.9) {
+            ctx.fillStyle = "#00ff41";
+          } else {
+            ctx.fillStyle = "rgba(0, 255, 65, 0.6)";
+          }
+
+          ctx.fillText(char, x, y);
+
+          if (y > canvas.height && Math.random() > 0.975) {
+            drops[i] = 0;
+          }
+          drops[i]++;
+        }
+      }
+
+      setInterval(drawMatrix, 50);
+
+      // ========== CUSTOM CURSOR ==========
+      const cursor = document.getElementById("custom-cursor");
+      const cursorDot = document.getElementById("cursor-dot");
+      const mouseGlow = document.getElementById("mouse-glow");
+      let mouseX = 0,
+        mouseY = 0;
+      let cursorX = 0,
+        cursorY = 0;
+
+      document.addEventListener("mousemove", (e) => {
+        mouseX = e.clientX;
+        mouseY = e.clientY;
+
+        cursorDot.style.left = mouseX + "px";
+        cursorDot.style.top = mouseY + "px";
+
+        mouseGlow.style.left = mouseX + "px";
+        mouseGlow.style.top = mouseY + "px";
+
+        // Spawn trail particles occasionally
+        if (Math.random() > 0.7) {
+          spawnParticle(mouseX, mouseY);
+        }
+      });
+
+      // Smooth cursor follow
+      function animateCursor() {
+        cursorX += (mouseX - cursorX) * 0.15;
+        cursorY += (mouseY - cursorY) * 0.15;
+        cursor.style.left = cursorX + "px";
+        cursor.style.top = cursorY + "px";
+        requestAnimationFrame(animateCursor);
+      }
+      animateCursor();
+
+      // Cursor hover state for interactive elements
+      document.addEventListener("mouseover", (e) => {
+        if (e.target.closest("a, button, .game-card")) {
+          cursor.classList.add("hovering");
+        }
+      });
+      document.addEventListener("mouseout", (e) => {
+        if (e.target.closest("a, button, .game-card")) {
+          cursor.classList.remove("hovering");
+        }
+      });
+
+      // ========== MOUSE TRAIL PARTICLES ==========
+      function spawnParticle(x, y) {
+        const particle = document.createElement("div");
+        particle.className = "particle";
+        particle.style.left = x + "px";
+        particle.style.top = y + "px";
+        document.body.appendChild(particle);
+
+        const angle = Math.random() * Math.PI * 2;
+        const speed = Math.random() * 30 + 10;
+        const tx = Math.cos(angle) * speed;
+        const ty = Math.sin(angle) * speed;
+        const duration = Math.random() * 600 + 400;
+
+        particle.animate(
+          [
+            { opacity: 0.8, transform: "translate(0, 0) scale(1)" },
+            {
+              opacity: 0,
+              transform: `translate(${tx}px, ${ty}px) scale(0)`,
+            },
+          ],
+          { duration, easing: "ease-out" }
+        ).onfinish = () => particle.remove();
+      }
+
+      // ========== CARD MOUSE TRACKING (inner glow) ==========
+      document.addEventListener("mousemove", (e) => {
+        const cards = document.querySelectorAll(".game-card");
+        cards.forEach((card) => {
+          const rect = card.getBoundingClientRect();
+          const x = ((e.clientX - rect.left) / rect.width) * 100;
+          const y = ((e.clientY - rect.top) / rect.height) * 100;
+          card.style.setProperty("--mouse-x", x + "%");
+          card.style.setProperty("--mouse-y", y + "%");
+        });
+      });
+
+      // ========== SCROLL PROGRESS BAR ==========
+      const scrollProgress = document.getElementById("scroll-progress");
+      window.addEventListener("scroll", () => {
+        const scrollTop = window.scrollY;
+        const docHeight =
+          document.documentElement.scrollHeight - window.innerHeight;
+        const scrollPercent = docHeight > 0 ? (scrollTop / docHeight) * 100 : 0;
+        scrollProgress.style.width = scrollPercent + "%";
+      });
+
+      // ========== GAME CARDS ==========
       const games = [
         { name: "Zoopaloola", url: "https://zoopaloola.vercel.app/" },
         {
@@ -329,9 +772,27 @@
         grid.appendChild(card);
       });
 
-      // Keyboard navigation
-      let selectedIndex = -1;
+      // ========== SCROLL REVEAL (Intersection Observer) ==========
       const cards = document.querySelectorAll(".game-card");
+      const observer = new IntersectionObserver(
+        (entries) => {
+          entries.forEach((entry) => {
+            if (entry.isIntersecting) {
+              const idx = parseInt(entry.target.getAttribute("data-index"));
+              setTimeout(() => {
+                entry.target.classList.add("visible");
+              }, idx * 80);
+              observer.unobserve(entry.target);
+            }
+          });
+        },
+        { threshold: 0.1 }
+      );
+
+      cards.forEach((card) => observer.observe(card));
+
+      // ========== KEYBOARD NAVIGATION ==========
+      let selectedIndex = -1;
 
       document.addEventListener("keydown", (e) => {
         const numCards = cards.length;
