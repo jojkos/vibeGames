@@ -73,21 +73,11 @@
   .cursor-dot{position:fixed;z-index:9999;pointer-events:none;width:3px;height:3px;background:var(--mg);border-radius:50%;box-shadow:0 0 6px var(--mg);transform:translate(-50%,-50%);left:-100px;top:-100px}
   @keyframes spin{to{transform:rotate(360deg)}}
 
-  /* ========== BOOT ========== */
-  .boot{position:fixed;inset:0;z-index:80;background:#000;display:flex;flex-direction:column;justify-content:center;align-items:flex-start;padding:7vh 7vw;font-family:var(--mono);font-size:13px;color:var(--mg);line-height:1.6}
-  .boot .line{opacity:0;transform:translateX(-8px);animation:bootIn .15s forwards}
-  .boot .line .ok{color:#9cff9f}
-  .boot .line .warn{color:#ffe66b}
-  .boot .dim{color:var(--mg-dim)}
-  @keyframes bootIn{to{opacity:1;transform:none}}
-  .boot.fade-out{animation:bootOut .6s forwards .2s}
-  @keyframes bootOut{to{opacity:0;filter:blur(10px)}}
-
   /* ========== HERO TITLE ========== */
   .hero{position:fixed;inset:0;z-index:40;display:flex;flex-direction:column;justify-content:center;align-items:center;pointer-events:none;transition:opacity .8s ease,transform 1s ease;mix-blend-mode:screen}
   .hero.dissolve{opacity:0;transform:scale(1.4) translateZ(0);filter:blur(20px)}
   .hero pre{font-family:var(--pixel);font-size:clamp(10px,1.4vw,16px);line-height:1;color:var(--mg);text-shadow:0 0 6px var(--mg-glow),0 0 20px rgba(0,255,65,.3);letter-spacing:.5px;white-space:pre;text-align:center}
-  .hero .sub{margin-top:28px;font-family:var(--mono);font-size:13px;letter-spacing:.55em;color:var(--mg);text-transform:uppercase;text-shadow:0 0 10px var(--mg-glow);opacity:0;animation:subIn 1.2s forwards 2.2s}
+  .hero .sub{margin-top:28px;font-family:var(--mono);font-size:13px;letter-spacing:.55em;color:var(--mg);text-transform:uppercase;text-shadow:0 0 10px var(--mg-glow);opacity:0;animation:subIn 1s forwards .8s}
   .hero .sub .caret{display:inline-block;width:.6em;height:1em;background:var(--mg);vertical-align:-2px;margin-left:6px;animation:caret 1s steps(2) infinite}
   @keyframes subIn{to{opacity:1}}
   @keyframes caret{50%{opacity:0}}
@@ -95,14 +85,14 @@
   /* ========== TUNNEL STAGE ========== */
   .stage{position:fixed;inset:0;z-index:10;perspective:1400px;perspective-origin:50% 50%;opacity:0;transition:opacity 1.2s ease}
   .stage.visible{opacity:1}
-  .world{position:absolute;inset:0;transform-style:preserve-3d;will-change:transform}
+  .world{position:absolute;inset:0;transform-style:preserve-3d;will-change:transform;pointer-events:none}
 
-  .ring-deco{position:absolute;left:50%;top:50%;border:1px dashed rgba(0,255,65,.28);border-radius:50%;transform-style:preserve-3d}
+  .ring-deco{position:absolute;left:50%;top:50%;border:1px dashed rgba(0,255,65,.28);border-radius:50%;transform-style:preserve-3d;pointer-events:none}
   .ring-deco.r1{width:120vmax;height:120vmax;margin:-60vmax 0 0 -60vmax;animation:ringSpin 60s linear infinite}
   .ring-deco.r2{width:80vmax;height:80vmax;margin:-40vmax 0 0 -40vmax;border-color:rgba(0,255,65,.15);animation:ringSpin 40s linear infinite reverse}
   @keyframes ringSpin{to{transform:rotate(360deg)}}
 
-  .horizon-grid{position:absolute;left:50%;bottom:0;width:300vmax;height:60vh;margin-left:-150vmax;transform:rotateX(78deg) translateZ(-200px);transform-origin:50% 100%;
+  .horizon-grid{position:absolute;left:50%;bottom:0;width:300vmax;height:60vh;margin-left:-150vmax;transform:rotateX(78deg) translateZ(-200px);transform-origin:50% 100%;pointer-events:none;
     background:
       linear-gradient(to right,rgba(0,255,65,.35) 1px,transparent 1px) 0 0/80px 100%,
       linear-gradient(to bottom,rgba(0,255,65,.35) 1px,transparent 1px) 0 0/100% 60px;
@@ -346,16 +336,6 @@
 <!-- CURSOR -->
 <div class="cursor" id="cursor"><span class="ring"></span><span class="label" id="cursor-label"></span></div>
 <div class="cursor-dot" id="cdot"></div>
-
-<!-- BOOT TERMINAL -->
-<div class="boot" id="boot">
-  <div class="line" style="animation-delay:0s"><span class="dim">$</span> booting <span class="ok">MATRIX.PORTAL</span> v4.2.1 ...</div>
-  <div class="line" style="animation-delay:.18s">[<span class="ok"> ok </span>] locating nearest Zion node .... <span class="dim">cloud-7</span></div>
-  <div class="line" style="animation-delay:.36s">[<span class="ok"> ok </span>] handshake w/ operator <span class="dim">JOJKO</span> ... <span class="ok">AUTHORIZED</span></div>
-  <div class="line" style="animation-delay:.55s">[<span class="ok"> ok </span>] decrypting games.payload .......... <span class="ok">DONE</span></div>
-  <div class="line" style="animation-delay:.76s">[<span class="warn"> !! </span>] red pill detected — rerouting perception</div>
-  <div class="line" style="animation-delay:.95s"><span class="dim">$</span> enter the construct ...</div>
-</div>
 
 <!-- HERO: ASCII logo -->
 <div class="hero" id="hero">
@@ -1052,7 +1032,37 @@ GAMES.forEach((g, i) => {
   `;
   world.appendChild(el);
   cardEls.push(el);
+  // Block the anchor's default navigation — click routing is done in
+  // the document-level pointerdown handler below.
+  el.addEventListener('click', (ev) => ev.preventDefault());
 });
+// Document-level pointerdown that scans the full z-stack at the click
+// point. This avoids misses when a sibling (ring-deco, world) briefly
+// sits on top of the card at the single pixel under the cursor.
+document.addEventListener('pointerdown', (e) => {
+  if(e.button !== undefined && e.button !== 0) return;
+  const stack = document.elementsFromPoint(e.clientX, e.clientY);
+  const cardEl = stack.find(el => el.classList && el.classList.contains('card'));
+  if(!cardEl) return;
+  e.preventDefault();
+  const idx = parseInt(cardEl.dataset.idx, 10);
+  if(idxIsCentered(idx)){
+    jackIn();
+  } else {
+    lastUserInput = performance.now();
+    target = pos + wrapDelta(pos, idx);
+  }
+});
+// True when card i is the one currently closest to the centre of the tunnel.
+function idxIsCentered(i){
+  let best = 0, bestAbs = Infinity;
+  for(let k=0; k<N; k++){
+    let rel = k - pos;
+    rel = ((rel + N/2) % N + N) % N - N/2;
+    if(Math.abs(rel) < bestAbs){ bestAbs = Math.abs(rel); best = k; }
+  }
+  return i === best;
+}
 
 // ============================================================
 // 3D TUNNEL LOGIC
@@ -1118,6 +1128,9 @@ function tick(){
     target += 0.003 * state.speed;
   }
   pos += (target - pos) * 0.09;
+  // Snap when very close — stops sub-pixel jitter that was making the
+  // cursor flicker and mousedown miss the card.
+  if(!state.drift && Math.abs(target - pos) < 0.0008) pos = target;
   // keep in range but wrap mentally
   layoutCards();
   updateFocus();
@@ -1278,8 +1291,7 @@ addEventListener('touchend', (e)=>{
   const cardEl = document.elementFromPoint(t.clientX, t.clientY)?.closest('.card');
   if(cardEl){
     const idx = parseInt(cardEl.dataset.idx,10);
-    const curFocus = Math.round(((pos % N) + N) % N) % N;
-    if(idx === curFocus){
+    if(idxIsCentered(idx)){
       jackIn();
     } else {
       lastUserInput = performance.now();
@@ -1288,23 +1300,7 @@ addEventListener('touchend', (e)=>{
   }
 });
 
-// Click a non-focused card → scroll it to centre.
-// Click the focused card → jack in.
-document.addEventListener('click', (e)=>{
-  const cardEl = e.target.closest('.card');
-  if(!cardEl) return;
-  e.preventDefault();
-  const idx = parseInt(cardEl.dataset.idx,10);
-  // Trust the visual focus class (applied by layoutCards via |rel|<0.6)
-  // so clicks on the centered card always open, even mid-interpolation.
-  if(cardEl.classList.contains('focus')){
-    jackIn();
-  } else {
-    lastUserInput = performance.now();
-    target = pos + wrapDelta(pos, idx);
-  }
-});
-
+// (Card clicks are handled per-element in the BUILD CARDS block for reliability.)
 document.getElementById('enterBtn').addEventListener('click', (e)=>{
   e.preventDefault();
   jackIn();
@@ -1365,60 +1361,66 @@ function animCursor(){
   requestAnimationFrame(animCursor);
 }
 animCursor();
-document.addEventListener('mouseover', (e)=>{
-  const card = e.target.closest('.card');
-  const btn = e.target.closest('.enter, .coffee, .gameindex .item, .tweaks select, .tweaks input, .tweaks button');
+// Hover detection via elementsFromPoint on mousemove — walks the full
+// z-stack at the cursor position, so we reliably find a card even when
+// the topmost hit-target is a decorative layer underneath.
+let _lastHoverKey = '';
+function hoverProbe(clientX, clientY){
+  const stack = document.elementsFromPoint(clientX, clientY);
+  let card = null, btn = null;
+  for(const el of stack){
+    if(!card && el.classList && el.classList.contains('card')) card = el;
+    if(!btn && el.closest){
+      btn = el.closest('.enter, .coffee, .gameindex .item, .tweaks select, .tweaks input, .tweaks button');
+    }
+    if(card || btn) break;
+  }
+  let key = '';
   if(card){
     cursor.classList.add('hover');
     const idx = parseInt(card.dataset.idx,10);
     cursorLabel.textContent = GAMES[idx] ? '>> ' + GAMES[idx].name : '';
+    key = 'c'+idx;
   } else if(btn){
     cursor.classList.add('hover');
     if(btn.classList.contains('enter')) cursorLabel.textContent = '>> EXECUTE';
     else if(btn.classList.contains('coffee')) cursorLabel.textContent = '>> SUPPORT';
     else if(btn.classList.contains('item')) cursorLabel.textContent = '>> SELECT';
     else cursorLabel.textContent = '';
+    key = 'b'+btn.className;
   } else {
     cursor.classList.remove('hover');
     cursorLabel.textContent = '';
   }
-});
+  _lastHoverKey = key;
+}
+addEventListener('mousemove', (e) => hoverProbe(e.clientX, e.clientY));
 
 // ============================================================
 // INTRO SEQUENCE
 // ============================================================
 const startTime = performance.now();
 function runIntro(){
-  const boot = document.getElementById('boot');
   const hero = document.getElementById('hero');
   const stage = document.getElementById('stage');
 
-  // Start rain swirl -> pull toward center as logo appears
-  setTimeout(()=>{
-    const swirlStart = performance.now();
-    const swirl = ()=>{
-      const t = (performance.now()-swirlStart)/1000;
-      rainSwirl = Math.min(0.8, t*0.6);
-      if(t<2) requestAnimationFrame(swirl);
-    };
-    swirl();
-  }, 900);
+  // Rain swirls toward centre as the logo decrypts
+  const swirlStart = performance.now();
+  const swirl = ()=>{
+    const t = (performance.now()-swirlStart)/1000;
+    rainSwirl = Math.min(0.8, t*0.9);
+    if(t<1.2) requestAnimationFrame(swirl);
+  };
+  swirl();
 
-  // Fade boot away
-  setTimeout(()=>{ boot.classList.add('fade-out'); }, 1400);
-  setTimeout(()=>{ boot.style.display='none'; }, 2100);
-
-  // Start decrypting the logo
-  setTimeout(()=>{
-    decryptLogo();
-  }, 1500);
+  // Decrypt the logo immediately
+  decryptLogo();
 
   // Release rain swirl, dissolve hero, reveal tunnel
   setTimeout(()=>{
-    // rain returns to falling
     const relStart = performance.now();
     const release = ()=>{
-      const t = (performance.now()-relStart)/800;
+      const t = (performance.now()-relStart)/700;
       rainSwirl = Math.max(0, 0.8 - t*0.8);
       if(t<1) requestAnimationFrame(release);
     };
@@ -1426,10 +1428,10 @@ function runIntro(){
     hero.classList.add('dissolve');
     stage.classList.add('visible');
     document.getElementById('focusPanel').style.opacity = '1';
-  }, 4200);
+  }, 2400);
 
   // Remove hero from dom after transition
-  setTimeout(()=>{ hero.style.display='none'; }, 5400);
+  setTimeout(()=>{ hero.style.display='none'; }, 3400);
 }
 
 // Kick everything off
