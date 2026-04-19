@@ -48,6 +48,9 @@
   .hud .tag.live::before{content:"";display:inline-block;width:6px;height:6px;border-radius:50%;background:var(--mg);box-shadow:0 0 8px var(--mg);margin-right:6px;animation:blink 1.2s infinite}
   @keyframes blink{0%,60%,100%{opacity:1}30%{opacity:.25}}
   .hud .sep{opacity:.4}
+  .hud .audio-btn{background:none;cursor:none;font:inherit;color:inherit;letter-spacing:.15em;transition:color .2s,box-shadow .2s}
+  .hud .audio-btn:hover{color:var(--mg);box-shadow:0 0 8px var(--mg-glow)}
+  .hud .audio-btn.on{color:var(--mg);border-color:var(--mg);box-shadow:0 0 6px var(--mg-glow)}
   .hud-bottom{position:fixed;bottom:0;left:0;right:0;z-index:50;padding:16px 24px;display:flex;justify-content:space-between;align-items:flex-end;font-family:var(--mono);font-size:11px;color:var(--mg-dim);pointer-events:none;letter-spacing:.12em;text-transform:uppercase}
   .hud-bottom .col{display:flex;flex-direction:column;gap:4px}
   .hud-bottom .col.right{align-items:flex-end}
@@ -318,6 +321,9 @@
   <div class="slot">
     <span class="tag">LAT <b id="hud-lat">12ms</b></span>
     <span class="tag" id="hud-time-tag">T+<b id="hud-time">0000</b></span>
+    <button class="tag audio-btn" id="audio-btn" type="button" aria-label="Toggle audio" title="Toggle audio (M)">
+      <span id="audio-icon">AUDIO ◌</span>
+    </button>
   </div>
 </div>
 
@@ -423,6 +429,174 @@
 </div>
 
 <script>
+// ============================================================
+// AUDIO ENGINE (procedural Web Audio — no files)
+// ============================================================
+const AudioFX = (() => {
+  let ctx, master, ambient, enabled = true, started = false;
+
+  function init(){
+    if(ctx) return;
+    const AC = window.AudioContext || window.webkitAudioContext;
+    if(!AC) return;
+    ctx = new AC();
+    master = ctx.createGain();
+    master.gain.value = enabled ? 0.28 : 0;
+    master.connect(ctx.destination);
+
+    ambient = ctx.createGain();
+    ambient.gain.value = 0;
+    ambient.connect(master);
+
+    // Low drone: two detuned saws through a slow-LFO lowpass
+    const o1 = ctx.createOscillator(); o1.type = 'sawtooth'; o1.frequency.value = 55; o1.detune.value = -7;
+    const o2 = ctx.createOscillator(); o2.type = 'sawtooth'; o2.frequency.value = 82.41; o2.detune.value = +9;
+    const padFilter = ctx.createBiquadFilter();
+    padFilter.type = 'lowpass'; padFilter.frequency.value = 320; padFilter.Q.value = 4;
+    const lfo = ctx.createOscillator(); lfo.frequency.value = 0.11;
+    const lfoGain = ctx.createGain(); lfoGain.gain.value = 180;
+    lfo.connect(lfoGain).connect(padFilter.frequency);
+    o1.connect(padFilter); o2.connect(padFilter); padFilter.connect(ambient);
+
+    // Digital-rain hiss: filtered pink-ish noise
+    const bufSize = ctx.sampleRate * 3;
+    const buf = ctx.createBuffer(1, bufSize, ctx.sampleRate);
+    const data = buf.getChannelData(0);
+    let last = 0;
+    for(let i=0;i<bufSize;i++){
+      const white = Math.random()*2 - 1;
+      last = 0.98 * last + 0.02 * white;
+      data[i] = last * 1.6;
+    }
+    const noise = ctx.createBufferSource(); noise.buffer = buf; noise.loop = true;
+    const nFilter = ctx.createBiquadFilter(); nFilter.type = 'bandpass'; nFilter.frequency.value = 1600; nFilter.Q.value = 1.2;
+    const nGain = ctx.createGain(); nGain.gain.value = 0.06;
+    noise.connect(nFilter).connect(nGain).connect(ambient);
+
+    // Slow LFO on noise gain for breathing feel
+    const nLfo = ctx.createOscillator(); nLfo.frequency.value = 0.07;
+    const nLfoGain = ctx.createGain(); nLfoGain.gain.value = 0.03;
+    nLfo.connect(nLfoGain).connect(nGain.gain);
+
+    o1.start(); o2.start(); lfo.start(); noise.start(); nLfo.start();
+    ambient.gain.linearRampToValueAtTime(0.42, ctx.currentTime + 4);
+  }
+
+  function env(dur, peak, attack=0.005){
+    const g = ctx.createGain();
+    const t = ctx.currentTime;
+    g.gain.setValueAtTime(0, t);
+    g.gain.linearRampToValueAtTime(peak, t + attack);
+    g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+    return g;
+  }
+
+  function tone(freq, dur, type='sine', peak=0.12){
+    if(!ctx || !enabled) return;
+    const osc = ctx.createOscillator();
+    osc.type = type; osc.frequency.value = freq;
+    const g = env(dur, peak);
+    osc.connect(g).connect(master);
+    osc.start(); osc.stop(ctx.currentTime + dur + 0.05);
+  }
+
+  function start(){
+    if(started) return;
+    started = true;
+    init();
+    if(ctx && ctx.state === 'suspended') ctx.resume();
+  }
+
+  function setEnabled(on){
+    enabled = on;
+    if(master){
+      const t = ctx.currentTime;
+      master.gain.cancelScheduledValues(t);
+      master.gain.linearRampToValueAtTime(on ? 0.28 : 0, t + 0.3);
+    }
+  }
+
+  let lastTick = 0, lastHover = 0;
+  return {
+    start,
+    tick(){
+      const now = performance.now();
+      if(now - lastTick < 70) return;
+      lastTick = now;
+      tone(620 + Math.random()*60, 0.045, 'square', 0.08);
+    },
+    hover(){
+      const now = performance.now();
+      if(now - lastHover < 60) return;
+      lastHover = now;
+      tone(480, 0.03, 'sine', 0.035);
+    },
+    select(){
+      if(!ctx || !enabled) return;
+      tone(880, 0.05, 'triangle', 0.09);
+      setTimeout(() => tone(1320, 0.07, 'triangle', 0.06), 40);
+    },
+    jackIn(){
+      if(!ctx || !enabled) return;
+      const t = ctx.currentTime;
+      const osc = ctx.createOscillator(); osc.type = 'sawtooth';
+      osc.frequency.setValueAtTime(160, t);
+      osc.frequency.exponentialRampToValueAtTime(2200, t + 0.7);
+      const f = ctx.createBiquadFilter(); f.type = 'lowpass'; f.Q.value = 8;
+      f.frequency.setValueAtTime(400, t);
+      f.frequency.exponentialRampToValueAtTime(4200, t + 0.7);
+      const g = ctx.createGain();
+      g.gain.setValueAtTime(0, t);
+      g.gain.linearRampToValueAtTime(0.32, t + 0.04);
+      g.gain.exponentialRampToValueAtTime(0.0001, t + 0.95);
+      osc.connect(f).connect(g).connect(master);
+      osc.start(t); osc.stop(t + 1);
+      // zap tail
+      const zap = ctx.createOscillator(); zap.type = 'square';
+      zap.frequency.setValueAtTime(2400, t + 0.6);
+      zap.frequency.exponentialRampToValueAtTime(200, t + 1.0);
+      const zg = ctx.createGain();
+      zg.gain.setValueAtTime(0, t + 0.6);
+      zg.gain.linearRampToValueAtTime(0.18, t + 0.62);
+      zg.gain.exponentialRampToValueAtTime(0.0001, t + 1.05);
+      zap.connect(zg).connect(master);
+      zap.start(t + 0.6); zap.stop(t + 1.1);
+    },
+    toggle(){ setEnabled(!enabled); return enabled; },
+    isOn: () => enabled,
+    isStarted: () => started,
+  };
+})();
+
+// Lazily boot audio on first user gesture
+['pointerdown','keydown','touchstart'].forEach(ev =>
+  addEventListener(ev, () => AudioFX.start(), {once:true, passive:true})
+);
+
+// Audio toggle button
+(function(){
+  const btn = document.getElementById('audio-btn');
+  const icon = document.getElementById('audio-icon');
+  function render(){
+    const on = AudioFX.isOn();
+    icon.textContent = 'AUDIO ' + (on ? '●' : '○');
+    btn.classList.toggle('on', on);
+  }
+  btn.addEventListener('click', () => {
+    AudioFX.start();
+    AudioFX.toggle();
+    render();
+  });
+  addEventListener('keydown', (e) => {
+    if((e.key === 'm' || e.key === 'M') && !e.metaKey && !e.ctrlKey){
+      AudioFX.start();
+      AudioFX.toggle();
+      render();
+    }
+  });
+  render();
+})();
+
 // ============================================================
 // GAME DATA
 // ============================================================
@@ -926,6 +1100,7 @@ function updateFocus(){
   const glA = document.querySelector('#focus-name .gl-a');
   const glB = document.querySelector('#focus-name .gl-b');
   if(nameTxt.textContent !== game.name){
+    if(nameTxt.textContent !== '—') AudioFX.select();
     nameTxt.textContent = game.name;
     glA.textContent = game.name;
     glB.textContent = game.name;
@@ -976,7 +1151,7 @@ GAMES.forEach((g, i) => {
     lastUserInput = performance.now();
     target = pos + wrapDelta(pos, i);
   };
-  item.addEventListener('mouseenter', select);
+  item.addEventListener('mouseenter', () => { AudioFX.hover(); select(); });
   item.addEventListener('focus', select);
   item.addEventListener('click', (e) => { e.preventDefault(); select(); });
   gameIndexListEl.appendChild(item);
@@ -999,6 +1174,7 @@ let lastUserInput = 0;
 function userNudge(delta){
   lastUserInput = performance.now();
   target += delta;
+  AudioFX.tick();
 }
 
 addEventListener('keydown', (e)=>{
@@ -1104,6 +1280,7 @@ function jackIn(){
   const warp = document.getElementById('warp');
   document.getElementById('warp-msg').textContent = 'JACKING IN :: '+ game.name.toUpperCase();
   warp.classList.add('on');
+  AudioFX.jackIn();
   // scramble the focus title
   scrambleText('#focus-name .txt', game.name, 40);
   setTimeout(()=>{
