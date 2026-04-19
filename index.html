@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>JOJKO // MATRIX.PORTAL</title>
+<title>JOJKOS // MATRIX.PORTAL</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=VT323&family=JetBrains+Mono:wght@400;500;700&family=Orbitron:wght@700;900&family=Cookie&display=swap" rel="stylesheet">
@@ -163,16 +163,37 @@
   .card .tick.bl{bottom:-1px;left:-1px;border-right:none;border-top:none}
   .card .tick.br{bottom:-1px;right:-1px;border-left:none;border-top:none}
 
-  /* ========== CENTER RETICLE ========== */
-  .reticle{position:fixed;left:50%;top:50%;transform:translate(-50%,-50%);z-index:35;pointer-events:none;color:var(--mg);opacity:.75;mix-blend-mode:screen;transition:opacity .6s}
-  .reticle .box{width:320px;height:200px;border:1px solid rgba(0,255,65,.35);position:relative}
-  .reticle .box::before,.reticle .box::after{content:"";position:absolute;background:var(--mg);opacity:.6}
-  .reticle .box::before{left:50%;top:-10px;width:1px;height:20px;transform:translateX(-.5px)}
-  .reticle .box::after{top:50%;left:-10px;height:1px;width:20px;transform:translateY(-.5px)}
-  .reticle .t{position:absolute;font-family:var(--mono);font-size:10px;letter-spacing:.3em;color:var(--mg);text-transform:uppercase;text-shadow:0 0 6px var(--mg-glow)}
-  .reticle .t.a{top:-22px;left:0}
-  .reticle .t.b{bottom:-22px;right:0}
-  .reticle .t.c{top:50%;left:calc(100% + 14px);transform:translateY(-50%)}
+  /* ========== GAME INDEX SIDEBAR ========== */
+  .gameindex{position:fixed;left:24px;top:72px;bottom:120px;z-index:48;width:260px;
+    display:flex;flex-direction:column;font-family:var(--mono);pointer-events:auto;
+    background:linear-gradient(180deg,rgba(0,15,2,.55),rgba(0,10,2,.35));
+    border:1px solid rgba(0,255,65,.18);
+    backdrop-filter:blur(3px);-webkit-backdrop-filter:blur(3px)}
+  .gameindex .hdr{display:flex;justify-content:space-between;align-items:center;
+    padding:10px 12px;border-bottom:1px solid rgba(0,255,65,.18);
+    font-size:10px;letter-spacing:.3em;color:var(--mg);text-transform:uppercase;
+    text-shadow:0 0 6px var(--mg-glow)}
+  .gameindex .hdr .ct{color:var(--mg-dim)}
+  .gameindex .list{flex:1;overflow-y:auto;overflow-x:hidden;padding:6px 0;
+    scrollbar-width:thin;scrollbar-color:var(--mg-dim) transparent}
+  .gameindex .list::-webkit-scrollbar{width:4px}
+  .gameindex .list::-webkit-scrollbar-thumb{background:var(--mg-dim)}
+  .gameindex .item{display:flex;gap:10px;align-items:center;padding:7px 12px 7px 14px;
+    font-size:11px;letter-spacing:.18em;color:var(--mg-dim);text-transform:uppercase;
+    cursor:none;transition:color .2s,background .2s,padding .2s;
+    border-left:2px solid transparent;position:relative;width:100%;text-align:left;
+    background:none;border-top:none;border-right:none;border-bottom:none;font-family:inherit}
+  .gameindex .item .num{color:var(--mg-dim);min-width:22px;font-variant-numeric:tabular-nums;font-size:10px}
+  .gameindex .item .name{flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .gameindex .item:hover{color:var(--mg);background:rgba(0,255,65,.06);padding-left:18px}
+  .gameindex .item.active{color:var(--mg);background:rgba(0,255,65,.1);
+    border-left-color:var(--mg);padding-left:18px;
+    text-shadow:0 0 8px var(--mg-glow)}
+  .gameindex .item.active .num{color:var(--mg)}
+  .gameindex .item.active::after{content:"◄";position:absolute;right:10px;top:50%;transform:translateY(-50%);color:var(--mg);font-size:10px;text-shadow:0 0 6px var(--mg-glow)}
+  .gameindex .ftr{padding:8px 12px;border-top:1px solid rgba(0,255,65,.18);
+    font-size:9px;letter-spacing:.25em;color:var(--mg-dim);text-transform:uppercase;
+    display:flex;justify-content:space-between}
 
   /* ========== DETAIL PANEL (current focus) ========== */
   .focus-panel{position:fixed;left:50%;bottom:90px;transform:translateX(-50%);z-index:45;display:flex;flex-direction:column;align-items:center;gap:14px;pointer-events:none;width:min(780px,88vw);transition:opacity 1s ease}
@@ -190,11 +211,6 @@
   .focus-panel .enter:hover::before{transform:translateX(100%)}
   .focus-panel .enter .arrow{font-family:var(--pixel);font-size:18px}
 
-  /* ========== NAV PIPS ========== */
-  .pips{position:fixed;right:24px;top:50%;transform:translateY(-50%);z-index:45;display:flex;flex-direction:column;gap:7px;pointer-events:auto}
-  .pips .pip{width:22px;height:2px;background:rgba(0,255,65,.2);position:relative;transition:background .2s,width .2s}
-  .pips .pip.active{background:var(--mg);width:30px;box-shadow:0 0 8px var(--mg-glow)}
-  .pips .pip:hover{background:var(--mg);cursor:none}
 
   /* ========== HOTKEY PANEL ========== */
   .keys{display:flex;gap:10px;font-family:var(--mono);font-size:10px;color:var(--mg-dim);letter-spacing:.2em;text-transform:uppercase}
@@ -250,15 +266,19 @@
   .warp .bar::before{content:"";position:absolute;inset:0;background:var(--mg);transform:translateX(-100%);animation:barfill .8s forwards}
   @keyframes barfill{to{transform:translateX(0)}}
 
+  @media (max-width:900px){
+    .gameindex{display:none}
+  }
   @media (max-width:720px){
     .card{width:260px;height:170px}
     .hud{font-size:10px;padding:10px 14px}
     .hud-bottom{display:none}
     .focus-panel{bottom:60px}
-    .pips{display:none}
+    .gameindex{display:none}
     body{cursor:auto}
     .cursor,.cursor-dot{display:none}
-    .coffee{right:14px;bottom:14px}
+    .coffee{right:14px;bottom:14px;font-size:16px;padding:10px 14px}
+    .coffee svg{width:18px;height:18px}
   }
   @media (prefers-reduced-motion:reduce){
     *,*::before,*::after{animation-duration:.01ms!important;transition-duration:.01ms!important}
@@ -278,7 +298,7 @@
 <div class="hud">
   <div class="slot">
     <span class="tag live">SIGNAL LOCKED</span>
-    <span class="tag">NODE <b id="hud-node">0xJOJKO</b></span>
+    <span class="tag">NODE <b id="hud-node">JOJKOS</b></span>
     <span class="tag">TRK <b id="hud-trk">00/00</b></span>
   </div>
   <div class="slot">
@@ -289,7 +309,7 @@
 
 <div class="hud-bottom">
   <div class="col">
-    <span>// MATRIX.PORTAL v4.2.1 — jojko.industries</span>
+    <span>// MATRIX.PORTAL v4.3 — jojkos.industries</span>
     <div class="keys">
       <span><kbd>←</kbd><kbd>→</kbd> / <kbd>A</kbd><kbd>D</kbd> steer</span>
       <span><kbd>↑</kbd><kbd>↓</kbd> / <kbd>W</kbd><kbd>S</kbd> depth</span>
@@ -331,15 +351,6 @@
   <div class="world" id="world"></div>
 </div>
 
-<!-- RETICLE -->
-<div class="reticle" id="reticle">
-  <div class="box">
-    <span class="t a">TARGET · LOCK</span>
-    <span class="t b">// FOCUS</span>
-    <span class="t c" id="reticle-label">AWAITING</span>
-  </div>
-</div>
-
 <!-- FOCUS PANEL -->
 <div class="focus-panel" id="focusPanel" style="opacity:0">
   <div class="name glitch" id="focus-name">
@@ -354,8 +365,12 @@
   <a class="enter" id="enterBtn" href="#"><span>JACK IN</span><span class="arrow">▸▸</span></a>
 </div>
 
-<!-- PIPS -->
-<div class="pips" id="pips"></div>
+<!-- GAME INDEX -->
+<nav class="gameindex" id="gameIndex" aria-label="Game list">
+  <div class="hdr"><span>GAME INDEX</span><span class="ct" id="gameIndexCount">00/00</span></div>
+  <div class="list" id="gameIndexList"></div>
+  <div class="ftr"><span>HOVER · SELECT</span><span>ENTER · DIVE</span></div>
+</nav>
 
 <!-- COFFEE -->
 <a class="coffee" href="https://buymeacoffee.com/jojkos" target="_blank" rel="noopener" aria-label="Buy me a coffee">
@@ -422,7 +437,7 @@ const TWEAKS = /*EDITMODE-BEGIN*/{
   "scanlines": 0.85,
   "glitch": 0.85,
   "theme": "classic",
-  "autoDrift": true
+  "autoDrift": false
 }/*EDITMODE-END*/;
 
 function applyTheme(t){
@@ -491,12 +506,12 @@ setInterval(drawRain, 45);
 // ============================================================
 // Compact hand-placed ascii for JOJKO'S GAMES
 const LOGO_LINES = [
-  "     ██╗ ██████╗      ██╗██╗  ██╗ ██████╗       ██████╗      ██████╗  █████╗ ███╗   ███╗███████╗███████╗",
-  "     ██║██╔═══██╗     ██║██║ ██╔╝██╔═══██╗      ██╔═══╗     ██╔════╝ ██╔══██╗████╗ ████║██╔════╝██╔════╝",
-  "     ██║██║   ██║     ██║█████╔╝ ██║   ██║█████╗╚█████╝     ██║  ███╗███████║██╔████╔██║█████╗  ███████╗",
-  "██   ██║██║   ██║██   ██║██╔═██╗ ██║   ██║╚════╝ ╚═══██╗    ██║   ██║██╔══██║██║╚██╔╝██║██╔══╝  ╚════██║",
-  "╚█████╔╝╚██████╔╝╚█████╔╝██║  ██╗╚██████╔╝      ██████╔╝    ╚██████╔╝██║  ██║██║ ╚═╝ ██║███████╗███████║",
-  " ╚════╝  ╚═════╝  ╚════╝ ╚═╝  ╚═╝ ╚═════╝       ╚═════╝      ╚═════╝ ╚═╝  ╚═╝╚═╝     ╚═╝╚══════╝╚══════╝",
+  "     ██╗ ██████╗      ██╗██╗  ██╗ ██████╗ ███████╗     ██████╗  █████╗ ███╗   ███╗███████╗███████╗",
+  "     ██║██╔═══██╗     ██║██║ ██╔╝██╔═══██╗██╔════╝    ██╔════╝ ██╔══██╗████╗ ████║██╔════╝██╔════╝",
+  "     ██║██║   ██║     ██║█████╔╝ ██║   ██║███████╗    ██║  ███╗███████║██╔████╔██║█████╗  ███████╗",
+  "██   ██║██║   ██║██   ██║██╔═██╗ ██║   ██║╚════██║    ██║   ██║██╔══██║██║╚██╔╝██║██╔══╝  ╚════██║",
+  "╚█████╔╝╚██████╔╝╚█████╔╝██║  ██╗╚██████╔╝███████║    ╚██████╔╝██║  ██║██║ ╚═╝ ██║███████╗███████║",
+  " ╚════╝  ╚═════╝  ╚════╝ ╚═╝  ╚═╝ ╚═════╝ ╚══════╝     ╚═════╝ ╚═╝  ╚═╝╚═╝     ╚═╝╚══════╝╚══════╝",
 ];
 const asciiEl = document.getElementById('asciiLogo');
 // Decryption reveal: fill with random matrix chars, resolve char-by-char
@@ -838,11 +853,26 @@ function layoutCards(){
     // Cards fade as they get very close (past camera) or very far
     const depthNorm = Math.abs(rel) / (N/2);
     const opacity = Math.max(0, 1 - depthNorm*1.1);
-    // Slight face toward camera
-    const rotY = -Math.atan2(x, -z + 1) * 0.6;
-    const rotX = -Math.atan2(y, -z + 1) * 0.6;
-    el.style.transform = `translate(-50%,-50%) translate3d(${x}px,${y}px,${z}px) rotateY(${rotY}rad) rotateX(${rotX}rad)`;
+    // focus weight (1 at centre, 0 when rel >= 1) — flattens rotation + adds scale
+    const focus01 = Math.max(0, 1 - Math.abs(rel));
+    const f = focus01 * focus01 * (3 - 2 * focus01);
+    // Non-focused cards angle toward origin; focused card faces forward.
+    // Behind the focused card (rel>0) we add a per-card tilt so they don't
+    // all look dead-forward in the distance; in-front cards (rel<0) keep
+    // the subtle atan2 angle so they don't block the view.
+    let baseRotY = -Math.atan2(x, -z + 1) * 0.6;
+    let baseRotX = -Math.atan2(y, -z + 1) * 0.6;
+    if(rel > 0.4){
+      const behindBoost = Math.min(1, (rel - 0.4) / 1.5);
+      baseRotY += Math.sin(angle * 1.3) * 0.55 * behindBoost;
+      baseRotX += Math.cos(angle * 0.9) * 0.3 * behindBoost;
+    }
+    const rotY = baseRotY * (1 - f);
+    const rotX = baseRotX * (1 - f);
+    const scale = 1 + f * 0.18;
+    el.style.transform = `translate(-50%,-50%) translate3d(${x}px,${y}px,${z}px) rotateY(${rotY}rad) rotateX(${rotX}rad) scale(${scale})`;
     el.style.opacity = opacity;
+    el.style.zIndex = Math.round(100 - Math.abs(rel) * 10);
     el.style.pointerEvents = opacity > 0.3 ? 'auto' : 'none';
     // near = closest to camera (z>-SPACING_Z*0.6)
     const near = Math.abs(rel) < 0.6;
@@ -891,11 +921,20 @@ function updateFocus(){
     document.getElementById('enterBtn').href = game.url;
     document.getElementById('hud-title').textContent = '>> ' + game.name.toUpperCase();
     document.getElementById('hud-hash').textContent = '0x'+sig+' '+game.tag;
-    document.getElementById('reticle-label').textContent = game.name.slice(0,18).toUpperCase();
     document.getElementById('hud-trk').textContent = String(fi+1).padStart(2,'0')+'/'+String(N).padStart(2,'0');
   }
-  // Update pips
-  document.querySelectorAll('.pip').forEach((p, i) => p.classList.toggle('active', i===fi));
+  // Update sidebar active state
+  document.querySelectorAll('.gameindex .item').forEach((it, i) => {
+    const active = i === fi;
+    if(it.classList.contains('active') !== active) it.classList.toggle('active', active);
+    if(active && !sidebarHover){
+      const rect = it.getBoundingClientRect();
+      const parent = it.parentElement.getBoundingClientRect();
+      if(rect.top < parent.top || rect.bottom > parent.bottom){
+        it.scrollIntoView({block:'nearest',behavior:'smooth'});
+      }
+    }
+  });
 }
 
 function updateHUD(t){
@@ -905,20 +944,31 @@ function updateHUD(t){
 }
 
 // ============================================================
-// PIPS
+// GAME INDEX SIDEBAR
 // ============================================================
-const pipsEl = document.getElementById('pips');
+const gameIndexListEl = document.getElementById('gameIndexList');
+document.getElementById('gameIndexCount').textContent =
+  String(GAMES.length).padStart(2,'0') + '/' + String(GAMES.length).padStart(2,'0');
+let sidebarHover = false;
 GAMES.forEach((g, i) => {
-  const pip = document.createElement('div');
-  pip.className = 'pip';
-  pip.dataset.idx = i;
-  pip.title = g.name;
-  pip.addEventListener('click', () => {
+  const item = document.createElement('button');
+  item.type = 'button';
+  item.className = 'item';
+  item.dataset.idx = i;
+  item.innerHTML = '<span class="num">' + String(i+1).padStart(2,'0') + '</span>' +
+                   '<span class="name">' + g.name + '</span>';
+  const select = () => {
     lastUserInput = performance.now();
     target = pos + wrapDelta(pos, i);
-  });
-  pipsEl.appendChild(pip);
+  };
+  item.addEventListener('mouseenter', select);
+  item.addEventListener('focus', select);
+  item.addEventListener('click', (e) => { e.preventDefault(); select(); });
+  gameIndexListEl.appendChild(item);
 });
+const gameIndexEl = document.getElementById('gameIndex');
+gameIndexEl.addEventListener('mouseenter', () => { sidebarHover = true; });
+gameIndexEl.addEventListener('mouseleave', () => { sidebarHover = false; });
 
 // ============================================================
 // INPUT
@@ -961,20 +1011,23 @@ addEventListener('wheel', (e)=>{
   }
 }, {passive:true});
 
-// Click a card → focus it; click focused card → jack in
+// Click a card → select it (scroll to center). Double-click → jack in.
+// Users must hit the JACK IN button or Enter to open.
 document.addEventListener('click', (e)=>{
   const cardEl = e.target.closest('.card');
   if(!cardEl) return;
   e.preventDefault();
   const idx = parseInt(cardEl.dataset.idx,10);
+  lastUserInput = performance.now();
+  target = pos + wrapDelta(pos, idx);
+});
+document.addEventListener('dblclick', (e)=>{
+  const cardEl = e.target.closest('.card');
+  if(!cardEl) return;
+  e.preventDefault();
+  const idx = parseInt(cardEl.dataset.idx,10);
   const curFocus = Math.round(((pos % N) + N) % N) % N;
-  if(idx === curFocus){
-    jackIn();
-  } else {
-    lastUserInput = performance.now();
-    // shortest-path target so we don't scroll the long way around
-    target = pos + wrapDelta(pos, idx);
-  }
+  if(idx === curFocus) jackIn();
 });
 
 document.getElementById('enterBtn').addEventListener('click', (e)=>{
@@ -1036,14 +1089,17 @@ function animCursor(){
 animCursor();
 document.addEventListener('mouseover', (e)=>{
   const card = e.target.closest('.card');
-  const btn = e.target.closest('.enter, .coffee, .pip, .tweaks select, .tweaks input, .tweaks button');
+  const btn = e.target.closest('.enter, .coffee, .gameindex .item, .tweaks select, .tweaks input, .tweaks button');
   if(card){
     cursor.classList.add('hover');
     const idx = parseInt(card.dataset.idx,10);
     cursorLabel.textContent = GAMES[idx] ? '>> ' + GAMES[idx].name : '';
   } else if(btn){
     cursor.classList.add('hover');
-    cursorLabel.textContent = btn.classList.contains('enter') ? '>> EXECUTE' : btn.classList.contains('coffee') ? '>> SUPPORT' : '';
+    if(btn.classList.contains('enter')) cursorLabel.textContent = '>> EXECUTE';
+    else if(btn.classList.contains('coffee')) cursorLabel.textContent = '>> SUPPORT';
+    else if(btn.classList.contains('item')) cursorLabel.textContent = '>> SELECT';
+    else cursorLabel.textContent = '';
   } else {
     cursor.classList.remove('hover');
     cursorLabel.textContent = '';
