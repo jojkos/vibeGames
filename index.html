@@ -1295,8 +1295,9 @@ document.addEventListener('click', (e)=>{
   if(!cardEl) return;
   e.preventDefault();
   const idx = parseInt(cardEl.dataset.idx,10);
-  const curFocus = Math.round(((pos % N) + N) % N) % N;
-  if(idx === curFocus){
+  // Trust the visual focus class (applied by layoutCards via |rel|<0.6)
+  // so clicks on the centered card always open, even mid-interpolation.
+  if(cardEl.classList.contains('focus')){
     jackIn();
   } else {
     lastUserInput = performance.now();
