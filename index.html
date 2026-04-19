@@ -479,7 +479,10 @@ const AudioFX = (() => {
     nLfo.connect(nLfoGain).connect(nGain.gain);
 
     o1.start(); o2.start(); lfo.start(); noise.start(); nLfo.start();
-    ambient.gain.linearRampToValueAtTime(0.42, ctx.currentTime + 4);
+    const t0 = ctx.currentTime;
+    ambient.gain.setValueAtTime(0.0001, t0);
+    ambient.gain.exponentialRampToValueAtTime(0.15, t0 + 0.15);
+    ambient.gain.linearRampToValueAtTime(0.42, t0 + 1.2);
   }
 
   function env(dur, peak, attack=0.005){
@@ -501,10 +504,21 @@ const AudioFX = (() => {
   }
 
   function start(){
-    if(started) return;
-    started = true;
-    init();
-    if(ctx && ctx.state === 'suspended') ctx.resume();
+    if(!started){
+      started = true;
+      init();
+    }
+    if(ctx && ctx.state === 'suspended'){
+      ctx.resume().catch(()=>{});
+    }
+  }
+  // Returns true when the context is actually running (audible)
+  function tryResume(){
+    if(!ctx) { start(); }
+    if(!ctx) return false;
+    if(ctx.state === 'running') return true;
+    ctx.resume().catch(()=>{});
+    return ctx.state === 'running';
   }
 
   function setEnabled(on){
@@ -563,15 +577,39 @@ const AudioFX = (() => {
       zap.start(t + 0.6); zap.stop(t + 1.1);
     },
     toggle(){ setEnabled(!enabled); return enabled; },
+    tryResume,
     isOn: () => enabled,
     isStarted: () => started,
+    isRunning: () => ctx && ctx.state === 'running',
   };
 })();
 
-// Lazily boot audio on first user gesture
-['pointerdown','keydown','touchstart'].forEach(ev =>
-  addEventListener(ev, () => AudioFX.start(), {once:true, passive:true})
-);
+// Reset transient UI when the portal is shown (including bfcache back-nav)
+addEventListener('pageshow', () => {
+  const warp = document.getElementById('warp');
+  if(warp){
+    warp.classList.remove('on');
+    const msg = document.getElementById('warp-msg');
+    if(msg) msg.textContent = 'JACKING IN';
+  }
+});
+
+// Try to boot audio immediately; browsers block autoplay until user gesture,
+// so also attach a one-shot listener for every common interaction as fallback.
+(function(){
+  const boot = () => AudioFX.start();
+  // Immediate attempt (works on return visits w/ media-engagement,
+  // or in browsers that allow autoplay for this origin)
+  boot();
+  // Keep trying to resume periodically until it succeeds
+  const resumer = setInterval(() => {
+    const ok = AudioFX.tryResume();
+    if(ok) clearInterval(resumer);
+  }, 300);
+  // Fallback: any user interaction unblocks it
+  const evs = ['pointerdown','mousedown','keydown','touchstart','click','wheel','mousemove'];
+  evs.forEach(ev => addEventListener(ev, boot, {once:true, passive:true, capture:true}));
+})();
 
 // Audio toggle button
 (function(){
@@ -583,14 +621,16 @@ const AudioFX = (() => {
     btn.classList.toggle('on', on);
   }
   btn.addEventListener('click', () => {
+    const wasStarted = AudioFX.isStarted();
     AudioFX.start();
-    AudioFX.toggle();
+    if(wasStarted) AudioFX.toggle();
     render();
   });
   addEventListener('keydown', (e) => {
     if((e.key === 'm' || e.key === 'M') && !e.metaKey && !e.ctrlKey){
+      const wasStarted = AudioFX.isStarted();
       AudioFX.start();
-      AudioFX.toggle();
+      if(wasStarted) AudioFX.toggle();
       render();
     }
   });
@@ -1240,9 +1280,7 @@ addEventListener('touchend', (e)=>{
     const idx = parseInt(cardEl.dataset.idx,10);
     const curFocus = Math.round(((pos % N) + N) % N) % N;
     if(idx === curFocus){
-      // second tap on focused card = jack in
-      if(performance.now() - (cardEl._lastTap||0) < 500) jackIn();
-      cardEl._lastTap = performance.now();
+      jackIn();
     } else {
       lastUserInput = performance.now();
       target = pos + wrapDelta(pos, idx);
@@ -1250,23 +1288,20 @@ addEventListener('touchend', (e)=>{
   }
 });
 
-// Click a card → select it (scroll to center). Double-click → jack in.
-// Users must hit the JACK IN button or Enter to open.
+// Click a non-focused card → scroll it to centre.
+// Click the focused card → jack in.
 document.addEventListener('click', (e)=>{
   const cardEl = e.target.closest('.card');
   if(!cardEl) return;
   e.preventDefault();
   const idx = parseInt(cardEl.dataset.idx,10);
-  lastUserInput = performance.now();
-  target = pos + wrapDelta(pos, idx);
-});
-document.addEventListener('dblclick', (e)=>{
-  const cardEl = e.target.closest('.card');
-  if(!cardEl) return;
-  e.preventDefault();
-  const idx = parseInt(cardEl.dataset.idx,10);
   const curFocus = Math.round(((pos % N) + N) % N) % N;
-  if(idx === curFocus) jackIn();
+  if(idx === curFocus){
+    jackIn();
+  } else {
+    lastUserInput = performance.now();
+    target = pos + wrapDelta(pos, idx);
+  }
 });
 
 document.getElementById('enterBtn').addEventListener('click', (e)=>{
@@ -1281,6 +1316,8 @@ function jackIn(){
   document.getElementById('warp-msg').textContent = 'JACKING IN :: '+ game.name.toUpperCase();
   warp.classList.add('on');
   AudioFX.jackIn();
+  // If the user hits back, don't let bfcache freeze us on the warp screen.
+  // pageshow below will clean up — this is the proactive guard in case bfcache is disabled.
   // scramble the focus title
   scrambleText('#focus-name .txt', game.name, 40);
   setTimeout(()=>{
