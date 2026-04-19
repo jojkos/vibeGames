@@ -263,29 +263,44 @@
     .gameindex{display:none}
   }
   @media (max-width:720px){
-    .card{width:240px;height:150px}
+    .card{width:280px;height:175px}
+    .card .topbar{font-size:9px}
+    .card .topbar .right span{font-size:8px;padding:1px 3px}
+    .card .title{font-size:12px}
     .hud{font-size:9px;padding:8px 10px;gap:4px}
-    .hud .slot{gap:6px}
-    .hud .tag{padding:3px 6px;letter-spacing:.08em}
-    .hud #hud-time-tag{display:none}
+    .hud .slot{gap:6px;flex-wrap:wrap;justify-content:flex-end}
+    .hud .tag{padding:3px 6px;letter-spacing:.06em}
+    .hud #hud-time-tag,.hud #hud-node{display:none}
     .hud-bottom{display:none}
-    .focus-panel{bottom:84px;gap:10px}
-    .focus-panel .name,.focus-panel .name.glitch{font-size:clamp(18px,6vw,28px);display:block;max-width:100%;overflow-wrap:break-word;word-break:break-word;text-align:center;line-height:1.05;letter-spacing:.04em}
-    .focus-panel .info{gap:14px;font-size:9px;flex-wrap:wrap;justify-content:center}
-    .focus-panel .enter{padding:14px 22px;font-size:13px}
+    .focus-panel{bottom:88px;gap:8px;width:92vw}
+    .focus-panel .name,.focus-panel .name.glitch{font-size:clamp(20px,7vw,32px);display:block;max-width:100%;overflow-wrap:break-word;word-break:break-word;text-align:center;line-height:1.05;letter-spacing:.04em}
+    .focus-panel .name .gl-a,.focus-panel .name .gl-b{display:none}
+    .focus-panel .info{gap:12px;font-size:9px;flex-wrap:wrap;justify-content:center}
+    .focus-panel .enter{padding:14px 26px;font-size:13px;letter-spacing:.25em}
     .gameindex{display:none}
     body{cursor:auto}
     .cursor,.cursor-dot{display:none}
-    .coffee{left:auto;right:12px;bottom:12px;font-size:13px;padding:8px 12px;gap:8px;letter-spacing:.02em;white-space:nowrap;justify-content:center;max-width:calc(100vw - 24px)}
+    .coffee{left:auto;right:12px;bottom:12px;font-size:12px;padding:7px 12px;gap:7px;letter-spacing:.02em;white-space:nowrap;justify-content:center}
     .coffee svg{width:16px;height:16px;flex-shrink:0}
     .coffee .txt{line-height:1;white-space:nowrap;display:inline;flex-shrink:0}
     .coffee::before{display:none}
-    .brackets{inset:8px}
-    .brackets::before,.brackets::after,.brackets .bl,.brackets .br{width:18px;height:18px}
-    #rain{opacity:.35!important}
+    .brackets{inset:6px}
+    .brackets::before,.brackets::after,.brackets .bl,.brackets .br{width:14px;height:14px}
+    #rain{opacity:.22!important}
+    .crt-flicker{display:none}
+    .vignette{background:radial-gradient(ellipse at center,transparent 55%,rgba(0,0,0,.25) 100%)}
+    .scanlines{opacity:.45}
     .hero pre{font-size:clamp(6px,1.7vw,10px)}
     .hero .sub{font-size:10px;letter-spacing:.3em}
     .stage{perspective:900px}
+    .ring-deco.r1{animation-duration:90s}
+    .ring-deco.r2{animation-duration:70s}
+  }
+  @media (max-width:480px){
+    .card{width:250px;height:156px}
+    .focus-panel{bottom:80px}
+    .focus-panel .enter{padding:12px 22px;font-size:12px}
+    .focus-panel .info{display:none}
   }
   @media (prefers-reduced-motion:reduce){
     *,*::before,*::after{animation-duration:.01ms!important;transition-duration:.01ms!important}
@@ -1036,10 +1051,12 @@ GAMES.forEach((g, i) => {
   // the document-level pointerdown handler below.
   el.addEventListener('click', (ev) => ev.preventDefault());
 });
-// Document-level pointerdown that scans the full z-stack at the click
-// point. This avoids misses when a sibling (ring-deco, world) briefly
-// sits on top of the card at the single pixel under the cursor.
+// Document-level pointerdown (mouse only) that scans the full z-stack at
+// the click point. Avoids misses when a sibling briefly sits on top of
+// the card. Touch is handled separately in touchend so a light tap
+// during a drag gesture doesn't accidentally jack in.
 document.addEventListener('pointerdown', (e) => {
+  if(e.pointerType && e.pointerType !== 'mouse') return;
   if(e.button !== undefined && e.button !== 0) return;
   const stack = document.elementsFromPoint(e.clientX, e.clientY);
   const cardEl = stack.find(el => el.classList && el.classList.contains('card'));
@@ -1069,8 +1086,8 @@ function idxIsCentered(i){
 // ============================================================
 const N = cardEls.length;
 const SPACING_Z = 520;        // gap between cards
-function getSpread(){ return innerWidth < 720 ? 0.32 : 1; }
-function getSpacing(){ return innerWidth < 720 ? 360 : SPACING_Z; }
+function getSpread(){ return innerWidth < 720 ? 0.28 : 1; }
+function getSpacing(){ return innerWidth < 720 ? 340 : SPACING_Z; }
 let pos = 0;                  // current z position (in slots)
 let target = 0;
 let lastScroll = 0;
@@ -1277,8 +1294,8 @@ addEventListener('touchmove', (e)=>{
     touchDragAccum = 0;
     touchMoved = true;
   }
-  if(Math.abs(e.touches[0].clientY - touchStartY) > 10 ||
-     Math.abs(e.touches[0].clientX - touchStartX) > 10){
+  if(Math.abs(e.touches[0].clientY - touchStartY) > 6 ||
+     Math.abs(e.touches[0].clientX - touchStartX) > 6){
     touchMoved = true;
   }
 }, {passive:true});
