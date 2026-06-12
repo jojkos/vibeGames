@@ -1,0 +1,588 @@
+/* ============================================================
+   v2f — PATCH NOTES FROM THE VOID
+   brutalist mono zine · paper / ink / warning-tape accent
+   ============================================================ */
+
+:root {
+  --paper: #f2f0eb;
+  --ink: #111111;
+  --accent: #ff4d00;
+  --soft: rgba(17, 17, 17, 0.55);
+  --hair: rgba(17, 17, 17, 0.25);
+  color-scheme: light;
+}
+
+/* dark mode: ink paper inverted, accent stays */
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --paper: #121212;
+    --ink: #e9e6df;
+    --soft: rgba(233, 230, 223, 0.55);
+    --hair: rgba(233, 230, 223, 0.25);
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --paper: #121212;
+  --ink: #e9e6df;
+  --soft: rgba(233, 230, 223, 0.55);
+  --hair: rgba(233, 230, 223, 0.25);
+  color-scheme: dark;
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+html { scroll-behavior: auto; }
+
+body {
+  background: var(--paper);
+  color: var(--ink);
+  font-family: "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: 15px;
+  line-height: 1.55;
+  -webkit-font-smoothing: antialiased;
+  overflow-x: hidden;
+}
+
+::selection { background: var(--accent); color: var(--paper); }
+
+a { color: inherit; text-decoration-thickness: 1px; text-underline-offset: 3px; }
+a:hover { color: var(--accent); }
+
+button {
+  font: inherit;
+  color: inherit;
+  background: none;
+  border: none;
+  cursor: pointer;
+}
+
+:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+/* JS-gated controls */
+html:not(.has-js) .js-only { display: none !important; }
+
+/* reduced motion / no gsap: physics controls make no promises they can't keep */
+html.no-phys .break-btn,
+html.no-phys .rebuild-btn { display: none !important; }
+
+/* ============================================================
+   TOP BAR
+   ============================================================ */
+.topbar {
+  position: fixed;
+  top: 0; left: 0; right: 0;
+  z-index: 90;
+  display: flex;
+  align-items: center;
+  gap: 0.9rem;
+  height: 44px;
+  padding: 0 0.9rem;
+  background: var(--paper);
+  border-bottom: 1px solid var(--ink);
+  font-size: 12px;
+  letter-spacing: 0.04em;
+}
+
+.brand {
+  font-weight: 800;
+  text-decoration: none;
+  white-space: nowrap;
+}
+
+.ring-wrap { display: inline-flex; }
+.ring-track, .ring-fill {
+  fill: none;
+  stroke-width: 2.5;
+}
+.ring-track { stroke: var(--hair); }
+.ring-fill {
+  stroke: var(--accent);
+  stroke-dasharray: 69.12; /* 2πr, r=11 */
+  stroke-dashoffset: 69.12;
+  transform: rotate(-90deg);
+  transform-origin: center;
+}
+
+.lap { font-weight: 700; white-space: nowrap; }
+
+.marquee {
+  flex: 1;
+  overflow: hidden;
+  white-space: nowrap;
+  border-left: 1px solid var(--hair);
+  border-right: 1px solid var(--hair);
+  padding: 0 0.6rem;
+  color: var(--soft);
+  mask-image: linear-gradient(90deg, transparent, #000 6%, #000 94%, transparent);
+  -webkit-mask-image: linear-gradient(90deg, transparent, #000 6%, #000 94%, transparent);
+}
+.marquee-track {
+  display: inline-flex;
+  gap: 1.4rem;
+  padding-right: 1.4rem;
+  will-change: transform;
+}
+.has-js .marquee-track { animation: marquee 42s linear infinite; }
+@keyframes marquee {
+  to { transform: translateX(-50%); }
+}
+
+.snd-btn, .pal-btn { font-weight: 700; white-space: nowrap; }
+.snd-btn[aria-pressed="true"] { color: var(--accent); }
+.pal-btn {
+  border: 1px solid var(--ink);
+  padding: 2px 7px;
+}
+.pal-btn:hover { background: var(--ink); color: var(--paper); }
+
+.coffee-link { text-decoration: none; font-weight: 700; white-space: nowrap; }
+
+.velobar {
+  position: absolute;
+  left: 0; right: 0; bottom: -2px;
+  height: 2px;
+  background: var(--accent);
+  transform: scaleY(0.5);
+  transform-origin: top;
+}
+
+/* ============================================================
+   MASTHEAD
+   ============================================================ */
+/* NOTE: the 44px topbar offset lives INSIDE the loop unit (masthead padding),
+   so the document is exactly periodic with period = unit height — required
+   for the seamless modulo wrap. */
+#loop { padding-top: 0; }
+
+.loop-unit { position: relative; }
+
+html.loop-on body { overscroll-behavior: none; }
+
+.masthead {
+  max-width: 1180px;
+  margin: 0 auto;
+  padding: calc(44px + clamp(3rem, 9vh, 7rem)) 1.2rem 2.5rem;
+  position: relative;
+}
+
+.regmarks {
+  display: flex;
+  justify-content: space-between;
+  color: var(--soft);
+  font-size: 13px;
+}
+
+.mast-over {
+  margin-top: 1.4rem;
+  font-size: 12px;
+  letter-spacing: 0.28em;
+  color: var(--soft);
+}
+
+.mast-title {
+  font-size: clamp(52px, 11.5vw, 168px);
+  font-weight: 800;
+  line-height: 0.88;
+  letter-spacing: -0.02em;
+  margin: 1.2rem 0 1.6rem;
+  text-transform: uppercase;
+}
+
+.mast-sub { font-size: clamp(14px, 1.5vw, 17px); max-width: 60ch; }
+.mast-sub strong { color: var(--accent); }
+
+.mast-hint {
+  margin-top: 0.8rem;
+  font-size: 12px;
+  color: var(--soft);
+}
+
+.mast-coffee { margin-top: 1.6rem; font-size: 13px; }
+.mast-coffee a { font-weight: 700; }
+
+.mast-rule {
+  margin-top: 2.2rem;
+  color: var(--hair);
+  overflow: hidden;
+  white-space: nowrap;
+}
+
+/* ============================================================
+   ENTRIES
+   ============================================================ */
+.entry {
+  position: relative;
+  display: grid;
+  grid-template-columns: 3.4rem minmax(0, 1.35fr) minmax(0, 1fr);
+  gap: 0;
+  max-width: 1180px;
+  margin: 3.5rem auto;
+  border: 1px solid var(--ink);
+  background: var(--paper);
+  overflow: hidden;
+}
+
+.rail {
+  border-right: 1px solid var(--ink);
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  padding: 1rem 0;
+  user-select: none;
+}
+.rail span {
+  writing-mode: vertical-rl;
+  transform: rotate(180deg);
+  font-size: clamp(26px, 3vw, 44px);
+  font-weight: 800;
+  letter-spacing: 0.15em;
+  color: var(--soft);
+}
+
+.log {
+  padding: 1.4rem 1.6rem 1.5rem;
+  min-width: 0;
+}
+
+.loghead {
+  display: flex;
+  align-items: baseline;
+  flex-wrap: wrap;
+  gap: 0.4rem 1rem;
+  margin-bottom: 0.9rem;
+}
+
+.ver {
+  font-weight: 700;
+  font-size: clamp(14px, 1.4vw, 17px);
+  color: var(--accent);
+}
+
+.tag {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.18em;
+  border: 1px solid var(--ink);
+  padding: 2px 8px;
+  align-self: center;
+}
+
+.title {
+  flex-basis: 100%;
+  font-size: clamp(40px, 6.2vw, 104px);
+  font-weight: 800;
+  line-height: 0.95;
+  letter-spacing: -0.015em;
+  text-transform: uppercase;
+  order: 2;
+  cursor: default;
+  touch-action: pan-y;
+}
+.title .ch {
+  display: inline-block;
+  white-space: pre;
+}
+.title.is-broken .ch { will-change: transform; }
+
+.desc { max-width: 58ch; margin-bottom: 0.9rem; }
+
+.changes {
+  list-style: none;
+  margin-bottom: 0.9rem;
+  font-size: 14px;
+}
+.changes li { padding-left: 0; }
+.ch-add  { color: var(--ink); }
+.ch-add::first-letter { color: var(--accent); }
+.ch-fix  { color: var(--soft); }
+.ch-wont { color: var(--accent); }
+
+.meta {
+  font-size: 12px;
+  color: var(--soft);
+  border-top: 1px dashed var(--hair);
+  padding-top: 0.7rem;
+  margin-bottom: 1.1rem;
+}
+
+.actions {
+  display: flex;
+  gap: 1rem;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.break-btn, .rebuild-btn {
+  font-size: 13px;
+  color: var(--soft);
+}
+.break-btn:hover { color: var(--accent); }
+.rebuild-btn { color: var(--accent); font-weight: 700; }
+
+.run {
+  margin-left: auto;
+  font-weight: 800;
+  font-size: clamp(15px, 1.6vw, 19px);
+  text-decoration: none;
+  border: 1px solid var(--ink);
+  padding: 0.45rem 1rem;
+  white-space: nowrap;
+}
+.run:hover, .run:focus-visible {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: #fff;
+}
+
+/* figure */
+.fig {
+  border-left: 1px solid var(--ink);
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+.fig img {
+  width: 100%;
+  height: auto;
+  aspect-ratio: 8 / 5;
+  object-fit: cover;
+  display: block;
+  filter: grayscale(1) contrast(1.1);
+  transition: filter 0.35s ease;
+  flex: 1;
+}
+.entry:hover .fig img,
+.entry.in-focus .fig img,
+.entry:focus-within .fig img {
+  filter: none;
+}
+.fig figcaption {
+  font-size: 11px;
+  letter-spacing: 0.08em;
+  color: var(--soft);
+  border-top: 1px solid var(--ink);
+  padding: 0.5rem 0.8rem;
+}
+
+/* build-log launch overlay */
+.buildlog {
+  position: absolute;
+  inset: 0;
+  z-index: 5;
+  background: var(--paper);
+  padding: 1.2rem 1.5rem;
+  font-size: 13px;
+  line-height: 1.8;
+  white-space: pre-wrap;
+  border: 2px solid var(--accent);
+  overflow: hidden;
+}
+.buildlog .ok { color: var(--accent); font-weight: 700; }
+
+/* launch expander */
+.expander {
+  position: fixed;
+  z-index: 200;
+  object-fit: cover;
+  border: 1px solid var(--ink);
+  view-transition-name: fig-expand;
+}
+.expander.full {
+  inset: 0 !important;
+  width: 100vw !important;
+  height: 100vh !important;
+  border: none;
+}
+::view-transition-old(fig-expand),
+::view-transition-new(fig-expand) {
+  animation-duration: 0.45s;
+  animation-timing-function: cubic-bezier(0.7, 0, 0.2, 1);
+}
+
+/* ============================================================
+   COLOPHON
+   ============================================================ */
+.colophon {
+  max-width: 1180px;
+  margin: 4rem auto 0;
+  padding: 2.5rem 1.2rem 3.5rem;
+  border-top: 1px solid var(--ink);
+  font-size: 12px;
+  letter-spacing: 0.08em;
+  color: var(--soft);
+  text-align: center;
+}
+.colo-line { margin-bottom: 0.5rem; }
+.hash { color: var(--accent); }
+
+.backtotop {
+  display: inline-block;
+  margin-top: 1.4rem;
+  font-weight: 800;
+  font-size: 15px;
+  letter-spacing: 0.12em;
+  color: var(--ink);
+  border: 2px solid var(--ink);
+  padding: 0.6rem 1.2rem;
+  text-decoration: none;
+  transform: rotate(-2deg);
+}
+.backtotop:hover { border-color: var(--accent); }
+html.loop-on .backtotop { display: none; }
+
+.colo-loop { margin-top: 1.4rem; display: none; }
+html.loop-on .colo-loop { display: block; }
+
+/* clone of loop unit: not focusable, not announced (also inert via JS) */
+.loop-unit.is-clone { user-select: none; }
+
+/* ============================================================
+   COMMAND PALETTE
+   ============================================================ */
+.palette-veil {
+  position: fixed;
+  inset: 0;
+  z-index: 150;
+  background: color-mix(in srgb, var(--paper) 65%, transparent);
+  backdrop-filter: blur(2px);
+}
+
+.palette {
+  position: absolute;
+  top: 14vh;
+  left: 50%;
+  transform: translateX(-50%);
+  width: min(640px, 92vw);
+  background: var(--paper);
+  border: 1px solid var(--ink);
+  box-shadow: 6px 6px 0 var(--accent);
+}
+
+.pal-head {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  border-bottom: 1px solid var(--ink);
+  padding: 0.7rem 0.9rem;
+}
+.pal-prompt { color: var(--accent); font-weight: 800; }
+#palInput {
+  flex: 1;
+  font: inherit;
+  color: inherit;
+  background: none;
+  border: none;
+  outline: none;
+  min-width: 0;
+}
+#palInput::placeholder { color: var(--soft); opacity: 1; font-size: 12px; }
+.pal-close { font-size: 12px; color: var(--soft); }
+
+.pal-list {
+  list-style: none;
+  max-height: 46vh;
+  overflow-y: auto;
+}
+.pal-list li {
+  padding: 0.55rem 0.9rem;
+  display: flex;
+  gap: 0.8rem;
+  align-items: baseline;
+  cursor: pointer;
+  border-bottom: 1px solid var(--hair);
+}
+.pal-list li:last-child { border-bottom: none; }
+.pal-list li .k { font-weight: 700; }
+.pal-list li .d { color: var(--soft); font-size: 12px; margin-left: auto; text-align: right; }
+.pal-list li[aria-selected="true"] {
+  background: var(--ink);
+  color: var(--paper);
+}
+.pal-list li[aria-selected="true"] .d { color: var(--paper); opacity: 0.7; }
+.pal-list li.empty { color: var(--soft); cursor: default; }
+
+.pal-foot {
+  border-top: 1px solid var(--ink);
+  padding: 0.45rem 0.9rem;
+  font-size: 11px;
+  color: var(--soft);
+}
+
+/* ============================================================
+   IMAGE TRAIL (scattered photo prints)
+   ============================================================ */
+.trail-layer {
+  position: fixed;
+  inset: 0;
+  z-index: 80;
+  pointer-events: none;
+  overflow: hidden;
+}
+.print {
+  position: absolute;
+  width: 140px;
+  background: var(--paper);
+  border: 1px solid var(--ink);
+  padding: 4px 4px 14px;
+  will-change: transform, opacity;
+}
+.print img {
+  display: block;
+  width: 100%;
+  aspect-ratio: 8 / 5;
+  object-fit: cover;
+  filter: grayscale(1) contrast(1.1);
+}
+
+/* ============================================================
+   TOAST
+   ============================================================ */
+.toast {
+  position: fixed;
+  bottom: 1.2rem;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 160;
+  background: var(--ink);
+  color: var(--paper);
+  font-size: 13px;
+  padding: 0.55rem 1rem;
+  border: 1px solid var(--accent);
+  white-space: nowrap;
+}
+
+/* ============================================================
+   RESPONSIVE
+   ============================================================ */
+@media (max-width: 880px) {
+  .entry {
+    grid-template-columns: 2.4rem minmax(0, 1fr);
+    margin: 2.2rem 0.8rem;
+  }
+  .fig {
+    grid-column: 2;
+    border-left: none;
+    border-top: 1px solid var(--ink);
+  }
+  .rail { grid-row: 1 / span 2; }
+  .log { padding: 1.1rem 1rem 1.2rem; }
+  .title { font-size: clamp(34px, 9.5vw, 64px); }
+  .marquee { display: none; }
+  .lap { display: none; }
+  .topbar { gap: 0.6rem; }
+}
+
+@media (max-width: 480px) {
+  .brand { font-size: 11px; }
+  .run { margin-left: 0; width: 100%; text-align: center; }
+}
+
+/* ============================================================
+   REDUCED MOTION
+   ============================================================ */
+@media (prefers-reduced-motion: reduce) {
+  .has-js .marquee-track { animation: none; }
+  .fig img, .entry { transition: none; }
+  .velobar { display: none; }
+}

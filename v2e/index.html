@@ -1,0 +1,628 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>JOJKO'S GAMES — Insert Coin Arcade</title>
+<meta name="description" content="A rainy-night isometric pixel arcade. Walk between 14 humming cabinets, insert a coin and play — Zoopaloola, Pug Fiesta, Combat Arena and more by jojkos.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --plate:#16101f;
+    --plate-edge:#3a2b52;
+    --neon:#ff3df0;
+    --amber:#ffd23f;
+    --ink:#e8defc;
+    --dim:#9b8cc0;
+  }
+  *{ box-sizing:border-box; margin:0; padding:0; -webkit-tap-highlight-color:transparent; }
+  html,body{ height:100%; }
+  body{
+    background:#06040c;
+    color:var(--ink);
+    font-family:'Press Start 2P', monospace;
+    overflow:hidden;
+    touch-action:none;
+  }
+  /* ---------- fullscreen stage ---------- */
+  #screenWrap{
+    position:fixed; inset:0;
+    overflow:hidden;
+    background:#06040c;
+  }
+  canvas#view{
+    position:absolute; inset:0; width:100%; height:100%;
+    image-rendering:pixelated; image-rendering:crisp-edges;
+    display:block; cursor:crosshair;
+  }
+  /* crisp screen overlay — cabinet CRTs rendered at device resolution */
+  canvas#screens{
+    position:absolute; inset:0; width:100%; height:100%;
+    image-rendering:auto;
+    display:block; pointer-events:none; z-index:2;
+  }
+  /* screen-glass reflection */
+  #glass{
+    position:absolute; inset:0; pointer-events:none; z-index:5;
+    background:
+      linear-gradient(115deg, rgba(255,255,255,.05) 0%, rgba(255,255,255,.015) 22%, rgba(255,255,255,0) 40%),
+      radial-gradient(140% 110% at 50% 118%, rgba(0,0,0,.28) 0%, rgba(0,0,0,0) 55%);
+    box-shadow:inset 0 0 0 1px rgba(155,92,255,.12), inset 0 0 60px rgba(0,0,0,.55);
+  }
+  /* ---------- launch crossfade (the money shot) ---------- */
+  #launchImg{
+    position:absolute; inset:0; z-index:8; pointer-events:none;
+    width:100%; height:100%; object-fit:cover;
+    opacity:0; display:none;
+  }
+  #whiteFlash{
+    position:absolute; inset:0; z-index:9; pointer-events:none;
+    background:#fff; opacity:0; display:none;
+  }
+  /* ---------- HUD pixel plates ---------- */
+  .plate{
+    position:absolute; z-index:12;
+    background:var(--plate);
+    border:2px solid var(--plate-edge);
+    box-shadow:0 3px 0 #000, inset 0 0 0 1px #07050d;
+    padding:9px 12px;
+    font-size:clamp(8px,1.05vw,11px);
+    line-height:1.7;
+    image-rendering:pixelated;
+    user-select:none;
+  }
+  #plateTitle{ top:10px; left:10px; }
+  #plateTitle .hall{ color:var(--neon); text-shadow:0 0 8px rgba(255,61,240,.7); }
+  #plateTitle .echo{ color:var(--dim); font-size:.82em; display:block; margin-top:4px; }
+  #plateTitle .echo b{ color:#7fb4ff; text-shadow:0 0 6px rgba(95,150,255,.8); }
+  #plateTitle .coins{ color:var(--dim); font-size:.82em; display:block; margin-top:4px; }
+  #plateTitle .coins b{ color:var(--amber); text-shadow:0 0 6px rgba(255,210,63,.7); }
+  #plateTR{ top:10px; right:10px; display:flex; gap:8px; padding:5px; background:none; border:none; box-shadow:none; }
+  .pxbtn{
+    font-family:inherit; font-size:clamp(8px,1.05vw,11px);
+    color:var(--ink); background:var(--plate);
+    border:2px solid var(--plate-edge);
+    box-shadow:0 3px 0 #000;
+    padding:10px 12px; min-width:44px; min-height:44px;
+    cursor:pointer;
+  }
+  .pxbtn:hover{ border-color:var(--amber); color:var(--amber); }
+  .pxbtn:active{ transform:translateY(2px); box-shadow:0 1px 0 #000; }
+  /* ---------- focus popup — in-world arcade style ---------- */
+  #plateFocus{
+    position:absolute; z-index:12;
+    left:50%; bottom:14px; transform:translate(-50%, 140%);
+    transition:transform .32s cubic-bezier(.34,1.56,.64,1);
+    display:flex; align-items:center; gap:12px; text-align:left;
+    cursor:pointer; min-height:44px;
+    --tag:#ffd23f;
+    background:
+      repeating-linear-gradient(0deg, rgba(0,0,0,.22) 0 1px, transparent 1px 3px),
+      #0a0712;
+    border:3px solid var(--tag);
+    box-shadow:0 4px 0 #000, 0 0 22px color-mix(in srgb, var(--tag) 45%, transparent), inset 0 0 0 1px #07050d;
+    clip-path:polygon(8px 0, calc(100% - 8px) 0, 100% 8px, 100% calc(100% - 8px), calc(100% - 8px) 100%, 8px 100%, 0 calc(100% - 8px), 0 8px);
+    padding:10px 16px 10px 10px;
+    font-size:clamp(8px,1.05vw,11px);
+    line-height:1.7; user-select:none; font-family:inherit; color:var(--ink);
+  }
+  #plateFocus.show{ transform:translate(-50%, 0); }
+  /* chase lights strip */
+  #plateFocus::before{
+    content:""; position:absolute; left:10px; right:10px; top:2px; height:3px;
+    background:repeating-linear-gradient(90deg, var(--tag) 0 4px, transparent 4px 10px);
+    animation:chase .45s steps(2) infinite; opacity:.9;
+  }
+  #plateFocus::after{
+    content:""; position:absolute; left:10px; right:10px; bottom:2px; height:3px;
+    background:repeating-linear-gradient(90deg, transparent 0 6px, var(--tag) 6px 10px);
+    animation:chase .45s steps(2) infinite reverse; opacity:.9;
+  }
+  @keyframes chase{ to{ background-position:10px 0; } }
+  #plateFocus .thumb{
+    width:clamp(72px,9vw,108px); aspect-ratio:16/10; object-fit:cover;
+    border:2px solid var(--tag); background:#000;
+    image-rendering:auto; flex:none;
+    box-shadow:0 0 10px color-mix(in srgb, var(--tag) 50%, transparent);
+  }
+  #plateFocus .col{ display:flex; flex-direction:column; gap:5px; max-width:min(46vw, 340px); }
+  #plateFocus .gname{
+    color:#fff; text-shadow:0 0 8px color-mix(in srgb, var(--tag) 80%, transparent);
+    white-space:normal; line-height:1.45;
+  }
+  #plateFocus .gtag{
+    font-size:.72em; padding:2px 6px; border:1px solid var(--tag);
+    color:var(--tag); text-shadow:0 0 6px var(--tag); align-self:flex-start;
+  }
+  #plateFocus .hint{ color:var(--dim); font-size:.78em; }
+  #plateFocus .hint .blink{ color:var(--amber); animation:blink 1s steps(2,end) infinite; }
+  @keyframes blink{ 50%{ opacity:0; } }
+  /* ---------- buy me a coffee — original contrasty yellow ---------- */
+  #coffeeLink{
+    position:absolute; z-index:12; right:10px; bottom:10px;
+    display:flex; align-items:center; gap:8px;
+    background:linear-gradient(180deg,#FFDD00 0%,#FFC700 100%);
+    color:#0a0a0a; font-size:clamp(8px,1vw,11px);
+    text-decoration:none; font-family:inherit;
+    padding:10px 14px; border:2px solid #0a0a0a; border-radius:8px;
+    box-shadow:0 3px 0 #7a5c00, 0 0 18px rgba(255,221,0,.45);
+    transition:transform .15s, box-shadow .15s;
+  }
+  #coffeeLink:hover{ transform:translateY(-2px); box-shadow:0 5px 0 #7a5c00, 0 0 26px rgba(255,221,0,.7); }
+  #coffeeLink:active{ transform:translateY(1px); box-shadow:0 1px 0 #7a5c00; }
+  /* hover tooltip (fine pointers) */
+  #tip{
+    position:fixed; z-index:14; pointer-events:none;
+    background:var(--plate); border:2px solid var(--plate-edge);
+    color:var(--ink); font-size:9px; padding:5px 8px;
+    display:none; white-space:nowrap;
+  }
+  /* toast */
+  #toast{
+    position:absolute; z-index:13; left:50%; top:14%;
+    transform:translateX(-50%);
+    color:var(--amber); font-size:clamp(8px,1vw,10px);
+    text-shadow:0 0 8px rgba(255,210,63,.7);
+    opacity:0; pointer-events:none; text-align:center; line-height:1.8;
+  }
+  /* ---------- MENU overlay (also reduced-motion / a11y page) ---------- */
+  #menu{
+    position:absolute; inset:0; z-index:20;
+    background:rgba(5,3,10,.93);
+    display:none;
+    overflow-y:auto;
+    padding:clamp(14px,3vw,40px);
+    -webkit-overflow-scrolling:touch;
+    touch-action:pan-y;
+  }
+  #menu.open{ display:block; }
+  #menu h1{
+    color:var(--neon); font-size:clamp(13px,2.2vw,22px);
+    text-shadow:0 0 14px rgba(255,61,240,.8);
+    margin-bottom:6px;
+  }
+  #menu .sub{ color:var(--dim); font-size:clamp(7px,1vw,10px); margin-bottom:20px; line-height:1.8; }
+  #gameList{
+    list-style:none;
+    display:grid; gap:10px;
+    grid-template-columns:repeat(auto-fill, minmax(min(270px,100%), 1fr));
+  }
+  #gameList a{
+    display:flex; align-items:center; gap:10px;
+    color:var(--ink); text-decoration:none;
+    background:var(--plate); border:2px solid var(--plate-edge);
+    padding:12px; font-size:clamp(8px,1.05vw,11px);
+    min-height:44px;
+  }
+  #gameList a:hover{ border-color:var(--tag,#fff); color:#fff; }
+  #gameList .chip{
+    flex:none; font-size:.72em; padding:3px 6px;
+    color:var(--tag,#fff); border:1px solid var(--tag,#fff);
+    text-shadow:0 0 6px var(--tag,#fff);
+  }
+  #menu .mrow{ display:flex; flex-wrap:wrap; gap:10px; margin-top:22px; align-items:center; }
+  #menu .mrow a{ color:var(--amber); font-size:clamp(8px,1vw,10px); }
+  #rmNote{ display:none; color:#7fb4ff; font-size:clamp(7px,1vw,10px); margin-bottom:16px; line-height:1.9; }
+  .reduced #rmNote{ display:block; }
+  @media (max-width:700px){
+    #plateTitle .echo, #plateTitle .coins{ display:none; }
+    .plate{ padding:7px 9px; }
+    #coffeeLink{ padding:8px 10px; font-size:8px; gap:5px; }
+    #plateFocus .thumb{ width:64px; }
+    #plateFocus .col{ max-width:56vw; }
+  }
+</style>
+<script src="https://cdn.jsdelivr.net/npm/gsap@3.12.5/dist/gsap.min.js"></script>
+</head>
+<body>
+
+<div id="screenWrap">
+  <canvas id="view" width="480" height="270" aria-label="Isometric pixel arcade hall. Walk with WASD or tap to move, press E to insert a coin. Use the MENU button for a plain list of all games."></canvas>
+  <canvas id="screens" width="960" height="540" aria-hidden="true"></canvas>
+  <img id="launchImg" alt="" decoding="async">
+  <div id="whiteFlash"></div>
+  <div id="glass"></div>
+
+  <div class="plate" id="plateTitle">
+    <span class="hall">JOJKO'S GAMES</span>
+    <span class="echo" title="echoes of past visits">ECHOES IN HALL: <b id="echoCount">0</b></span>
+    <span class="coins">COINS: <b id="coinCount">0</b></span>
+  </div>
+
+  <div id="plateTR">
+    <button class="pxbtn" id="btnMute" aria-label="Toggle sound">SND ON</button>
+    <button class="pxbtn" id="btnFS" aria-label="Toggle fullscreen">⛶</button>
+    <button class="pxbtn" id="btnMenu" aria-label="Open game menu">MENU</button>
+  </div>
+
+  <button id="plateFocus" aria-live="polite">
+    <img class="thumb" id="focusThumb" alt="" decoding="async">
+    <span class="col">
+      <span class="gname" id="focusName">GAME</span>
+      <span class="gtag" id="focusTag">TAG</span>
+      <span class="hint"><span class="blink">▮</span> <span id="focusHint">INSERT COIN — E / SPACE</span></span>
+    </span>
+  </button>
+
+  <div id="toast"></div>
+  <div id="tip"></div>
+
+  <a id="coffeeLink" href="https://buymeacoffee.com/jojkos" target="_blank" rel="noopener" aria-label="Buy me a coffee">
+    <span aria-hidden="true">☕</span><span>Buy me a coffee</span>
+  </a>
+
+  <div id="menu" role="dialog" aria-label="All games">
+    <h1>JOJKO'S GAMES</h1>
+    <p id="rmNote">REDUCED MOTION DETECTED — the animated arcade hall is paused. All games are right here. <button class="pxbtn" id="btnEnterAnyway" style="margin-top:8px">ENTER THE HALL ANYWAY</button></p>
+    <p class="sub">ALL 14 CABINETS · PICK ONE AND PRESS START<br>or close this menu and walk the hall: WASD / tap to move · E to insert coin</p>
+    <ul id="gameList"></ul>
+    <div class="mrow">
+      <a href="https://buymeacoffee.com/jojkos" target="_blank" rel="noopener">☕ BUY ME A COFFEE — 1 COIN</a>
+      <button class="pxbtn" id="btnClearEchoes">CLEAR ECHOES</button>
+      <button class="pxbtn" id="btnCloseMenu">CLOSE ✕</button>
+    </div>
+  </div>
+</div>
+
+<noscript>
+  <div style="position:fixed;inset:0;background:#040209;color:#e8defc;font-family:monospace;padding:30px;overflow:auto;z-index:99">
+    <h1>JOJKO'S GAMES</h1>
+    <p>This arcade needs JavaScript, but the games don't:</p>
+    <ul>
+      <li><a style="color:#ffd23f" href="https://zoopaloola.vercel.app/">Zoopaloola</a></li>
+      <li><a style="color:#ffd23f" href="https://factorio-lamp-editor.vercel.app/">Factorio Lamp Editor</a></li>
+      <li><a style="color:#ffd23f" href="https://lol-fusion.vercel.app/">LoL Fusion loldle</a></li>
+      <li><a style="color:#ffd23f" href="https://pug-fiesta.vercel.app/">Pug Fiesta</a></li>
+      <li><a style="color:#ffd23f" href="https://pug-fiesta3-d.vercel.app/">Pug Fiesta 3D</a></li>
+      <li><a style="color:#ffd23f" href="https://combatarena.onrender.com/">Combat Arena</a></li>
+      <li><a style="color:#ffd23f" href="../bluff/index.html">Bluff Helper</a></li>
+      <li><a style="color:#ffd23f" href="https://calendar-puzzle2.vercel.app/">Calendar Puzzle</a></li>
+      <li><a style="color:#ffd23f" href="../pokemonShooter/index.html">Pokemon Shooter</a></li>
+      <li><a style="color:#ffd23f" href="../tralalaGame/index.html">Tralala Clicker</a></li>
+      <li><a style="color:#ffd23f" href="../lolWheel/index.html">LoL Wheel</a></li>
+      <li><a style="color:#ffd23f" href="../neonDrifter/index.html">Neon Drifter</a></li>
+      <li><a style="color:#ffd23f" href="../guitarTuner/index.html">Guitar Tuner</a></li>
+      <li><a style="color:#ffd23f" href="https://okcorral.onrender.com/">OK Corral</a></li>
+    </ul>
+    <p><a style="color:#ffd23f" href="https://buymeacoffee.com/jojkos">☕ Buy me a coffee</a></p>
+  </div>
+</noscript>
+
+<script src="../shared/games.js"></script>
+<script>
+// ---------------------------------------------------------------- shared config
+// (games list + tag colors come from ../shared/games.js — edit games there)
+window.CFG = {
+  BW: 480, BH: 270,          // low-res pixel buffer (BW recomputed from viewport aspect)
+  TW: 24, TH: 12,            // iso tile size
+  GW: 22, GH: 14,            // hall grid (GW may grow with the games list)
+  BASE_ZOOM: 1.3,
+  FOCUS_ZOOM: 1.62,
+  LAYOUT: null,              // filled by the generator below
+  TAG_COLORS: window.TAG_COLORS
+};
+
+// ---------------------------------------------------------------- cabinet auto-layout
+// Generates cabinet spots from the game count. Zones in priority order:
+// back wall (skipping the door/window span at tiles 7–13), left wall,
+// then paired free-standing center rows. If the games list outgrows the
+// hall, the hall gets wider (+3 tiles per extra column) and everything
+// downstream (walls, carpet, lamps, camera) follows from CFG.GW.
+(function(){
+  function slotsFor(GW, GH){
+    const back = [], left = [], center = [];
+    for (let x = 2; x + 1 <= 6; x += 3)            back.push({ tx:x, ty:1, f:'S' });   // left of door
+    for (let x = 13; x + 1 <= GW - 2; x += 3)      back.push({ tx:x, ty:1, f:'S' });   // right of window
+    for (let y = 4; y + 1 <= GH - 2; y += 3)       left.push({ tx:1, ty:y, f:'E' });
+    for (const ry of [5, 9]){
+      if (ry + 1 > GH - 2) continue;
+      for (let x = 8; x + 1 <= GW - 6; x += 3)     center.push({ tx:x, ty:ry, f:'S' });
+    }
+    return back.concat(left, center);
+  }
+  let GW = CFG.GW;
+  let s = slotsFor(GW, CFG.GH);
+  while (s.length < GAMES.length && GW < 60){ GW += 3; s = slotsFor(GW, CFG.GH); }
+  CFG.GW = GW;
+  CFG.LAYOUT = s.slice(0, GAMES.length);
+})();
+
+// tween helper: GSAP if it loaded, otherwise snap to end values (offline-safe)
+window.tween = function(target, vars){
+  if (window.gsap) return gsap.to(target, vars);
+  const skip = ['duration','delay','ease','onComplete','onStart','overwrite','repeat','yoyo'];
+  for (const k in vars){ if (skip.indexOf(k) === -1) target[k] = vars[k]; }
+  if (vars.onStart) vars.onStart();
+  if (vars.onComplete) setTimeout(vars.onComplete, ((vars.duration||0)+(vars.delay||0))*1000);
+};
+</script>
+<script src="world.js"></script>
+<script src="cabinets.js"></script>
+<script src="player.js"></script>
+<script src="ghosts.js"></script>
+<script src="audio.js"></script>
+<script>
+(function(){
+'use strict';
+const $ = id => document.getElementById(id);
+const canvas = $('view');
+const crisp = $('screens');
+const reduced = window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches;
+let running = false, lastT = 0;
+let idleT = 0;                     // seconds without input (attract mode)
+let attractPhantomIn = 0;
+
+// ---------------------------------------------------------------- buffer sizing (fullscreen)
+function sizeBuffers(){
+  const aspect = Math.max(.45, innerWidth / Math.max(1, innerHeight));
+  CFG.BH = 270;
+  CFG.BW = Math.max(320, Math.min(680, Math.round(CFG.BH * aspect / 2) * 2));
+  canvas.width = CFG.BW; canvas.height = CFG.BH;
+  // crisp overlay at (capped) device resolution
+  const dpr = Math.min(1.5, devicePixelRatio || 1);
+  crisp.width  = Math.round(innerWidth * dpr);
+  crisp.height = Math.round(innerHeight * dpr);
+  if (World.ctx) World.resize();
+}
+let rsTo = 0;
+addEventListener('resize', () => { clearTimeout(rsTo); rsTo = setTimeout(sizeBuffers, 120); });
+
+// ---------------------------------------------------------------- menu
+function buildMenu(){
+  const ul = $('gameList');
+  GAMES.forEach(g => {
+    const li = document.createElement('li');
+    const a = document.createElement('a');
+    a.href = g.url;
+    a.style.setProperty('--tag', CFG.TAG_COLORS[g.tag] || '#fff');
+    const chip = document.createElement('span');
+    chip.className = 'chip'; chip.textContent = g.tag;
+    a.appendChild(chip);
+    a.appendChild(document.createTextNode(g.name));
+    li.appendChild(a); ul.appendChild(li);
+  });
+}
+function openMenu(){
+  $('menu').classList.add('open');
+  if (window.gsap) gsap.fromTo('#menu', {opacity:0}, {opacity:1, duration:.25, overwrite:true});
+}
+function closeMenu(){ $('menu').classList.remove('open'); }
+
+// ---------------------------------------------------------------- HUD
+function toast(msg, ms){
+  const t = $('toast');
+  t.innerHTML = msg;
+  if (window.gsap){
+    gsap.killTweensOf(t);
+    gsap.fromTo(t, {opacity:0, y:-8}, {opacity:1, y:0, duration:.25});
+    gsap.to(t, {opacity:0, duration:.4, delay:(ms||1800)/1000});
+  } else {
+    t.style.opacity = 1;
+    setTimeout(()=>{ t.style.opacity = 0; }, ms||1800);
+  }
+}
+function setFocusPlate(item){
+  const p = $('plateFocus');
+  if (item){
+    const col = item.coffee ? '#ffd23f' : CFG.TAG_COLORS[item.game.tag];
+    p.style.setProperty('--tag', col);
+    if (item.coffee){
+      $('focusThumb').style.display = 'none';
+      $('focusName').textContent = 'COFFEE ☕ 1 COIN';
+      $('focusTag').textContent = 'SUPPORT';
+    } else {
+      const th = $('focusThumb');
+      th.style.display = '';
+      if (th.getAttribute('src') !== item.game.img) th.src = item.game.img;
+      $('focusName').textContent = item.game.name.toUpperCase();
+      $('focusTag').textContent = item.game.tag;
+    }
+    $('focusHint').textContent = isTouch ? 'TAP HERE TO INSERT COIN' : 'INSERT COIN — E / SPACE';
+    p.classList.add('show');
+  } else {
+    p.classList.remove('show');
+  }
+}
+function updateEchoHud(){ $('echoCount').textContent = Ghosts.count(); }
+function updateCoinHud(){ $('coinCount').textContent = Cabinets.coinTotal(); }
+
+// ---------------------------------------------------------------- input
+const isTouch = matchMedia('(pointer: coarse)').matches;
+const keys = Object.create(null);
+addEventListener('keydown', e => {
+  if ($('menu').classList.contains('open')){
+    if (e.key === 'Escape') closeMenu();
+    return;
+  }
+  const k = e.key.toLowerCase();
+  keys[k] = true;
+  idleT = 0; World.setAttract(false);
+  if (k === 'e' || k === ' ' || k === 'enter'){ e.preventDefault(); tryInsert(); }
+  if (k === 'm') openMenu();
+  if (k === 'f') toggleFS();
+  if (['arrowup','arrowdown','arrowleft','arrowright',' '].includes(k)) e.preventDefault();
+  AudioSys.unlock();
+});
+addEventListener('keyup', e => { keys[e.key.toLowerCase()] = false; });
+
+function tryInsert(){
+  AudioSys.unlock();
+  Cabinets.insertCoin();
+  updateCoinHud();
+}
+
+function eventToWorld(e){
+  const r = canvas.getBoundingClientRect();
+  const bx = (e.clientX - r.left) / r.width  * CFG.BW;
+  const by = (e.clientY - r.top)  / r.height * CFG.BH;
+  return World.screenToWorld(bx, by);
+}
+// facing the cabinet front: 'S' cabinets are north of the player (face 0),
+// 'E' cabinets (left wall) are west of the player (face 3)
+function faceFor(item){ return item.f === 'E' ? 3 : 0; }
+
+let lastTap = { item: null, t: 0 };
+canvas.addEventListener('pointerdown', e => {
+  AudioSys.unlock();
+  idleT = 0; World.setAttract(false);
+  if (Cabinets.launching()){ Cabinets.insertCoin(); return; } // skip
+  const w = eventToWorld(e);
+  const hit = Cabinets.hitTest(w[0], w[1]);
+  const now = performance.now();
+  if (hit){
+    const dbl = lastTap.item === hit.item && (now - lastTap.t) < 420;
+    lastTap = { item: hit.item, t: now };
+    if (hit.focused){ tryInsert(); return; }
+    const fp = hit.frontPoint;
+    World.setMarker(fp[0], fp[1]);
+    Player.walkTo(fp[0], fp[1], {
+      face: faceFor(hit.item),
+      onArrive: dbl ? () => { if (Cabinets.focused === hit.item) tryInsert(); } : null,
+    });
+  } else {
+    lastTap = { item: null, t: now };
+    World.setMarker(w[0], w[1]);
+    Player.walkTo(w[0], w[1]);
+  }
+});
+
+// hover highlight + tooltip (fine pointers only)
+if (!isTouch){
+  const tip = $('tip');
+  canvas.addEventListener('pointermove', e => {
+    const w = eventToWorld(e);
+    const hit = Cabinets.hitTest(w[0], w[1]);
+    Cabinets.setHover(hit ? hit.item : null);
+    if (hit){
+      canvas.style.cursor = 'pointer';
+      tip.style.display = 'block';
+      tip.textContent = hit.item.coffee ? 'COFFEE ☕' : hit.item.game.name;
+      tip.style.left = (e.clientX + 14) + 'px';
+      tip.style.top  = (e.clientY + 14) + 'px';
+    } else {
+      canvas.style.cursor = 'crosshair';
+      tip.style.display = 'none';
+    }
+  });
+  canvas.addEventListener('pointerleave', () => {
+    Cabinets.setHover(null);
+    tip.style.display = 'none';
+  });
+}
+
+// ---------------------------------------------------------------- buttons
+function toggleFS(){
+  const el = document.documentElement;
+  if (!document.fullscreenElement && el.requestFullscreen) el.requestFullscreen().catch(()=>{});
+  else if (document.exitFullscreen) document.exitFullscreen().catch(()=>{});
+}
+$('btnFS').addEventListener('click', () => { AudioSys.unlock(); AudioSys.ui(); toggleFS(); });
+if (!document.documentElement.requestFullscreen) $('btnFS').style.display = 'none';
+$('btnMenu').addEventListener('click', () => { AudioSys.unlock(); AudioSys.ui(); openMenu(); });
+$('btnCloseMenu').addEventListener('click', () => { AudioSys.ui(); closeMenu(); });
+$('btnClearEchoes').addEventListener('click', () => {
+  Ghosts.clear(); updateEchoHud(); AudioSys.ui();
+  $('btnClearEchoes').textContent = 'ECHOES CLEARED';
+  setTimeout(()=>{ $('btnClearEchoes').textContent = 'CLEAR ECHOES'; }, 1500);
+});
+$('btnMute').addEventListener('click', () => {
+  const m = AudioSys.toggleMute();
+  $('btnMute').textContent = m ? 'SND OFF' : 'SND ON';
+});
+$('plateFocus').addEventListener('click', () => { tryInsert(); });
+$('btnEnterAnyway').addEventListener('click', () => {
+  document.body.classList.remove('reduced');
+  closeMenu();
+  if (!running){ running = true; lastT = performance.now(); requestAnimationFrame(loop); }
+});
+
+// ---------------------------------------------------------------- boot
+sizeBuffers();
+buildMenu();
+World.init();
+World.setCrisp(crisp);
+Cabinets.init();
+Ghosts.init();
+Ghosts.setPhantomCb(i => Cabinets.phantomWake(i));
+updateEchoHud();
+updateCoinHud();
+$('btnMute').textContent = AudioSys.isMuted() ? 'SND OFF' : 'SND ON';
+
+Cabinets.onFocusChange = item => {
+  setFocusPlate(item);
+  World.setTargetZoom(item ? CFG.FOCUS_ZOOM : CFG.BASE_ZOOM);
+  if (item){
+    AudioSys.wake();
+    if (!item.coffee) Ghosts.event('focus', item.idx);
+  }
+};
+Cabinets.onCoin = item => { if (!item.coffee) Ghosts.event('coin', item.idx); };
+Cabinets.onCoffee = () => {
+  toast('THANKS! ☕ BREWING…');
+  try { window.open('https://buymeacoffee.com/jojkos', '_blank', 'noopener'); } catch(err){}
+};
+
+// entrance intro: a beat at the door, shop bell, then a slow walk in —
+// camera starts tight on the door and eases out as you enter.
+// Any input takes over instantly (keys reset the slow speed too).
+if (reduced){
+  Player.init(9.0, 2.7);
+} else {
+  Player.init(9.0, 1.35);
+  const d = World.iso(9.0, 1.6);
+  World.cam.x = d[0]; World.cam.y = d[1] - 14;
+  World.cam.z = 1.7;                     // tz stays BASE_ZOOM → eases out while walking in
+  setTimeout(() => {
+    AudioSys.bell();
+    Player.walkTo(9.0, 3.6, { face: 2, slow: true, onArrive: () => { Player.speedMul = 1; } });
+  }, 650);
+}
+
+function loop(tNow){
+  if (!running) return;
+  const dt = Math.min(0.05, (tNow - lastT) / 1000 || 0.016);
+  lastT = tNow;
+  const t = tNow / 1000;
+  const menuOpen = $('menu').classList.contains('open');
+  if (!menuOpen){
+    Player.update(dt, keys);
+  }
+  // idle attract mode
+  if (!Cabinets.launching() && !menuOpen){
+    idleT += dt;
+    if (idleT > 25 && !World.attract){ World.setAttract(true); attractPhantomIn = 0; }
+    if (World.attract){
+      attractPhantomIn -= dt;
+      if (attractPhantomIn <= 0){
+        attractPhantomIn = 2.6 + Math.random() * 2;
+        Cabinets.phantomWake(Math.random() * Cabinets.cabs.length | 0);
+      }
+    }
+  }
+  if (Player.moving){ idleT = 0; World.setAttract(false); }
+  Ghosts.record(Player.x, Player.y, Player.facing, tNow);
+  Ghosts.update(tNow);
+  Cabinets.update(dt, t, Player);
+  World.update(dt, t);
+  AudioSys.update(dt, Player, Cabinets.list());
+  World.render(t, Player, Ghosts.frames());
+  requestAnimationFrame(loop);
+}
+
+if (reduced){
+  document.body.classList.add('reduced');
+  World.render(0.001, Player, []);   // one static frame behind the menu
+  openMenu();
+} else {
+  running = true;
+  lastT = performance.now();
+  requestAnimationFrame(loop);
+  toast('WASD / TAP TO WALK · E = INSERT COIN', 3500);
+}
+})();
+</script>
+<script src="../shared/switcher.js" defer></script>
+</body>
+</html>

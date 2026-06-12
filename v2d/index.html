@@ -1,0 +1,187 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>JOJKO'S GAMES — THE SIGNAL DEGRADES</title>
+<meta name="description" content="14 game transmissions on an infinite phosphor wall. Drag to scan frequencies, tune in to play. Zoopaloola, Pug Fiesta, Combat Arena and more.">
+<meta name="theme-color" content="#020503">
+<style>
+  :root{
+    --ph0:#021a06; --ph1:#0a3d12; --ph2:#1f7a2e; --ph3:#4dff7a;
+    --dim:#2e7a45; --amber:#ffb13d;
+    --mono:"IBM Plex Mono","JetBrains Mono",ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html,body{height:100%;overflow:hidden;background:#020503;color:var(--ph3);font-family:var(--mono)}
+  body{-webkit-font-smoothing:antialiased;overscroll-behavior:none}
+
+  #stage{position:fixed;inset:0;width:100%;height:100%;display:block;touch-action:none;cursor:crosshair}
+  body.fallback #stage{display:none}
+
+  /* ---------- HUD ---------- */
+  #hud{position:fixed;inset:0;pointer-events:none;z-index:10;font-size:11px;letter-spacing:.14em}
+  #hud .corner{position:absolute;padding:18px 20px}
+  #hud .tl{top:0;left:0}
+  #hud .tr{top:0;right:0;text-align:right}
+  #hud .bl{bottom:0;left:0}
+  #hud .br{bottom:0;right:0;text-align:right}
+  #hud h1{font-size:13px;font-weight:700;letter-spacing:.3em;color:var(--ph3);text-shadow:0 0 12px rgba(77,255,122,.45)}
+  #hud .sub{margin-top:5px;color:var(--dim);font-size:10px}
+  #presence{min-height:12px} /* phase-2 live-presence slot */
+  #hud button{
+    pointer-events:auto;background:transparent;border:1px solid var(--dim);color:var(--ph3);
+    font-family:inherit;font-size:10px;letter-spacing:.2em;padding:6px 12px;margin-left:8px;cursor:pointer;
+    transition:background .15s,color .15s;
+  }
+  #hud button:hover,#hud button:focus-visible{background:var(--ph1);outline:none}
+  #freq{font-size:15px;color:var(--ph3);text-shadow:0 0 10px rgba(77,255,122,.4);font-variant-numeric:tabular-nums}
+  #sig{margin-top:5px;color:var(--dim);font-size:10px}
+  #onair{
+    pointer-events:auto;display:inline-block;text-decoration:none;color:var(--amber);
+    border:1px solid rgba(255,177,61,.55);padding:7px 13px;font-size:10px;letter-spacing:.2em;
+    text-shadow:0 0 10px rgba(255,177,61,.7);background:rgba(40,22,2,.35);
+    animation:onair 2.4s ease-in-out infinite;
+  }
+  #onair:hover{background:rgba(255,177,61,.14)}
+  @keyframes onair{0%,100%{opacity:1}50%{opacity:.55}}
+  @media (prefers-reduced-motion: reduce){#onair{animation:none}}
+
+  #teach{
+    position:absolute;left:50%;bottom:13%;transform:translateX(-50%);
+    color:var(--ph3);font-size:11px;letter-spacing:.3em;white-space:nowrap;
+    text-shadow:0 0 12px rgba(77,255,122,.5);opacity:0;transition:opacity .6s;
+  }
+  #teach.show{opacity:.95}
+
+  /* ---------- INDEX overlay (also the a11y / SEO / reduced-motion path) ---------- */
+  #indexOverlay{
+    position:fixed;inset:0;z-index:20;overflow-y:auto;background:rgba(1,5,2,.96);
+    opacity:0;pointer-events:none;transition:opacity .25s;
+    background-image:repeating-linear-gradient(0deg,rgba(0,0,0,.28) 0 1px,transparent 1px 3px);
+  }
+  #indexOverlay.open,body.fallback #indexOverlay{opacity:1;pointer-events:auto}
+  #indexOverlay .wrap{max-width:760px;margin:0 auto;padding:64px 20px 80px}
+  #indexOverlay h2{font-size:13px;letter-spacing:.34em;color:var(--ph3);text-shadow:0 0 12px rgba(77,255,122,.45)}
+  #indexOverlay .note{color:var(--dim);font-size:10px;letter-spacing:.16em;margin:8px 0 28px}
+  #closeIndex{
+    position:absolute;top:16px;right:18px;background:transparent;border:1px solid var(--dim);
+    color:var(--ph3);font-family:inherit;font-size:10px;letter-spacing:.2em;padding:6px 12px;cursor:pointer;
+  }
+  #closeIndex:hover{background:var(--ph1)}
+  body.fallback #closeIndex{display:none}
+  #indexOverlay nav a.row{
+    display:grid;grid-template-columns:28px 84px 1fr auto auto;gap:14px;align-items:center;
+    padding:10px 8px;text-decoration:none;color:var(--ph3);border-bottom:1px solid rgba(46,122,69,.25);
+    font-size:12px;letter-spacing:.12em;transition:background .12s;
+  }
+  #indexOverlay nav a.row:hover,#indexOverlay nav a.row:focus-visible{background:rgba(31,122,46,.18);outline:none}
+  #indexOverlay nav a.row img{
+    width:84px;height:48px;object-fit:cover;display:block;
+    filter:grayscale(1) sepia(1) hue-rotate(66deg) saturate(2.6) contrast(1.25) brightness(.85);
+  }
+  #indexOverlay nav a.row:hover img{filter:none}
+  #indexOverlay .n{color:var(--dim)}
+  #indexOverlay .tag{color:var(--dim);font-size:10px;border:1px solid rgba(46,122,69,.5);padding:2px 7px}
+  #indexOverlay .fq{color:var(--dim);font-size:10px;font-variant-numeric:tabular-nums}
+  #indexOverlay .coffee{
+    display:inline-block;margin-top:30px;color:var(--amber);text-decoration:none;font-size:11px;
+    letter-spacing:.2em;border:1px solid rgba(255,177,61,.55);padding:8px 14px;
+    text-shadow:0 0 10px rgba(255,177,61,.6);
+  }
+  #indexOverlay .coffee:hover{background:rgba(255,177,61,.12)}
+  @media (max-width:560px){
+    #indexOverlay nav a.row{grid-template-columns:24px 64px 1fr auto;}
+    #indexOverlay nav a.row .fq{display:none}
+    #indexOverlay nav a.row img{width:64px;height:38px}
+    #hud .corner{padding:12px 12px}
+    #hud h1{font-size:11px}
+    #freq{font-size:13px}
+  }
+  body.fallback #hud .bl,body.fallback #hud .br,body.fallback #teach{display:none}
+</style>
+</head>
+<body>
+
+<canvas id="stage" aria-hidden="true"></canvas>
+
+<div id="hud">
+  <header class="corner tl">
+    <h1>JOJKO'S GAMES</h1>
+    <div class="sub">14 TRANSMISSIONS · SIGNAL WALL</div>
+    <div id="presence" class="sub"></div>
+  </header>
+  <div class="corner tr">
+    <button id="sndBtn" aria-label="Toggle sound">SND ON</button>
+    <button id="indexBtn" aria-haspopup="true" aria-controls="indexOverlay">INDEX</button>
+  </div>
+  <div class="corner bl">
+    <div id="freq">087.5 FM</div>
+    <div id="sig">SIG ▯▯▯▯▯</div>
+  </div>
+  <div class="corner br">
+    <a id="onair" href="https://buymeacoffee.com/jojkos" target="_blank" rel="noopener">● ON AIR · BUY ME A COFFEE</a>
+  </div>
+  <div id="teach">MOVE TO TUNE · CLICK TO PLAY</div>
+</div>
+
+<section id="indexOverlay" aria-label="All games index">
+  <button id="closeIndex" aria-label="Close index">CLOSE</button>
+  <div class="wrap">
+    <h2>SIGNAL INDEX — ALL TRANSMISSIONS</h2>
+    <p class="note">JOJKO'S GAMES · PICK A FREQUENCY · EVERY LINK PLAYS</p>
+    <nav>
+      <a class="row" href="https://zoopaloola.vercel.app/"><span class="n">01</span><img src="../screenshots/zoopaloola.png" loading="lazy" alt="" width="84" height="48"><span class="nm">ZOOPALOOLA</span><span class="tag">ARCADE</span><span class="fq">088.1</span></a>
+      <a class="row" href="https://factorio-lamp-editor.vercel.app/"><span class="n">02</span><img src="../screenshots/factorio-lamp.png" loading="lazy" alt="" width="84" height="48"><span class="nm">FACTORIO LAMP EDITOR</span><span class="tag">TOOL</span><span class="fq">089.4</span></a>
+      <a class="row" href="https://lol-fusion.vercel.app/"><span class="n">03</span><img src="../screenshots/lol-fusion.png" loading="lazy" alt="" width="84" height="48"><span class="nm">LOL FUSION LOLDLE</span><span class="tag">PUZZLE</span><span class="fq">090.7</span></a>
+      <a class="row" href="https://pug-fiesta.vercel.app/"><span class="n">04</span><img src="../screenshots/pug-fiesta.png" loading="lazy" alt="" width="84" height="48"><span class="nm">PUG FIESTA</span><span class="tag">ACTION</span><span class="fq">092.0</span></a>
+      <a class="row" href="https://pug-fiesta3-d.vercel.app/"><span class="n">05</span><img src="../screenshots/pug-fiesta-3d.png" loading="lazy" alt="" width="84" height="48"><span class="nm">PUG FIESTA 3D</span><span class="tag">ACTION</span><span class="fq">093.3</span></a>
+      <a class="row" href="https://combatarena.onrender.com/"><span class="n">06</span><img src="../screenshots/combat-arena.png" loading="lazy" alt="" width="84" height="48"><span class="nm">COMBAT ARENA</span><span class="tag">PVP</span><span class="fq">094.6</span></a>
+      <a class="row" href="../bluff/index.html"><span class="n">07</span><img src="../screenshots/bluff.png" loading="lazy" alt="" width="84" height="48"><span class="nm">BLUFF HELPER</span><span class="tag">TOOL</span><span class="fq">095.9</span></a>
+      <a class="row" href="https://calendar-puzzle2.vercel.app/"><span class="n">08</span><img src="../screenshots/calendar-puzzle.png" loading="lazy" alt="" width="84" height="48"><span class="nm">CALENDAR PUZZLE</span><span class="tag">PUZZLE</span><span class="fq">097.2</span></a>
+      <a class="row" href="../pokemonShooter/index.html"><span class="n">09</span><img src="../screenshots/pokemon-shooter.png" loading="lazy" alt="" width="84" height="48"><span class="nm">POKEMON SHOOTER</span><span class="tag">SHOOTER</span><span class="fq">098.5</span></a>
+      <a class="row" href="../tralalaGame/index.html"><span class="n">10</span><img src="../screenshots/tralala.png" loading="lazy" alt="" width="84" height="48"><span class="nm">TRALALA CLICKER</span><span class="tag">CLICKER</span><span class="fq">099.8</span></a>
+      <a class="row" href="../lolWheel/index.html"><span class="n">11</span><img src="../screenshots/lol-wheel.png" loading="lazy" alt="" width="84" height="48"><span class="nm">LOL WHEEL</span><span class="tag">RNG</span><span class="fq">101.1</span></a>
+      <a class="row" href="../neonDrifter/index.html"><span class="n">12</span><img src="../screenshots/neon-drifter.png" loading="lazy" alt="" width="84" height="48"><span class="nm">NEON DRIFTER</span><span class="tag">RACE</span><span class="fq">102.4</span></a>
+      <a class="row" href="../guitarTuner/index.html"><span class="n">13</span><img src="../screenshots/guitar-tuner.png" loading="lazy" alt="" width="84" height="48"><span class="nm">GUITAR TUNER</span><span class="tag">TOOL</span><span class="fq">103.7</span></a>
+      <a class="row" href="https://okcorral.onrender.com/"><span class="n">14</span><img src="../screenshots/ok-corral.png" loading="lazy" alt="" width="84" height="48"><span class="nm">OK CORRAL</span><span class="tag">SHOOTER</span><span class="fq">105.0</span></a>
+    </nav>
+    <a class="coffee" href="https://buymeacoffee.com/jojkos" target="_blank" rel="noopener">● ON AIR · BUY ME A COFFEE</a>
+  </div>
+</section>
+
+<script type="importmap">
+{ "imports": { "ogl": "https://unpkg.com/ogl@1/src/index.js" } }
+</script>
+<script src="https://cdn.jsdelivr.net/npm/gsap@3.13.0/dist/gsap.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/gsap@3.13.0/dist/Draggable.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/gsap@3.13.0/dist/InertiaPlugin.min.js"></script>
+
+<script type="module">
+  // Bootstrap: feature-detect, then hand over to tune.js (the conductor).
+  // Any failure → INDEX overlay becomes the whole page (still handsome, fully functional).
+  const fallback = () => {
+    document.body.classList.add('fallback');
+    const hint = document.querySelector('#indexOverlay .note');
+    if (hint) hint.textContent = "JOJKO'S GAMES · STATIC MODE · EVERY LINK PLAYS";
+  };
+
+  const reduced = matchMedia('(prefers-reduced-motion: reduce)').matches;
+  let glOK = false;
+  try {
+    const c = document.createElement('canvas');
+    glOK = !!(c.getContext('webgl2') || c.getContext('webgl'));
+  } catch (e) { glOK = false; }
+
+  if (reduced || !glOK || !window.gsap || !window.Draggable) {
+    fallback();
+  } else {
+    import('./tune.js')
+      .then(m => m.start())
+      .catch(err => { console.warn('v2d: falling back to INDEX —', err); fallback(); });
+  }
+</script>
+
+<script src="../shared/switcher.js" defer></script>
+</body>
+</html>

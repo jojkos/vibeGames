@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>JOJKO'S GAMES — version gallery</title>
+<meta name="description" content="Every landing-page variant of jojkos.games — a small design-history museum.">
+<style>
+  :root{color-scheme:dark}
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{min-height:100vh;background:#0b0b10;color:#e8e6df;font-family:"JetBrains Mono",ui-monospace,Menlo,monospace;
+    display:flex;flex-direction:column;align-items:center;justify-content:center;gap:24px;padding:40px 16px}
+  h1{font-size:clamp(22px,4vw,40px);letter-spacing:.08em}
+  h1 span{color:#d6ff3f}
+  p.sub{color:#8b897f;font-size:13px;max-width:600px;text-align:center;line-height:1.6}
+  p.sub b{color:#e8e6df;font-weight:600}
+  .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(270px,1fr));gap:14px;width:min(1100px,100%)}
+  .card{display:flex;flex-direction:column;gap:8px;border:1px solid #2a2a33;padding:18px;background:#101016;
+    transition:border-color .15s,transform .15s}
+  .card:hover{border-color:#d6ff3f;transform:translateY(-2px)}
+  .card.default{border-color:#d6ff3f}
+  .idrow{display:flex;justify-content:space-between;align-items:baseline}
+  .id{font-size:11px;color:#d6ff3f;letter-spacing:.2em}
+  .badge{font-size:9px;color:#0b0b10;background:#d6ff3f;padding:2px 6px;letter-spacing:.15em;display:none}
+  .card.default .badge{display:inline-block}
+  .name{font-size:16px;font-weight:700}
+  .desc{font-size:12px;color:#8b897f;line-height:1.5;flex:1}
+  .row{display:flex;gap:8px;margin-top:6px}
+  .row a,.row button{flex:1;text-align:center;font:inherit;font-size:11px;letter-spacing:.1em;text-decoration:none;
+    color:#e8e6df;background:#17171f;border:1px solid #2a2a33;padding:9px 10px;cursor:pointer}
+  .row a:hover,.row button:hover{border-color:#d6ff3f;color:#d6ff3f}
+  .foot{font-size:11px;color:#55534b;text-align:center;line-height:2}
+  .foot a{color:#8b897f}
+</style>
+</head>
+<body data-no-switcher>
+  <h1>VERSION <span>GALLERY</span></h1>
+  <p class="sub">Every landing page jojkos.games has worn — kept browsable as a little design-history museum.
+    <b>SET DEFAULT</b> makes the root URL load that version for you.</p>
+  <div class="grid" id="grid"></div>
+  <p class="foot">
+    default is remembered in your browser · <span id="curDefault"></span><br>
+    plans in <a href="../plans/00-overview.md">/plans</a> · <a href="https://buymeacoffee.com/jojkos">buy me a coffee</a>
+  </p>
+  <noscript>
+    <ul>
+      <li><a href="../v1/index.html">v1 — Matrix Tunnel</a></li>
+      <li><a href="../v2a/index.html">v2a — Pug Playground 3D</a></li>
+      <li><a href="../v2b/index.html">v2b — The Studio Cut</a></li>
+      <li><a href="../v2c/index.html">v2c — Matrix: Operator</a></li>
+      <li><a href="../v2d/index.html">v2d — The Signal Degrades</a></li>
+      <li><a href="../v2e/index.html">v2e — Insert Coin Arcade</a></li>
+      <li><a href="../v2f/index.html">v2f — Patch Notes from the Void</a></li>
+    </ul>
+  </noscript>
+<script src="../shared/switcher.js"></script>
+<script>
+(function(){
+  var KEY = 'jojkos_variant';
+  var grid = document.getElementById('grid');
+  function currentDefault(){
+    try { return localStorage.getItem(KEY) || 'v2e'; } catch (e){ return 'v2e'; }
+  }
+  function render(){
+    grid.innerHTML = '';
+    var def = currentDefault();
+    document.getElementById('curDefault').textContent = 'current default: ' + def;
+    VARIANTS.forEach(function(v){
+      var card = document.createElement('div');
+      card.className = 'card' + (v.id === def ? ' default' : '');
+      card.innerHTML =
+        '<div class="idrow"><span class="id">' + v.id + '</span><span class="badge">DEFAULT</span></div>' +
+        '<div class="name">' + v.name + '</div>' +
+        '<div class="desc">' + v.blurb + '</div>';
+      var row = document.createElement('div');
+      row.className = 'row';
+      var open = document.createElement('a');
+      open.href = '../' + v.id + '/index.html';
+      open.textContent = 'OPEN';
+      var set = document.createElement('button');
+      set.type = 'button';
+      set.textContent = v.id === def ? 'IS DEFAULT' : 'SET DEFAULT';
+      set.addEventListener('click', function(){
+        try { localStorage.setItem(KEY, v.id); } catch (e){}
+        render();
+      });
+      row.appendChild(open); row.appendChild(set);
+      card.appendChild(row);
+      grid.appendChild(card);
+    });
+  }
+  render();
+})();
+</script>
+</body>
+</html>

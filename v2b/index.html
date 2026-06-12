@@ -1,0 +1,209 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>JOJKO'S GAMES — 14 playable experiments</title>
+  <meta name="description" content="The studio cut. Fourteen vibe-coded games and tools — arcade, puzzles, shooters — built for fun, fueled by coffee.">
+  <meta name="theme-color" content="#0e0e0c">
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Anton&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+
+  <link rel="preload" as="image" href="../screenshots/zoopaloola.png">
+  <link rel="preload" as="image" href="../screenshots/factorio-lamp.png">
+
+  <link rel="stylesheet" href="style.css">
+
+  <script>document.documentElement.classList.add('js');</script>
+  <noscript><style>#preloader,.cursor,#gl{display:none!important}</style></noscript>
+
+  <script defer src="https://cdn.jsdelivr.net/npm/gsap@3.13.0/dist/gsap.min.js"></script>
+  <script defer src="https://cdn.jsdelivr.net/npm/gsap@3.13.0/dist/ScrollTrigger.min.js"></script>
+  <script defer src="https://cdn.jsdelivr.net/npm/lenis@1.3.4/dist/lenis.min.js"></script>
+  <script defer src="app.js"></script>
+</head>
+<body>
+
+  <!-- preloader -->
+  <div id="preloader" aria-hidden="true">
+    <div class="shutter shutter-top"></div>
+    <div class="shutter shutter-btm"></div>
+    <div class="pre-ui">
+      <div class="pre-label mono">loading — jojko's games</div>
+      <div class="pre-count" id="preCount">000</div>
+      <div class="pre-bar"><span id="preBar"></span></div>
+    </div>
+  </div>
+
+  <!-- header -->
+  <header class="site-header">
+    <a class="wordmark mono" href="./">jojko's games<span class="dot">●</span></a>
+    <div class="header-right">
+      <span class="mono header-count">14 experiments</span>
+      <button id="soundToggle" class="mono" type="button" aria-pressed="false">snd&nbsp;off</button>
+    </div>
+  </header>
+
+  <main id="main">
+
+    <!-- hero -->
+    <section class="hero">
+      <div class="hero-inner">
+        <h1 class="hero-title">
+          <span class="line"><span class="line-inner">JOJKO'S</span></span>
+          <span class="line"><span class="line-inner">GAMES<span class="hero-dot">●</span></span></span>
+        </h1>
+        <p class="hero-meta mono"><span class="line-inner">14 playable experiments · vibe-coded · 2024–2026</span></p>
+      </div>
+      <div class="scroll-hint mono" aria-hidden="true">scroll <span class="arrow">↓</span></div>
+      <div class="marquee" aria-hidden="true">
+        <div class="marquee-track">
+          <span>ARCADE · PUZZLE · SHOOTER · ACTION · TOOL · PVP · CLICKER · RNG · RACE&nbsp;·&nbsp;</span>
+          <span>ARCADE · PUZZLE · SHOOTER · ACTION · TOOL · PVP · CLICKER · RNG · RACE&nbsp;·&nbsp;</span>
+        </div>
+      </div>
+    </section>
+
+    <!-- the list -->
+    <section class="list-section">
+      <div class="list-head mono">
+        <span>the collection</span>
+        <span>01 — 14</span>
+      </div>
+
+      <nav class="list" id="list" aria-label="All games">
+
+        <a class="row" href="https://zoopaloola.vercel.app/" data-img="../screenshots/zoopaloola.png">
+          <span class="row-index" aria-hidden="true">01</span>
+          <span class="row-media"><img src="../screenshots/zoopaloola.png" alt="" loading="eager"></span>
+          <h2 class="row-title">ZOOPALOOLA</h2>
+          <span class="row-meta mono"><span class="tag">arcade</span><span class="domain">zoopaloola.vercel.app</span></span>
+        </a>
+
+        <a class="row" href="https://factorio-lamp-editor.vercel.app/" data-img="../screenshots/factorio-lamp.png">
+          <span class="row-index" aria-hidden="true">02</span>
+          <span class="row-media"><img src="../screenshots/factorio-lamp.png" alt="" loading="lazy"></span>
+          <h2 class="row-title">FACTORIO LAMP EDITOR</h2>
+          <span class="row-meta mono"><span class="tag">tool</span><span class="domain">factorio-lamp-editor.vercel.app</span></span>
+        </a>
+
+        <a class="row" href="https://lol-fusion.vercel.app/" data-img="../screenshots/lol-fusion.png">
+          <span class="row-index" aria-hidden="true">03</span>
+          <span class="row-media"><img src="../screenshots/lol-fusion.png" alt="" loading="lazy"></span>
+          <h2 class="row-title">LOL FUSION LOLDLE</h2>
+          <span class="row-meta mono"><span class="tag">puzzle</span><span class="domain">lol-fusion.vercel.app</span></span>
+        </a>
+
+        <a class="row" href="https://pug-fiesta.vercel.app/" data-img="../screenshots/pug-fiesta.png">
+          <span class="row-index" aria-hidden="true">04</span>
+          <span class="row-media"><img src="../screenshots/pug-fiesta.png" alt="" loading="lazy"></span>
+          <h2 class="row-title">PUG FIESTA</h2>
+          <span class="row-meta mono"><span class="tag">action</span><span class="domain">pug-fiesta.vercel.app</span></span>
+        </a>
+
+        <a class="row" href="https://pug-fiesta3-d.vercel.app/" data-img="../screenshots/pug-fiesta-3d.png">
+          <span class="row-index" aria-hidden="true">05</span>
+          <span class="row-media"><img src="../screenshots/pug-fiesta-3d.png" alt="" loading="lazy"></span>
+          <h2 class="row-title">PUG FIESTA 3D</h2>
+          <span class="row-meta mono"><span class="tag">action</span><span class="domain">pug-fiesta3-d.vercel.app</span></span>
+        </a>
+
+        <a class="row" href="https://combatarena.onrender.com/" data-img="../screenshots/combat-arena.png">
+          <span class="row-index" aria-hidden="true">06</span>
+          <span class="row-media"><img src="../screenshots/combat-arena.png" alt="" loading="lazy"></span>
+          <h2 class="row-title">COMBAT ARENA</h2>
+          <span class="row-meta mono"><span class="tag">pvp</span><span class="domain">combatarena.onrender.com</span></span>
+        </a>
+
+        <a class="row" href="../bluff/index.html" data-img="../screenshots/bluff.png">
+          <span class="row-index" aria-hidden="true">07</span>
+          <span class="row-media"><img src="../screenshots/bluff.png" alt="" loading="lazy"></span>
+          <h2 class="row-title">BLUFF HELPER</h2>
+          <span class="row-meta mono"><span class="tag">tool</span><span class="domain">on-site</span></span>
+        </a>
+
+        <a class="row" href="https://calendar-puzzle2.vercel.app/" data-img="../screenshots/calendar-puzzle.png">
+          <span class="row-index" aria-hidden="true">08</span>
+          <span class="row-media"><img src="../screenshots/calendar-puzzle.png" alt="" loading="lazy"></span>
+          <h2 class="row-title">CALENDAR PUZZLE</h2>
+          <span class="row-meta mono"><span class="tag">puzzle</span><span class="domain">calendar-puzzle2.vercel.app</span></span>
+        </a>
+
+        <a class="row" href="../pokemonShooter/index.html" data-img="../screenshots/pokemon-shooter.png">
+          <span class="row-index" aria-hidden="true">09</span>
+          <span class="row-media"><img src="../screenshots/pokemon-shooter.png" alt="" loading="lazy"></span>
+          <h2 class="row-title">POKEMON SHOOTER</h2>
+          <span class="row-meta mono"><span class="tag">shooter</span><span class="domain">on-site</span></span>
+        </a>
+
+        <a class="row" href="../tralalaGame/index.html" data-img="../screenshots/tralala.png">
+          <span class="row-index" aria-hidden="true">10</span>
+          <span class="row-media"><img src="../screenshots/tralala.png" alt="" loading="lazy"></span>
+          <h2 class="row-title">TRALALA CLICKER</h2>
+          <span class="row-meta mono"><span class="tag">clicker</span><span class="domain">on-site</span></span>
+        </a>
+
+        <a class="row" href="../lolWheel/index.html" data-img="../screenshots/lol-wheel.png">
+          <span class="row-index" aria-hidden="true">11</span>
+          <span class="row-media"><img src="../screenshots/lol-wheel.png" alt="" loading="lazy"></span>
+          <h2 class="row-title">LOL WHEEL</h2>
+          <span class="row-meta mono"><span class="tag">rng</span><span class="domain">on-site</span></span>
+        </a>
+
+        <a class="row" href="../neonDrifter/index.html" data-img="../screenshots/neon-drifter.png">
+          <span class="row-index" aria-hidden="true">12</span>
+          <span class="row-media"><img src="../screenshots/neon-drifter.png" alt="" loading="lazy"></span>
+          <h2 class="row-title">NEON DRIFTER</h2>
+          <span class="row-meta mono"><span class="tag">race</span><span class="domain">on-site</span></span>
+        </a>
+
+        <a class="row" href="../guitarTuner/index.html" data-img="../screenshots/guitar-tuner.png">
+          <span class="row-index" aria-hidden="true">13</span>
+          <span class="row-media"><img src="../screenshots/guitar-tuner.png" alt="" loading="lazy"></span>
+          <h2 class="row-title">GUITAR TUNER</h2>
+          <span class="row-meta mono"><span class="tag">tool</span><span class="domain">on-site</span></span>
+        </a>
+
+        <a class="row" href="https://okcorral.onrender.com/" data-img="../screenshots/ok-corral.png">
+          <span class="row-index" aria-hidden="true">14</span>
+          <span class="row-media"><img src="../screenshots/ok-corral.png" alt="" loading="lazy"></span>
+          <h2 class="row-title">OK CORRAL</h2>
+          <span class="row-meta mono"><span class="tag">shooter</span><span class="domain">okcorral.onrender.com</span></span>
+        </a>
+
+      </nav>
+    </section>
+
+    <!-- outro -->
+    <section class="outro">
+      <h2 class="statement">
+        <span class="line"><span class="line-inner">BUILT FOR FUN,</span></span>
+        <span class="line"><span class="line-inner">FUELED BY <em>COFFEE</em>.</span></span>
+      </h2>
+      <p class="outro-copy mono">Fourteen vibe-coded experiments — arcade physics, puzzles, shooters
+      and odd little tools — shipped straight from late-night sessions. No roadmaps. No sprints. Just play.</p>
+      <a class="pill" href="https://buymeacoffee.com/jojkos">buy me a coffee <span class="pill-dot">●</span></a>
+      <footer class="site-footer mono">
+        <span id="clock">00:00:00</span>
+        <span>made with claude ✶</span>
+        <span>© jojkos 2024–2026</span>
+      </footer>
+    </section>
+
+  </main>
+
+  <!-- fx layers -->
+  <canvas id="gl" aria-hidden="true"></canvas>
+  <div class="grain" aria-hidden="true"></div>
+  <div id="expander" aria-hidden="true"><img alt=""></div>
+  <div id="flash" aria-hidden="true"></div>
+  <div class="cursor" aria-hidden="true">
+    <div class="cursor-dot"></div>
+    <div class="cursor-ring"><span class="cursor-label mono">play ●</span></div>
+  </div>
+
+<script src="../shared/switcher.js" defer></script>
+</body>
+</html>

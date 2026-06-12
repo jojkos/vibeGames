@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <title>JOJKO'S GAMES — Matrix Operator Console</title>
+  <meta name="description" content="JOJKO'S GAMES — 14 games and toys, served by an operator console where the matrix rain IS the screen. Red pill or blue pill?" />
+  <meta name="theme-color" content="#020503" />
+  <style>
+    html, body {
+      margin: 0;
+      padding: 0;
+      background: #020503;
+      height: 100%;
+      overflow: hidden;
+    }
+    #construct {
+      display: block;
+      position: fixed;
+      inset: 0;
+      touch-action: none;
+      user-select: none;
+      -webkit-user-select: none;
+      -webkit-tap-highlight-color: transparent;
+    }
+    /* visually hidden, screen-reader/SEO real links */
+    .sr-nav {
+      position: absolute;
+      width: 1px;
+      height: 1px;
+      margin: -1px;
+      padding: 0;
+      overflow: hidden;
+      clip: rect(0 0 0 0);
+      clip-path: inset(50%);
+      white-space: nowrap;
+      border: 0;
+    }
+    /* ---- the blue pill: a complete, comfortable, plain website ---- */
+    #bluepill {
+      font-family: 'Times New Roman', Times, serif;
+      background: #ffffff;
+      color: #111;
+      min-height: 100%;
+      box-sizing: border-box;
+      padding: 2rem 1.25rem 4rem;
+    }
+    #bluepill main { max-width: 38rem; margin: 0 auto; }
+    #bluepill h1 { font-size: 2rem; margin: 0 0 .25rem; font-weight: normal; }
+    #bluepill .tagline { color: #555; font-style: italic; margin-top: 0; }
+    #bluepill ol { line-height: 1.8; padding-left: 2rem; }
+    #bluepill a { color: #00e; }
+    #bluepill a:visited { color: #551a8b; }
+    #bluepill .tag { color: #777; font-size: .85em; }
+    #bluepill .note { color: #777; font-size: .85em; }
+    #bluepill hr { border: none; border-top: 1px solid #ccc; margin: 1.5rem 0; }
+    body.bluemode { background: #fff; overflow: auto; }
+    body.bluemode #construct { display: none; }
+  </style>
+  <noscript>
+    <style>
+      /* no JS: the blue pill is the site */
+      #bluepill[hidden] { display: block; }
+      #construct { display: none; }
+      body { background: #fff; overflow: auto; }
+      .js-only { display: none; }
+    </style>
+  </noscript>
+</head>
+<body>
+  <canvas id="construct" aria-label="JOJKO'S GAMES operator console. The game list is available as links below." role="img"></canvas>
+
+  <nav class="sr-nav" aria-label="All games">
+    <a href="https://zoopaloola.vercel.app/">Zoopaloola</a>
+    <a href="https://factorio-lamp-editor.vercel.app/">Factorio Lamp Editor</a>
+    <a href="https://lol-fusion.vercel.app/">LoL Fusion loldle</a>
+    <a href="https://pug-fiesta.vercel.app/">Pug Fiesta</a>
+    <a href="https://pug-fiesta3-d.vercel.app/">Pug Fiesta 3D</a>
+    <a href="https://combatarena.onrender.com/">Combat Arena</a>
+    <a href="../bluff/index.html">Bluff Helper</a>
+    <a href="https://calendar-puzzle2.vercel.app/">Calendar Puzzle</a>
+    <a href="../pokemonShooter/index.html">Pokemon Shooter</a>
+    <a href="../tralalaGame/index.html">Tralala Clicker</a>
+    <a href="../lolWheel/index.html">LoL Wheel</a>
+    <a href="../neonDrifter/index.html">Neon Drifter</a>
+    <a href="../guitarTuner/index.html">Guitar Tuner</a>
+    <a href="https://okcorral.onrender.com/">OK Corral</a>
+    <a href="https://buymeacoffee.com/jojkos">Buy me a coffee</a>
+    <a href="?pill=blue">Plain HTML version (blue pill)</a>
+  </nav>
+
+  <div id="bluepill" hidden>
+    <main>
+      <h1>JOJKO'S GAMES</h1>
+      <p class="tagline">You took the blue pill. You chose comfort. Nothing wrong with that.</p>
+      <p>Fourteen games &amp; toys, plain and simple:</p>
+      <ol>
+        <li><a href="https://zoopaloola.vercel.app/">Zoopaloola</a> <span class="tag">— arcade</span></li>
+        <li><a href="https://factorio-lamp-editor.vercel.app/">Factorio Lamp Editor</a> <span class="tag">— tool</span></li>
+        <li><a href="https://lol-fusion.vercel.app/">LoL Fusion loldle</a> <span class="tag">— puzzle</span></li>
+        <li><a href="https://pug-fiesta.vercel.app/">Pug Fiesta</a> <span class="tag">— action</span></li>
+        <li><a href="https://pug-fiesta3-d.vercel.app/">Pug Fiesta 3D</a> <span class="tag">— action</span></li>
+        <li><a href="https://combatarena.onrender.com/">Combat Arena</a> <span class="tag">— pvp</span></li>
+        <li><a href="../bluff/index.html">Bluff Helper</a> <span class="tag">— tool</span></li>
+        <li><a href="https://calendar-puzzle2.vercel.app/">Calendar Puzzle</a> <span class="tag">— puzzle</span></li>
+        <li><a href="../pokemonShooter/index.html">Pokemon Shooter</a> <span class="tag">— shooter</span></li>
+        <li><a href="../tralalaGame/index.html">Tralala Clicker</a> <span class="tag">— clicker</span></li>
+        <li><a href="../lolWheel/index.html">LoL Wheel</a> <span class="tag">— rng</span></li>
+        <li><a href="../neonDrifter/index.html">Neon Drifter</a> <span class="tag">— race</span></li>
+        <li><a href="../guitarTuner/index.html">Guitar Tuner</a> <span class="tag">— tool</span></li>
+        <li><a href="https://okcorral.onrender.com/">OK Corral</a> <span class="tag">— shooter</span></li>
+      </ol>
+      <p><a href="https://buymeacoffee.com/jojkos">Buy me a coffee ☕</a></p>
+      <hr />
+      <p><a href="index.html?pill=red">Take the red pill instead →</a></p>
+      <p class="note">This page is also the reduced-motion / no-JavaScript version of the site.</p>
+    </main>
+  </div>
+
+  <script src="grid.js"></script>
+  <script src="imagecast.js"></script>
+  <script src="audio.js"></script>
+  <script src="ui.js"></script>
+  <script>
+    (function () {
+      'use strict';
+      var blueEl = document.getElementById('bluepill');
+      var canvas = document.getElementById('construct');
+
+      function lsGet(k) { try { return localStorage.getItem(k); } catch (e) { return null; } }
+      function lsSet(k, v) { try { localStorage.setItem(k, v); } catch (e) {} }
+
+      // ?pill=red / ?pill=blue override (also how the blue page's red link works)
+      var params = new URLSearchParams(location.search);
+      var forced = params.get('pill');
+      if (forced === 'red' || forced === 'blue') {
+        lsSet('v2c.pill', forced);
+        if (history.replaceState) history.replaceState(null, '', location.pathname);
+      }
+
+      var reduced = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+      var pill = lsGet('v2c.pill');
+      var firstVisit = !pill;
+
+      // blue pill view: re-attach the plain page, hide the construct
+      V2C.showBlue = function () {
+        if (V2C.ui) V2C.ui.stop();
+        if (!blueEl.isConnected) document.body.appendChild(blueEl);
+        blueEl.hidden = false;
+        document.body.classList.add('bluemode');
+        document.title = "JOJKO'S GAMES";
+      };
+
+      // Reduced-motion users get the calm page by default — unless they
+      // explicitly forced the red pill this load.
+      if (pill === 'blue' || (reduced && forced !== 'red')) {
+        V2C.showBlue();
+        return;
+      }
+
+      // RED PILL: the DOM is just the canvas + the hidden nav. The flex is real.
+      blueEl.remove();
+      V2C.ui.boot({ firstVisit: firstVisit, reduced: reduced });
+    })();
+  </script>
+<script src="../shared/switcher.js" defer></script>
+</body>
+</html>
