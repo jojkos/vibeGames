@@ -32,66 +32,260 @@ function mulberry32(seed){
 // char → color maps; '.' = transparent. Drawn 1:1 into wall shear space.
 const POSTER_PAL = {
   k:'#14101e', K:'#262436', r:'#e0314b', R:'#8e2438', w:'#e8e4f0', W:'#9b94b8',
-  y:'#ffd23f', t:'#d8a06a', d:'#5e3a22', g:'#3dff7a', c:'#2fd6e0', p:'#ff7ab8',
-  b:'#3d7bff', o:'#ff9a3c', m:'#ff3df0', s:'#3a3a4e',
-  P:'#f4b8c1', C:'#ead9b0', D:'#3a2a1c',
+  y:'#ffd23f', t:'#d8a06a', d:'#7a4a26', g:'#3dff7a', c:'#2fd6e0', p:'#ff7ab8',
+  b:'#3d7bff', o:'#ff9a3c', m:'#ff3df0', s:'#5a5a72', e:'#1f8f46', n:'#10204a',
+  u:'#7a4ddb', G:'#f2c14e', P:'#f4b8c1', C:'#efe0bb', D:'#3a2a1c', H:'#2a2030',
 };
+// Each poster is unique — assigned one-per-cabinet, no repeats. Rows may be
+// ragged; drawPoster sizes to the widest row and skips '.' (transparent).
 const POSTERS = {
-  // PUG BANGER FIESTA logo — two stacked pugs in the pink circle (the real one)
+  // PUG BANGER FIESTA — bold pug face in the pink ring (clearer than the
+  // two-pug mush at this resolution; the real logo can be dropped in as a PNG)
   puglogo: { cap:'#f4b8c1', rows:[
-    '.....kkkkkk.....',
-    '...kkppppppkk...',
-    '..kppppppppppk..',
-    '.kpppCCCCCppppk.',
-    '.kpCCCCCCCCDCpk.',
-    'kppCCCCCCCCCCCpk',
-    'kpCCpppCCCCCkCpk',
-    'kppCCCCCCCCCCCpk',
-    '.kpCCCCCCCCDCpk.',
-    '.kpCCpCCpCCCCpk.',
-    '..kpCCpCCpCCpk..',
-    '...kkppppppkk...',
-    '.....kkkkkk.....',
+    '....kkkkkkkk....',
+    '..kkPPPPPPPPkk..',
+    '.kPPPPPPPPPPPPk.',
+    '.kPPCCkPPPPkCCPk',
+    'kPPCCCkPPPPkCCCP',
+    'kPPCCCCCCCCCCCPk',
+    'kPPCCCCCCCCCCCPk',
+    'kPPCCkkCCCCkkCPk',
+    'kPPCCkkCCCCkkCPk',
+    'kPPCCCCDDDDCCCPk',
+    'kPPCCCDkkkkDCCPk',
+    'kPPCCCDkkkkDCCPk',
+    '.kPPCCCDDDDCCPk.',
+    '.kPPPPCCCCPPPPk.',
+    '..kkPPPPPPPPkk..',
+    '....kkkkkkkk....',
   ]},
-  pokeball: { cap:'#e0314b', rows:[     // GOTTA PLAY 'EM
-    '...rrrrrr...',
-    '..rrrrrrrr..',
-    '.rrrrrrrrrr.',
-    '.rrrrrrrrrr.',
-    'rrrrrrrrrrrr',
-    'kkkkkwwkkkkk',
-    'wwwwkwwkwwww',
-    '.wwwwwwwwww.',
-    '.wwwwwwwwww.',
-    '..wwwwwwww..',
-    '...wwwwww...',
+  // STAR WARS — Vader helmet, "MAY THE COIN BE WITH YOU"
+  vader: { cap:'#9b94b8', rows:[
+    '...kkkkkk...',
+    '..kkkkkkkk..',
+    '.kkkkkkkkkk.',
+    'kkkKKKKKKkkk',
+    'kkKKkkkkKKkk',
+    'kkKKkkkkKKkk',
+    'kkkKKKKKKkkk',
+    'kkksskksskkk',
+    'kkksskksskkk',
+    '.kksssssskk.',
+    '.kkkssssKkk.',
+    '..kkkkkkkk..',
+    '.kk......kk.',
+  ]},
+  pokeball: { cap:'#e0314b', rows:[
+    '..wwwwww..',
+    '.wrrrrrrw.',
+    'wrrrrrrrrw',
+    'wrrrrrrrrw',
+    'wkkkkkkkkw',
+    'kkkwwwwkkk',
+    'kkwwsswwkk',
+    'kkkwwwwkkk',
+    'wkkkkkkkkw',
+    'wwwwwwwwww',
+    'wwwwwwwwww',
+    '.wwwwwwww.',
+    '..wwwwww..',
   ]},
   pikachu: { cap:'#ffd23f', rows:[
-    'k..........k',
-    '.k........k.',
-    '.yk......ky.',
-    '..yy....yy..',
-    '..yyyyyyyy..',
-    '.yyyyyyyyyy.',
-    '.ykyyyyyyky.',
-    '.yyyykkyyyy.',
-    '.ryyyyyyyyr.',
-    '..yyyyyyyy..',
-    '...yyyyyy...',
-  ]},
-  vader: { cap:'#9b94b8', rows:[        // MAY THE COIN BE WITH YOU
-    '...kkkk...',
-    '.kkkkkkkk.',
-    'kkkkkkkkkk',
-    'kkkkkkkkkk',
-    'kkskkkkskk',
-    'kkkkkkkkkk',
-    '.kkskkskk.',
-    '.kksssskk.',
-    '..kksskk..',
-    '..kkkkkk..',
+    'k........k',
+    'kk......kk',
     '.kk....kk.',
+    '.yyy..yyy.',
+    '..yyyyyy..',
+    '.yyyyyyyy.',
+    '.ykkyykky.',
+    'ryyyooyyyr',
+    '.yykkkkyy.',
+    '..yyyyyy..',
   ]},
+  invader: { cap:'#3dff7a', rows:[
+    '..g....g..',
+    'g..g..g..g',
+    'g.gggggg.g',
+    'gggg..gggg',
+    'gggggggggg',
+    '.gggggggg.',
+    '.g.g..g.g.',
+    '.g......g.',
+  ]},
+  pacman: { cap:'#ffd23f', rows:[
+    '..yyyyyy..',
+    '.yyyyyykk.',
+    'yyyyyyykk.',
+    'yyyyyy....',
+    'yyyyy.....',
+    'yyyyyy....',
+    'yyyyyyy.oo',
+    '.yyyyyy.oo',
+    '..yyyyyy..',
+  ]},
+  ghost: { cap:'#ff7ab8', rows:[
+    '..pppppp..',
+    '.pppppppp.',
+    'pppppppppp',
+    'pwwppwwppp',
+    'pwbppwbppp',
+    'pppppppppp',
+    'pppppppppp',
+    'pp.pp.pp.p',
+  ]},
+  tetris: { cap:'#2fd6e0', rows:[
+    'cc........',
+    'cc..rr....',
+    '....rr.yy.',
+    'gg..rr.yy.',
+    'gg..u.....',
+    '.oo.uu....',
+    '.oo.uuu...',
+    'mm........',
+    'mm.mm.....',
+  ]},
+  mushroom: { cap:'#e0314b', rows:[
+    '..rrrrrr..',
+    '.rwwrrwwr.',
+    'rwwwrrwwwr',
+    'rrrrrrrrrr',
+    'rwwrrrrwwr',
+    '.wwwwwwww.',
+    '..wttttw..',
+    '..wtkktw..',
+    '..wttttw..',
+  ]},
+  heart: { cap:'#ff4d6d', rows:[
+    '.rr..rr.',
+    'rrrrrrrr',
+    'rwrrrrrr',
+    'rrrrrrrr',
+    '.rrrrrr.',
+    '..rrrr..',
+    '...rr...',
+  ]},
+  // STAR WARS — lightsaber (blue blade, lit hilt)
+  lightsaber: { cap:'#3d7bff', rows:[
+    '...bb...',
+    '...bb...',
+    '..bwwb..',
+    '...ww...',
+    '...ww...',
+    '...ww...',
+    '...bb...',
+    '..ssss..',
+    '..skks..',
+    '..ssss..',
+    '..skks..',
+    '...ss...',
+  ]},
+  controller: { cap:'#9b94b8', rows:[
+    '.kkkkkkkkkk.',
+    'kkkkkkkkkkkk',
+    'kwkkkkkkrrkk',
+    'kkkkkkkkkkkk',
+    'kwkwkkkkrwrk',
+    'kkkkkkkkkkkk',
+    '.kk......kk.',
+  ]},
+  // BORDERLANDS — psycho bandit mask (cream mask, dark eyes, red mark, teeth)
+  borderlands: { cap:'#ff9a3c', rows:[
+    '.CCCCCCCC.',
+    'CCCCCCCCCC',
+    'CkkCCCCkkC',
+    'CkkCCCCkkC',
+    'CCCCrrCCCC',
+    'CCCkkkkCCC',
+    'CkwkwkwkkC',
+    'CCkkkkkkCC',
+    '.CkCCCCkC.',
+  ]},
+  star: { cap:'#f2c14e', rows:[
+    '....G....',
+    '....G....',
+    '..GGGGG..',
+    'GGGGGGGGG',
+    '.GGGGGGG.',
+    '..GG.GG..',
+    '.GG...GG.',
+  ]},
+  // LEAGUE OF LEGENDS — a Poro (fluffy white blob, big eyes, lil tongue)
+  lol: { cap:'#2fd6e0', rows:[
+    '..wwwwww..',
+    '.wwwwwwww.',
+    'wwwwwwwwww',
+    'wwwwwwwwww',
+    'wwkwwwwkww',
+    'wwwwwwwwww',
+    'wwwwrrwwww',
+    '.wwwwwwww.',
+    '..w.ww.w..',
+  ]},
+};
+
+// Crisp poster art — hand-authored pixel-art icons (NOT emoji). Each is a small
+// char grid scaled to fill the cabinet side face, so it stays sharp + on-theme.
+const PIX_PAL = {
+  y:'#ffd23f', o:'#ff9a3c', r:'#e0314b', R:'#8e2438', w:'#f4f1ea', W:'#b8b0c8',
+  k:'#14101e', g:'#46e06a', G:'#1f8f46', c:'#2fd6e0', p:'#ff7ab8', b:'#3d7bff',
+  s:'#8a8aa0', d:'#c8962f', t:'#d8a06a',
+};
+const PIXART = {
+  // electric bolt (Pikachu / electric games)
+  pika: { pal: PIX_PAL, rows: [
+    '.....yyy..', '....yyy...', '...yyy....', '..yyy.....',
+    '..yyyyyy..', '.....yyy..', '....yyy...', '...yyy....',
+    '..yyy.....', '..yy......' ] },
+  // Borderlands psycho — bone mask, eye holes, blue mark, stitched mouth
+  psycho: { pal: PIX_PAL, rows: [
+    '.wwwwwwwww.', 'wwwwwwwwwww', 'wwwwwwwwwww', 'wkkwwwwwkkw',
+    'wkkwwwwwkkw', 'wwwwbwwwwww', 'wwwwwwwwwww', 'wkwkwkwkwkw',
+    'wwwwwwwwwww', '.wwwwwwwww.', '..wwwwwww..' ] },
+  // crossed swords (LoL / battle)
+  swords: { pal: PIX_PAL, rows: [
+    's.........s', '.s.......s.', '..s.....s..', '...s...s...',
+    '....s.s....', '.....s.....', '....s.s....', '...s...s...',
+    '..s.....s..', '.d.......d.', 'd.........d' ] },
+  // space invader
+  invader: { pal: PIX_PAL, rows: [
+    '..c.....c..', '...c...c...', '..ccccccc..', '.cc.ccc.cc.',
+    'ccccccccccc', 'c.ccccccc.c', 'c.c.....c.c', '...cc.cc...' ] },
+  // pac-man ghost
+  ghost: { pal: PIX_PAL, rows: [
+    '...rrrrr...', '..rrrrrrr..', '.rrrrrrrrr.', '.rwwrrwwrr.',
+    '.rwbrrwbrr.', '.rrrrrrrrr.', 'rrrrrrrrrrr', 'rrrrrrrrrrr',
+    'rrrrrrrrrrr', 'r.rr.rr.rr.', '.r.rr.rr.r.' ] },
+  // Mario-style mushroom
+  mushroom: { pal: PIX_PAL, rows: [
+    '...rrrrr...', '..rrrrrrr..', '.rrwwrwwrr.', 'rrrwwrwwrrr',
+    'rrrrrrrrrrr', 'rrrrrrrrrrr', '.wwwwwwwww.', '.wwkwwwkww.',
+    '.wwwwwwwww.', '..wwwwwww..' ] },
+  // heart
+  heart: { pal: PIX_PAL, rows: [
+    '.rr...rr..', 'rrrr.rrrr.', 'rrrrrrrrr.', 'rrrrrrrrr.',
+    'rrrrrrrrr.', '.rrrrrrr..', '..rrrrr...', '...rrr....', '....r.....' ] },
+  // gamepad
+  controller: { pal: PIX_PAL, rows: [
+    '.kkkkkkkkkk.', 'kkkkkkkkkkkk', 'kkwkkkkkrkkk', 'kwwwkkkkgkbk',
+    'kkwkkkkkykkk', 'kkkkkkkkkkkk', '.kk......kk.' ] },
+  // star
+  star: { pal: PIX_PAL, rows: [
+    '.....y.....', '.....y.....', '....yyy....', '....yyy....',
+    'yyyyyyyyyyy', '.yyyyyyyyy.', '..yyyyyyy..', '..yyy.yyy..',
+    '.yy.....yy.', '.y.......y.' ] },
+  // die showing five
+  dice: { pal: PIX_PAL, rows: [
+    '.sssssssss.', 'swwwwwwwwws', 'swkwwwwwkws', 'swwwwwwwwws',
+    'swwwwkwwwws', 'swwwwwwwwws', 'swkwwwwwkws', 'swwwwwwwwws', '.sssssssss.' ] },
+  // alien head
+  alien: { pal: PIX_PAL, rows: [
+    '..GGGGGGG..', '.GGGGGGGGG.', 'GGGGGGGGGGG', 'GkkGGGGGkkG',
+    'GkkGGGGGkkG', 'GGGGGGGGGGG', 'GGGGGGGGGGG', '.GGGGGGGGG.',
+    '..GGGGGGG..', '...G...G...' ] },
+  // pug face (wall-logo fallback only)
+  pug: { pal: PIX_PAL, rows: [
+    't.t.....t.t', 'ttt.....ttt', '.ttttttttt.', 'ttttttttttt',
+    'tkkttttkktt', 'ttttttttttt', 'tttkkkkkttt', '.ttttttt...', '..ttttt....' ] },
 };
 
 const World = window.World = {
@@ -99,7 +293,7 @@ const World = window.World = {
   cam: { x: 48, y: 96, z: BASE_ZOOM, tz: BASE_ZOOM },
   mulberry32,
   WALL_H,
-  POSTERS,                               // pixel-art posters (cabinets borrow these)
+  POSTERS,                               // pixel-art posters (legacy fallback)
 
   iso(x, y){ return [ (x - y) * TW2, (x + y) * TH2 ]; },
   unproject(sx, sy){
@@ -109,6 +303,9 @@ const World = window.World = {
 
   block(tx, ty){
     if (tx >= 0 && ty >= 0 && tx < GW && ty < GH) this.blocked[ty * GW + tx] = 1;
+  },
+  unblock(tx, ty){
+    if (tx >= 0 && ty >= 0 && tx < GW && ty < GH) this.blocked[ty * GW + tx] = 0;
   },
   isBlocked(tx, ty){
     if (tx < 0 || ty < 0 || tx >= GW || ty >= GH) return true;
@@ -124,14 +321,17 @@ const World = window.World = {
   drops: [], motes: [], notes: [],
   thunderIn: 6, flash: 0, signT: 0,
   machines: [],
-  claw: { tx: GW - 2, ty: 9, phase: 0, dropIn: 7, drift: 0 },
+  // decorative props, spaced along the right wall so the corner isn't crowded
+  claw: { tx: GW - 2, ty: 8, phase: 0, dropIn: 7, drift: 0 },
   juke: { tx: GW - 2, ty: 11, noteIn: 1 },
-  // free-standing HI-SCORE board: end of the first center cabinet row,
-  // facing the camera like its cabinet neighbours — provably overlaps nothing
-  board: { tx: GW - 5, ty: 5 },
+  // HI-SCORE hangs on the FRONT-LEFT wall (clear of the 'E' cabinets at ty>=4)
+  board: { ty: 1 },
+  pugImg: null, pugReady: false,
   walker: { active: false, p: 0, dir: 1, nextIn: 14 },
   marker: null,                          // click destination ping
   attract: false, attractT: 0,
+  doorOpen: 1, doorTarget: 1,            // 1 = open, 0 = closed (entrance intro)
+  introCam: false,                       // slow push-in while walking in
 
   // ----------------------------------------------------------------- init
   init(){
@@ -143,16 +343,27 @@ const World = window.World = {
     for (let x = 0; x < GW; x++){ this.block(x, 0); this.block(x, GH - 1); }
     for (let y = 0; y < GH; y++){ this.block(0, y); this.block(GW - 1, y); }
 
-    // decor machines (snack + change) on the right side
+    // one snack machine on the right wall (decluttered — was two)
     this.machines = [
       { tx: GW - 2, ty: 4, body: '#8e2438', win: '#ffd23f', stripe: '#ff4757', kind: 'snack'  },
-      { tx: GW - 2, ty: 6, body: '#1f6e46', win: '#9dffd0', stripe: '#3dff7a', kind: 'change' },
     ];
     for (const m of this.machines) this.block(m.tx, m.ty);
     this.block(this.claw.tx, this.claw.ty);
     this.block(this.juke.tx, this.juke.ty);
-    this.block(this.board.tx, this.board.ty);
-    this.block(this.board.tx + 1, this.board.ty);
+
+    // PUG BANGER FIESTA logo — the real logo, drawn crisp on the wall
+    // (falls back to the pixel pug if it fails to load / is offline)
+    this.pugImg = new Image();
+    this.pugImg.decoding = 'async';
+    this.pugImg.crossOrigin = 'anonymous';
+    this.pugImg.onload = () => { this.pugReady = true; };
+    this.pugImg.onerror = () => {
+      // retry without crossOrigin (some hosts lack CORS headers; we only draw it)
+      const i2 = new Image();
+      i2.onload = () => { this.pugImg = i2; this.pugReady = true; };
+      i2.src = window.CFG.PUG_LOGO || 'https://www.pugbanger.fun/assets/images/logo.png';
+    };
+    this.pugImg.src = (window.CFG.PUG_LOGO || 'https://www.pugbanger.fun/assets/images/logo.png');
 
     // rain drops, window-local space
     const rng = mulberry32(777);
@@ -203,16 +414,68 @@ const World = window.World = {
     if (on && !this.attract) this.attractT = 0;
     this.attract = on;
   },
+  setDoor(target){ this.doorTarget = target; },
 
   // sheared drawing helper: local x runs along the wall, local -y is up
   shear(c, ox, oy, slope){ c.save(); c.translate(ox, oy); c.transform(1, slope, 0, 1, 0, 0); },
 
+  // crisp poster art in an [x,y,S,S] box: vector shapes for geometric icons,
+  // emoji glyphs for everything else (recognizable even when small)
+  drawArt(c, x, y, S, name){
+    c.fillStyle = 'rgba(8,5,15,.62)';            // paper backing
+    c.fillRect(x, y, S, S);
+    c.fillStyle = 'rgba(255,255,255,.07)'; c.fillRect(x, y, S, 1);
+    const cx = x + S / 2, cy = y + S / 2, r = S * 0.40;
+    if (name === 'pokeball'){
+      c.beginPath(); c.arc(cx, cy, r, Math.PI, 0); c.fillStyle = '#e0314b'; c.fill();
+      c.beginPath(); c.arc(cx, cy, r, 0, Math.PI); c.fillStyle = '#f4f1ea'; c.fill();
+      c.fillStyle = '#14101e'; c.fillRect(cx - r, cy - r * 0.18, r * 2, r * 0.36);
+      c.beginPath(); c.arc(cx, cy, r * 0.32, 0, 6.3); c.fillStyle = '#14101e'; c.fill();
+      c.beginPath(); c.arc(cx, cy, r * 0.17, 0, 6.3); c.fillStyle = '#f4f1ea'; c.fill();
+      c.lineWidth = Math.max(1, S * 0.04); c.strokeStyle = '#14101e';
+      c.beginPath(); c.arc(cx, cy, r, 0, 6.3); c.stroke();
+    } else if (name === 'pacman'){
+      c.fillStyle = '#ffd23f';
+      c.beginPath(); c.moveTo(cx - r * 0.1, cy);
+      c.arc(cx - r * 0.1, cy, r, Math.PI * 0.27, Math.PI * 1.73); c.closePath(); c.fill();
+      c.fillStyle = '#14101e'; c.beginPath(); c.arc(cx - r * 0.1, cy - r * 0.44, r * 0.15, 0, 6.3); c.fill();
+    } else if (name === 'saber'){
+      c.fillStyle = '#79d0ff'; c.fillRect(cx - S * 0.06, y + S * 0.10, S * 0.12, S * 0.46);
+      c.fillStyle = '#eaffff'; c.fillRect(cx - S * 0.02, y + S * 0.10, S * 0.04, S * 0.46);
+      c.fillStyle = '#9b94b8'; c.fillRect(cx - S * 0.09, y + S * 0.56, S * 0.18, S * 0.30);
+      c.fillStyle = '#5a5a72'; c.fillRect(cx - S * 0.09, y + S * 0.665, S * 0.18, S * 0.05);
+    } else {
+      const art = PIXART[name]; if (!art) return;
+      this.drawPixGrid(c, x + S * 0.06, y + S * 0.06, S * 0.88, art);
+    }
+  },
+
+  // scale a char-grid pixel-art icon to fill the [x,y,size,size] box
+  drawPixGrid(c, x, y, size, art){
+    const rows = art.rows, pal = art.pal || PIX_PAL;
+    let cols = 0;
+    for (const r of rows) if (r.length > cols) cols = r.length;
+    const n = rows.length;
+    const cw = size / cols, ch = size / n;
+    for (let ry = 0; ry < n; ry++){
+      const row = rows[ry];
+      for (let rx = 0; rx < row.length; rx++){
+        const k = row[rx];
+        if (k === '.' || k === ' ') continue;
+        c.fillStyle = pal[k] || POSTER_PAL[k] || '#fff';
+        c.fillRect(x + rx * cw, y + ry * ch, cw + .6, ch + .6);
+      }
+    }
+  },
+
   /* drawPoster(c, x, yTop, art, taped) — framed wall poster, or (taped=true)
      a frameless "taped-on" version used on cabinet sides. */
   drawPoster(c, x, yTop, art, taped){
-    const rows = art.rows, w = rows[0].length, h = rows.length;
+    const rows = art.rows, h = rows.length;
+    let w = 0;
+    for (const r of rows) if (r.length > w) w = r.length;
     if (taped){
-      c.fillStyle = 'rgba(8,5,15,.55)';                 // paper backing
+      c.fillStyle = 'rgba(8,5,15,.6)';                  // paper backing
       c.fillRect(x - 1, yTop - 1, w + 2, h + 2);
     } else {
       c.fillStyle = '#0a0712';
@@ -222,9 +485,9 @@ const World = window.World = {
     }
     for (let ry = 0; ry < h; ry++){
       const row = rows[ry];
-      for (let rx = 0; rx < w; rx++){
+      for (let rx = 0; rx < row.length; rx++){     // per-row length — ragged-safe
         const ch = row[rx];
-        if (ch === '.') continue;
+        if (ch === '.' || ch === ' ') continue;
         c.fillStyle = POSTER_PAL[ch] || '#fff';
         c.fillRect(x + rx, yTop + ry, 1, 1);
       }
@@ -330,13 +593,11 @@ const World = window.World = {
     // baseboard
     c.fillStyle = '#0e0917'; c.fillRect(0, -4, GW * TW2, 4);
 
-    // door (tiles x 8..9 -> local 96..120)
-    c.fillStyle = '#0b0714'; c.fillRect(97, -40, 22, 40);          // opening
+    // door FRAME only (tiles x 8..9 -> local 96..120) — the two glass leaves
+    // are drawn per-frame in drawDoor() so they can open/close on entry
+    c.fillStyle = '#070b18'; c.fillRect(97, -40, 22, 40);          // opening (night beyond)
     c.fillStyle = '#241a38'; c.fillRect(96, -41, 24, 2);           // lintel
-    c.fillStyle = '#241a38'; c.fillRect(96, -41, 2, 41); c.fillRect(118, -41, 2, 41);
-    c.fillStyle = '#141d36'; c.fillRect(100, -36, 7, 30); c.fillRect(109, -36, 7, 30); // door glass
-    c.fillStyle = '#3a2b52'; c.fillRect(107, -36, 2, 30);          // middle stile
-    c.fillStyle = '#ffd23f'; c.fillRect(102, -20, 3, 1); c.fillRect(111, -20, 3, 1);   // handles
+    c.fillStyle = '#241a38'; c.fillRect(96, -41, 2, 41); c.fillRect(118, -41, 2, 41); // jambs
 
     // window frame (tiles 10..12 -> local 120..156), glass drawn per-frame
     c.fillStyle = '#241a38'; c.fillRect(119, -41, 39, 30);
@@ -363,10 +624,7 @@ const World = window.World = {
     c.fillStyle = 'rgba(179,45,168,.22)'; c.fillRect(0, -35, GH * TW2, 3);
     c.fillStyle = '#1e9aa3'; c.fillRect(0, -10, GH * TW2, 1);
     c.fillStyle = '#0c0813'; c.fillRect(0, -4, GH * TW2, 4);
-    // hero posters — only in spots cabinets can never lean over:
-    // the PUG BANGER FIESTA logo by the front rim, vader in the deep back corner
-    this.drawPoster(c, 3, -37, POSTERS.puglogo);
-    this.drawPoster(c, GH * TW2 - 28, -33, POSTERS.vader);
+    // (left-wall hero poster + HI-SCORE board are drawn per-frame, see render)
     c.restore();
 
     // --- front rim (along y=GH) ---
@@ -569,6 +827,8 @@ const World = window.World = {
       if (this.marker.age > .7) this.marker = null;
     }
     if (this.attract) this.attractT += dt;
+    // entrance doors easing open/closed
+    this.doorOpen += (this.doorTarget - this.doorOpen) * Math.min(1, dt * 4);
   },
 
   applyCam(c){
@@ -593,7 +853,7 @@ const World = window.World = {
       const cc = this.iso(GW / 2, GH / 2);
       tx = cc[0] + Math.sin(this.attractT * .12) * GW * TW2 * .30;
       ty = cc[1] - 14 + Math.cos(this.attractT * .08) * GH * TH2 * .5;
-      tz = BASE_ZOOM * 1.02 + Math.sin(this.attractT * .05) * .06;
+      tz = CFG.BASE_ZOOM * 1.02 + Math.sin(this.attractT * .05) * .06;
     } else {
       const p = this.iso(player.x, player.y);
       tx = p[0]; ty = p[1] - 14; tz = cam.tz;
@@ -609,7 +869,9 @@ const World = window.World = {
     const k = ov ? (ov.snap || .18) : Math.min(1, dt * (this.attract ? 1.2 : 5));
     cam.x += (tx - cam.x) * k;
     cam.y += (ty - cam.y) * k;
-    cam.z += (tz - cam.z) * (ov ? k : Math.min(1, dt * 4));
+    // slow cinematic push-in during the entrance walk; snappier otherwise
+    const zk = this.introCam ? Math.min(1, dt * 0.9) : (ov ? k : Math.min(1, dt * 4));
+    cam.z += (tz - cam.z) * zk;
   },
 
   // ----------------------------------------------------------------- render
@@ -625,7 +887,10 @@ const World = window.World = {
     c.drawImage(this.staticCv, -SOX, -SOY);
 
     this.drawWindowRain(c, t);
+    this.drawDoor(c, t);
     this.drawSign(c, t);
+    this.drawWallPosters(c, t);    // PUG BANGER hero (left wall)
+    this.drawScoreBoard(c, t);     // HI-SCORE (front-left wall)
     this.drawPuddleShimmer(c, t);
 
     // depth-sorted entities
@@ -639,8 +904,7 @@ const World = window.World = {
     }
     items.push({ depth: this.claw.tx + this.claw.ty + 1, draw: (cc) => this.drawClaw(cc, t) });
     items.push({ depth: this.juke.tx + this.juke.ty + 1, draw: (cc) => this.drawJuke(cc, t) });
-    items.push({ depth: (this.board.tx + 1) + (this.board.ty + 1), draw: (cc) => this.drawScoreBoard(cc, t) });
-    items.push({ depth: player.x + player.y, draw: (cc) => player.draw(cc, t) });
+    items.push({ depth: player.x + player.y + 0.5, draw: (cc) => player.draw(cc, t) });
     for (const g of ghostFrames){
       items.push({ depth: g.x + g.y, draw: (cc) => Player.drawSprite(cc, g.x, g.y, g.f, g.phase, true, t) });
     }
@@ -653,6 +917,7 @@ const World = window.World = {
 
     this.drawLighting(c, t, player);
     this.drawMotes(c, t);
+    this.drawDoorSpill(c, t);   // light + rain blowing in while the door is open
 
     // thunder flash wash
     c.setTransform(1, 0, 0, 1, 0, 0);
@@ -673,7 +938,7 @@ const World = window.World = {
       cc.setTransform(kx * cam.z, 0, 0, ky * cam.z,
         kx * (BW / 2 - cam.x * cam.z), ky * (BH / 2 - cam.y * cam.z));
       cc.imageSmoothingEnabled = true;
-      Cabinets.drawCrispScreens(cc, t);
+      Cabinets.drawCrispScreens(cc, t, player);
     }
   },
 
@@ -705,7 +970,22 @@ const World = window.World = {
         c.fillRect(px + 1, -25, 1, 1);
       }
     }
-    // OPEN 24/7 neon hanging in the window
+    // rain streaks — OUTSIDE, so drawn BEHIND the glass + neon writing
+    c.strokeStyle = 'rgba(150,185,235,.55)';
+    c.lineWidth = 1;
+    c.beginPath();
+    for (const d of this.drops){
+      const dx = 121 + d.x, dy = -39 + d.y;
+      if (dy > -14) continue;
+      c.moveTo(dx, dy);
+      c.lineTo(dx - .8, Math.min(-14, dy + d.len));
+    }
+    c.stroke();
+    // glass sheen + mullion (the pane — between outside rain and inside neon)
+    c.fillStyle = 'rgba(140,170,230,.07)'; c.fillRect(121, -39, 35, 26);
+    c.fillStyle = 'rgba(255,255,255,.10)'; c.fillRect(124, -39, 3, 26);
+    c.fillStyle = '#241a38'; c.fillRect(137, -39, 2, 26);
+    // OPEN 24/7 neon hanging INSIDE the window — in front of the rain/glass
     {
       const flick = Math.sin(t * 2.3) > .97 ? .25 : 1;
       c.font = 'bold 6px monospace';
@@ -720,26 +1000,68 @@ const World = window.World = {
       c.fillText('24/7', 142, -23);
       c.restore();
     }
-    // rain streaks
-    c.strokeStyle = 'rgba(150,185,235,.55)';
+    c.restore();
+  },
+
+  // animated entrance doors (back wall, opening tiles 8–9 → local 97..119)
+  drawDoor(c, t){
+    const o = Math.max(0, Math.min(1, this.doorOpen));   // 1 open, 0 closed
+    this.shear(c, 0, 0, .5);
+    c.save();
+    c.beginPath(); c.rect(98, -39, 20, 38); c.clip();      // door opening
+    // night + a glimpse of rain through the gap when open
+    if (o > .02){
+      c.fillStyle = '#0a1024'; c.fillRect(98, -39, 20, 38);
+      c.strokeStyle = 'rgba(150,185,235,' + (.5 * o).toFixed(2) + ')'; c.lineWidth = 1;
+      c.beginPath();
+      for (const d of this.drops){
+        const dx = 99 + d.x * .55, dy = -39 + d.y;
+        if (dy > 0) continue;
+        c.moveTo(dx, dy); c.lineTo(dx - .6, dy + d.len);
+      }
+      c.stroke();
+    }
+    // two glass leaves slide apart by o*9px (pocket doors)
+    const slide = o * 9;
+    const leaf = (x, handleRight) => {
+      c.fillStyle = '#141d36'; c.fillRect(x, -36, 7, 35);
+      c.fillStyle = 'rgba(150,180,235,.10)'; c.fillRect(x, -36, 7, 35);
+      c.fillStyle = '#3a2b52'; c.fillRect(x, -36, 1, 35);
+      c.fillStyle = '#ffd23f'; c.fillRect(x + (handleRight ? 5 : 1), -20, 1, 2);
+    };
+    leaf(100 - slide, true);     // left leaf slides left
+    leaf(109 + slide, false);    // right leaf slides right
+    if (o < .5){                 // center stile only while ~closed
+      c.globalAlpha = 1 - o * 2;
+      c.fillStyle = '#3a2b52'; c.fillRect(107, -36, 2, 35);
+      c.globalAlpha = 1;
+    }
+    c.restore();
+    c.restore();
+  },
+
+  // cool light + a gust of rain spilling onto the floor while the door is open
+  drawDoorSpill(c, t){
+    const o = this.doorOpen;
+    if (o < .02) return;
+    this.applyCam(c);
+    const p = this.iso(9, 2.5);
+    c.save();
+    c.globalCompositeOperation = 'lighter';
+    const g = c.createRadialGradient(p[0], p[1] - 6, 0, p[0], p[1] - 6, 32);
+    g.addColorStop(0, 'rgba(150,180,235,' + (0.18 * o).toFixed(3) + ')');
+    g.addColorStop(1, 'rgba(0,0,0,0)');
+    c.fillStyle = g; c.fillRect(p[0] - 32, p[1] - 38, 64, 64);
+    c.globalCompositeOperation = 'source-over';
+    c.strokeStyle = 'rgba(150,185,235,' + (0.5 * o).toFixed(2) + ')';
     c.lineWidth = 1;
     c.beginPath();
-    for (const d of this.drops){
-      const dx = 121 + d.x, dy = -39 + d.y;
-      if (dy > -14) continue;
-      c.moveTo(dx, dy);
-      c.lineTo(dx - .8, Math.min(-14, dy + d.len));
+    for (let i = 0; i < 9; i++){
+      const dx = p[0] - 15 + ((i * 7 + t * 70) % 30);
+      const dy = p[1] - 26 + ((i * 9 + t * 110) % 26);
+      c.moveTo(dx, dy); c.lineTo(dx - 2, dy + 4);
     }
     c.stroke();
-    // glass sheen + mullion re-draw
-    c.fillStyle = 'rgba(140,170,230,.07)'; c.fillRect(121, -39, 35, 26);
-    c.fillStyle = 'rgba(255,255,255,.10)'; c.fillRect(124, -39, 3, 26);
-    c.fillStyle = '#241a38'; c.fillRect(137, -39, 2, 26);
-    // faint rain through the door glass too
-    if (f > .05){
-      c.fillStyle = 'rgba(120,140,210,' + (f * .5).toFixed(2) + ')';
-      c.fillRect(100, -36, 7, 30); c.fillRect(109, -36, 7, 30);
-    }
     c.restore();
   },
 
@@ -776,63 +1098,70 @@ const World = window.World = {
     c.restore();
   },
 
-  // free-standing HI-SCORE board, south-facing like the cabinet row it ends
+  // HI-SCORE — proper-sized panel on the FRONT-LEFT wall (clear of cabinets)
   drawScoreBoard(c, t){
-    const b = this.board;
-    const o = this.iso(b.tx, b.ty + 1);        // front face, same math as 'S' cabinets
-    const FACEW = TW;                          // 2 tiles wide → 24px face
-    const H = 42;
-    this.shear(c, o[0], o[1], .5);
-    // legs + panel
-    c.fillStyle = '#241a38';
-    c.fillRect(2, -10, 2, 10); c.fillRect(FACEW - 4, -10, 2, 10);
-    c.fillStyle = '#0d0716'; c.fillRect(0, -H, FACEW, H - 9);
-    c.strokeStyle = '#5d4a7d'; c.strokeRect(.5, -H + .5, FACEW - 1, H - 10);
-    // blinking border bulbs
+    const lw = this.iso(0, GH);
+    const W = TW + TW2;                            // 3 tiles wide (36px) — wider
+    const X = GH * TW2 - W;                        // pinned to the back-left corner
+    const TOP = -46, BOT = -6, IH = BOT - TOP;     // taller, with margin around it
+    this.shear(c, lw[0], lw[1], -.5);
+    c.fillStyle = '#241a38'; c.fillRect(X + W / 2 - 1, TOP - 3, 2, 3);   // ceiling bracket
+    c.fillStyle = '#0b0518'; c.fillRect(X, TOP, W, IH);
+    c.strokeStyle = '#5d4a7d'; c.strokeRect(X + .5, TOP + .5, W - 1, IH - 1);
     for (let i = 0; i < 6; i++){
       c.fillStyle = ((i + (t * 4 | 0)) % 3) === 0 ? '#ffd23f' : '#4a3a18';
-      c.fillRect(2 + i * 4, -H + 2, 1, 1);
-      c.fillRect(2 + i * 4, -12, 1, 1);
+      c.fillRect(X + 2 + i * 4, TOP + 1, 1, 1);
+      c.fillRect(X + 2 + i * 4, BOT - 2, 1, 1);
     }
-    // panel content — clipped so nothing can escape the frame
     c.save();
-    c.beginPath();
-    c.rect(2, -H + 3, FACEW - 4, H - 14);
-    c.clip();
-    const IW = FACEW - 4;                      // inner width
-    // title: squeeze-to-fit, centered (same trick as the cabinet marquees)
+    c.beginPath(); c.rect(X + 2, TOP + 2, W - 4, IH - 4); c.clip();
+    const IW = W - 4;
+    c.textBaseline = 'alphabetic';
     c.font = 'bold 6px monospace';
     const tw = c.measureText('HI·SCORE').width;
     c.save();
-    c.translate(2 + IW / 2, -H + 11);
+    c.translate(X + W / 2, TOP + 10);
     if (tw > IW) c.scale(IW / tw, 1);
     c.shadowColor = '#ffd23f'; c.shadowBlur = 3;
     c.fillStyle = '#ffd23f';
     c.fillText('HI·SCORE', -tw / 2, 0);
     c.restore();
-    c.fillStyle = '#3a2b52'; c.fillRect(2, -H + 13, IW, 1);
+    c.fillStyle = '#3a2b52'; c.fillRect(X + 2, TOP + 13, IW, 1);
     const top = (window.Cabinets && Cabinets.topScores) ? Cabinets.topScores(3) : [];
-    c.font = '4px monospace';
+    c.font = '5px monospace';
     if (!top.length){
       c.fillStyle = (t * 1.4 % 1) < .6 ? '#9b8cc0' : '#5d4a7d';
-      c.fillText('PLAY!', 8, -H + 22);
+      c.fillText('PLAY!', X + 8, TOP + 24);
     } else {
       const COLS = ['#fff', '#cfd8ff', '#9b8cc0'];
       for (let i = 0; i < top.length; i++){
         c.fillStyle = i === 0 && (t * 2 % 1) < .7 ? '#ffd23f' : COLS[i];
         const nm = (i + 1) + ' ' + (top[i].short || '').slice(0, 5);
         const sc = String(top[i].n);
-        c.fillText(nm, 3, -H + 21 + i * 7);
-        c.fillText(sc, FACEW - 3 - c.measureText(sc).width, -H + 21 + i * 7);
+        c.fillText(nm, X + 3, TOP + 22 + i * 7);
+        c.fillText(sc, X + W - 3 - c.measureText(sc).width, TOP + 22 + i * 7);
       }
     }
     c.restore();
     c.restore();
-    // thin side edge + shadow so it reads as standing furniture
-    const s = this.iso(b.tx + 2, b.ty + 1);
-    this.shear(c, s[0], s[1], -.5);
-    c.fillStyle = '#191226'; c.fillRect(0, -H, 3, H - 9);
-    c.fillStyle = 'rgba(255,255,255,.05)'; c.fillRect(0, -H, 1, H - 9);
+  },
+
+  // PUG BANGER FIESTA hero poster — back-left wall corner (real logo if present)
+  drawWallPosters(c, t){
+    const lw = this.iso(0, GH);
+    this.shear(c, lw[0], lw[1], -.5);
+    const X = 4, Y = -42, S = 22;
+    c.fillStyle = '#0a0712'; c.fillRect(X - 2, Y - 2, S + 4, S + 8);
+    c.strokeStyle = '#3a2b52'; c.strokeRect(X - 1.5, Y - 1.5, S + 3, S + 6);
+    if (this.pugReady){
+      c.imageSmoothingEnabled = true;
+      c.drawImage(this.pugImg, X, Y, S, S);
+      c.imageSmoothingEnabled = false;
+    } else {
+      this.drawArt(c, X, Y, S, 'pug');                           // emoji fallback
+    }
+    c.fillStyle = '#f4b8c1'; c.fillRect(X, Y + S + 1, S, 1);
+    c.fillStyle = '#5d4a7d'; c.fillRect(X, Y + S + 3, S - 4, 1);
     c.restore();
   },
 
@@ -915,8 +1244,11 @@ const World = window.World = {
       hole(cab.frontPoint[0], cab.frontPoint[1], 24, .35 + cab.wake * .4 + cab.phantom * .25);
     }
     hole(player.x, player.y, 22, .5);
-    // window spill + jukebox
+    // window spill + open door + score bay + jukebox
     hole(11.5, 1.2, 30, .4 + this.flash * .5);
+    hole(9, 1.4, 20, .25 + this.doorOpen * .35);
+    hole(0.8, this.board.ty + 2, 16, .4);          // HI-SCORE (front-left wall)
+    hole(0.8, GH - 1.5, 14, .34);                  // PUG hero (left wall corner)
     hole(this.juke.tx + .5, this.juke.ty + .8, 20, .35);
 
     c.setTransform(1, 0, 0, 1, 0, 0);
@@ -940,6 +1272,8 @@ const World = window.World = {
       glow(cab.frontPoint[0], cab.frontPoint[1], 25, cab.color, .08 + cab.wake * .14 + cab.phantom * .1);
     }
     glow(player.x, player.y, 16, '#ffb45c', .06);
+    glow(9, 1.4, 16, '#7f9bd8', .04 + this.doorOpen * .08);   // night spill through the door
+    glow(0.8, this.board.ty + 2, 12, '#ffd23f', .08);         // HI-SCORE
     glow(this.juke.tx + .5, this.juke.ty + .8, 16, '#ff3df0', .09);
     c.globalCompositeOperation = 'source-over';
   },

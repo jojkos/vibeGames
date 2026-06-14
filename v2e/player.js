@@ -285,17 +285,14 @@ const Player = window.Player = {
     c.fillStyle = PAL.hood2;
     c.fillRect(X - 3, Y - 15 + bob, 6, 1);            // hood rim
 
-    // face shows when facing S or E/W (not from behind)
-    if (facing !== 0){
-      const blink = !ghost && (t % 3.7) < .12;
-      c.fillStyle = blink ? PAL.hood2 : PAL.face;
-      const fx = facing === 1 ? X : (facing === 3 ? X - 2 : X - 1);
-      c.fillRect(fx, Y - 13 + bob, 3, 3);
-      if (!blink && facing === 2){
-        c.fillStyle = '#1a1626';
-        c.fillRect(X - 1, Y - 12 + bob, 1, 1);
-        c.fillRect(X + 1, Y - 12 + bob, 1, 1);
-      }
+    // always face the camera — eyes visible no matter the walk direction
+    const blink = !ghost && (t % 3.7) < .12;
+    c.fillStyle = blink ? PAL.hood2 : PAL.face;
+    c.fillRect(X - 1, Y - 13 + bob, 3, 3);
+    if (!blink){
+      c.fillStyle = '#1a1626';
+      c.fillRect(X - 1, Y - 12 + bob, 1, 1);
+      c.fillRect(X + 1, Y - 12 + bob, 1, 1);
     }
     if (ghost) c.globalAlpha = 1;
   },

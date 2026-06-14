@@ -206,6 +206,25 @@
   #menu .mrow a{ color:var(--amber); font-size:clamp(8px,1vw,10px); }
   #rmNote{ display:none; color:#7fb4ff; font-size:clamp(7px,1vw,10px); margin-bottom:16px; line-height:1.9; }
   .reduced #rmNote{ display:block; }
+  /* ---------- START / INSERT COIN screen (unlocks audio on the gesture) ---------- */
+  #startScreen{
+    position:absolute; inset:0; z-index:18;
+    display:flex; align-items:center; justify-content:center; text-align:center; padding:20px;
+    background:radial-gradient(120% 90% at 50% 38%, rgba(10,6,20,.55), rgba(3,2,9,.93));
+    opacity:0; visibility:hidden; transition:opacity .45s ease, visibility .45s;
+  }
+  #startScreen.show{ opacity:1; visibility:visible; }
+  .sgClamp{ display:flex; flex-direction:column; align-items:center; gap:clamp(12px,2.6vh,26px); }
+  .sgMarquee{ color:var(--amber); font-size:clamp(7px,1vw,10px); letter-spacing:3px; animation:sgBlink 1.4s steps(2) infinite; }
+  .sgTitle{ color:var(--neon); font-size:clamp(20px,5.4vw,46px); line-height:1.25;
+    text-shadow:0 0 18px rgba(255,61,240,.8), 0 0 42px rgba(255,61,240,.4); }
+  .sgSub{ color:var(--dim); font-size:clamp(8px,1.2vw,12px); line-height:1.8; }
+  .sgBtn{ font-size:clamp(10px,1.6vw,16px); padding:16px 22px; color:var(--amber); border-color:var(--amber);
+    box-shadow:0 4px 0 #000, 0 0 26px rgba(255,210,63,.35); animation:sgPulse 1.1s ease-in-out infinite; }
+  .sgBtn:hover{ color:#fff; border-color:#fff; }
+  .sgHint{ color:var(--dim); font-size:clamp(7px,1vw,10px); opacity:.8; }
+  @keyframes sgBlink{ 50%{ opacity:.22; } }
+  @keyframes sgPulse{ 50%{ transform:scale(1.045); } }
   @media (max-width:700px){
     #plateTitle .echo, #plateTitle .coins{ display:none; }
     .plate{ padding:7px 9px; }
@@ -252,6 +271,16 @@
   <a id="coffeeLink" href="https://buymeacoffee.com/jojkos" target="_blank" rel="noopener" aria-label="Buy me a coffee">
     <span aria-hidden="true">☕</span><span>Buy me a coffee</span>
   </a>
+
+  <div id="startScreen" aria-label="Press start to enter the arcade">
+    <div class="sgClamp">
+      <div class="sgMarquee">▸ NOW PLAYING ◂</div>
+      <h1 class="sgTitle">JOJKO'S GAMES</h1>
+      <p class="sgSub">14 CABINETS · ONE RAINY ARCADE</p>
+      <button class="pxbtn sgBtn" id="btnStart">INSERT COIN ▸ PRESS START</button>
+      <p class="sgHint">walk with WASD / tap · E to play a cabinet</p>
+    </div>
+  </div>
 
   <div id="menu" role="dialog" aria-label="All games">
     <h1>JOJKO'S GAMES</h1>
@@ -311,6 +340,8 @@ window.CFG = {
 // hall, the hall gets wider (+3 tiles per extra column) and everything
 // downstream (walls, carpet, lamps, camera) follows from CFG.GW.
 (function(){
+  // back wall cabinets skip the door/window span (tiles 7–12); left wall starts
+  // at ty=4 (front-left stays clear for the HI-SCORE board); two center rows.
   function slotsFor(GW, GH){
     const back = [], left = [], center = [];
     for (let x = 2; x + 1 <= 6; x += 3)            back.push({ tx:x, ty:1, f:'S' });   // left of door
@@ -324,7 +355,7 @@ window.CFG = {
   }
   let GW = CFG.GW;
   let s = slotsFor(GW, CFG.GH);
-  while (s.length < GAMES.length && GW < 60){ GW += 3; s = slotsFor(GW, CFG.GH); }
+  while (s.length < GAMES.length && GW < 70){ GW += 3; s = slotsFor(GW, CFG.GH); }
   CFG.GW = GW;
   CFG.LAYOUT = s.slice(0, GAMES.length);
 })();
@@ -350,7 +381,7 @@ const $ = id => document.getElementById(id);
 const canvas = $('view');
 const crisp = $('screens');
 const reduced = window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches;
-let running = false, lastT = 0;
+let running = false, lastT = 0, entered = false;
 let idleT = 0;                     // seconds without input (attract mode)
 let attractPhantomIn = 0;
 
@@ -358,13 +389,21 @@ let attractPhantomIn = 0;
 function sizeBuffers(){
   const aspect = Math.max(.45, innerWidth / Math.max(1, innerHeight));
   CFG.BH = 270;
-  CFG.BW = Math.max(320, Math.min(680, Math.round(CFG.BH * aspect / 2) * 2));
+  CFG.BW = Math.max(360, Math.min(960, Math.round(CFG.BH * aspect / 2) * 2));
+  // keep the wide "see-the-whole-hall" framing; big monitors get a bigger
+  // buffer (sharper, less chunky) rather than a tighter zoom
+  const z = 1.3;
+  CFG.BASE_ZOOM = z;
+  CFG.FOCUS_ZOOM = 1.62;
   canvas.width = CFG.BW; canvas.height = CFG.BH;
   // crisp overlay at (capped) device resolution
   const dpr = Math.min(1.5, devicePixelRatio || 1);
   crisp.width  = Math.round(innerWidth * dpr);
   crisp.height = Math.round(innerHeight * dpr);
-  if (World.ctx) World.resize();
+  if (World.ctx){
+    World.resize();
+    if (!Cabinets.launching() && !Cabinets.focused) World.setTargetZoom(z);
+  }
 }
 let rsTo = 0;
 addEventListener('resize', () => { clearTimeout(rsTo); rsTo = setTimeout(sizeBuffers, 120); });
@@ -436,6 +475,7 @@ addEventListener('keydown', e => {
     if (e.key === 'Escape') closeMenu();
     return;
   }
+  if (!entered && !reduced){ e.preventDefault(); startGame(); return; }
   const k = e.key.toLowerCase();
   keys[k] = true;
   idleT = 0; World.setAttract(false);
@@ -465,6 +505,7 @@ function faceFor(item){ return item.f === 'E' ? 3 : 0; }
 
 let lastTap = { item: null, t: 0 };
 canvas.addEventListener('pointerdown', e => {
+  if (!entered && !reduced){ startGame(); return; }
   AudioSys.unlock();
   idleT = 0; World.setAttract(false);
   if (Cabinets.launching()){ Cabinets.insertCoin(); return; } // skip
@@ -564,21 +605,42 @@ Cabinets.onCoffee = () => {
   try { window.open('https://buymeacoffee.com/jojkos', '_blank', 'noopener'); } catch(err){}
 };
 
-// entrance intro: a beat at the door, shop bell, then a slow walk in —
-// camera starts tight on the door and eases out as you enter.
-// Any input takes over instantly (keys reset the slow speed too).
+// entrance intro: doors open, a beat at the threshold, shop bell, then a slow
+// walk in — and the doors swing shut behind you. Camera starts tight on the
+// door and eases out. Any input takes over instantly.
+World.setTargetZoom(CFG.BASE_ZOOM);
+World.cam.z = CFG.BASE_ZOOM;
+let introActive = false;
 if (reduced){
   Player.init(9.0, 2.7);
+  World.doorOpen = 0; World.doorTarget = 0;   // closed; no animation under reduced motion
 } else {
-  Player.init(9.0, 1.35);
-  const d = World.iso(9.0, 1.6);
+  // open the doorway tiles so the player can walk IN from outside
+  World.unblock(8, 0); World.unblock(9, 0);
+  Player.init(9.0, 0.4);                        // outside, in the doorway
+  Player.facing = 2;
+  World.doorOpen = 1; World.doorTarget = 1;
+  const d = World.iso(9.0, 2.2);
   World.cam.x = d[0]; World.cam.y = d[1] - 14;
-  World.cam.z = 1.7;                     // tz stays BASE_ZOOM → eases out while walking in
-  setTimeout(() => {
-    AudioSys.bell();
-    Player.walkTo(9.0, 3.6, { face: 2, slow: true, onArrive: () => { Player.speedMul = 1; } });
-  }, 650);
+  World.cam.z = CFG.BASE_ZOOM * 0.8;            // wide establishing shot; holds until START
+  World.setTargetZoom(CFG.BASE_ZOOM * 0.8);
+  World.introCam = true;
+  introActive = true;
+  // the walk-in waits for START — so audio unlocks on that gesture and the
+  // shop bell + ambience kick in exactly as the player steps inside
+  $('startScreen').classList.add('show');
 }
+
+// returning via browser Back (bfcache) leaves the launch overlay covering the
+// screen → white page. Reset the overlay + launch state and resume the loop.
+addEventListener('pageshow', () => {
+  const li = $('launchImg'), wf = $('whiteFlash');
+  if (li){ li.style.display = 'none'; li.style.opacity = 0; li.removeAttribute('src'); }
+  if (wf){ wf.style.display = 'none'; wf.style.opacity = 0; }
+  Cabinets.navigated = false; Cabinets.state = 'idle';
+  Cabinets.active = null; Cabinets.imgShown = false;
+  if (!reduced && !running){ running = true; lastT = performance.now(); requestAnimationFrame(loop); }
+});
 
 function loop(tNow){
   if (!running) return;
@@ -588,6 +650,14 @@ function loop(tNow){
   const menuOpen = $('menu').classList.contains('open');
   if (!menuOpen){
     Player.update(dt, keys);
+  }
+  // once inside, the entrance doors swing shut behind you (doorway tiles stay
+  // walkable — the map edge stops you leaving, so the player is never stuck)
+  if (introActive && Player.y > 1.9){
+    introActive = false;
+    World.setDoor(0);
+    World.introCam = false;                     // ensure the push-in settles
+    AudioSys.blip(210, 'square', .14, .06);   // soft door thunk
   }
   // idle attract mode
   if (!Cabinets.launching() && !menuOpen){
@@ -616,11 +686,28 @@ if (reduced){
   World.render(0.001, Player, []);   // one static frame behind the menu
   openMenu();
 } else {
-  running = true;
+  running = true;                    // hall renders behind the START screen
   lastT = performance.now();
   requestAnimationFrame(loop);
+}
+
+// START → unlock audio on the gesture, then play the entrance walk-in
+function startGame(){
+  if (entered || reduced) return;
+  entered = true;
+  AudioSys.unlock();
+  const ss = $('startScreen');
+  ss.classList.remove('show');
+  setTimeout(() => { ss.style.display = 'none'; }, 480);
+  World.setTargetZoom(CFG.BASE_ZOOM);            // begin the slow cinematic push-in
+  AudioSys.bell();
+  Player.walkTo(9.0, 2.6, { face: 2, slow: true, onArrive: () => {
+    Player.speedMul = 1; World.introCam = false;
+  }});
   toast('WASD / TAP TO WALK · E = INSERT COIN', 3500);
 }
+$('btnStart').addEventListener('click', e => { e.stopPropagation(); startGame(); });
+$('startScreen').addEventListener('click', startGame);
 })();
 </script>
 <script src="../shared/switcher.js" defer></script>

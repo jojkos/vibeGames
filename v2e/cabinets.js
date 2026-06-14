@@ -56,7 +56,8 @@ const Cabinets = window.Cabinets = {
         cab.sideO = World.iso(L.tx + 2, L.ty + 1); cab.sideSlope = -.5;
         cab.top = [[L.tx, L.ty], [L.tx + 2, L.ty], [L.tx + 2, L.ty + 1], [L.tx, L.ty + 1]];
         cab.frontPoint = [L.tx + 1, L.ty + 1.8];
-        cab.depth = (L.tx + 1) + (L.ty + 1);
+        cab.depth = L.tx + L.ty + 0.5;   // anchored near the back corner so a
+                                          // player standing in front always sorts ahead
         cab.labelAt = World.iso(L.tx + 1, L.ty + .5);
       } else { // 'E' — left wall, 1 wide × 2 deep
         cab.tiles = [[L.tx, L.ty], [L.tx, L.ty + 1]];
@@ -64,7 +65,8 @@ const Cabinets = window.Cabinets = {
         cab.sideO = World.iso(L.tx, L.ty + 2); cab.sideSlope = .5;
         cab.top = [[L.tx, L.ty], [L.tx + 1, L.ty], [L.tx + 1, L.ty + 2], [L.tx, L.ty + 2]];
         cab.frontPoint = [L.tx + 1.8, L.ty + 1];
-        cab.depth = (L.tx + 1) + (L.ty + 1);
+        cab.depth = L.tx + L.ty + 0.5;   // anchored near the back corner so a
+                                          // player standing in front always sorts ahead
         cab.labelAt = World.iso(L.tx + .5, L.ty + 1);
       }
       for (const tl of cab.tiles) World.block(tl[0], tl[1]);
@@ -329,12 +331,14 @@ const Cabinets = window.Cabinets = {
     c.fillStyle = shade(cab.color, .8);
     c.fillRect(2, -CH + 6, TW2 - 4, 2);
     {
-      const SIDE_ARTS = ['pokeball', 'pikachu', 'vader'];
-      const art = World.POSTERS[SIDE_ARTS[cab.idx % SIDE_ARTS.length]];
-      const w = art.rows[0].length;
-      const px = Math.max(0, Math.round((TW2 - w) / 2));
-      const py = -27 + (cab.idx * 7 % 4);           // slight per-cabinet jitter
-      World.drawPoster(c, px, py, art, true);
+      // one UNIQUE crisp poster per cabinet side (no repeats; pug logo on the wall)
+      const SIDE_ARTS = ['pokeball','pika','saber','psycho','swords','invader',
+                         'pacman','ghost','mushroom','heart','controller','star','dice','alien'];
+      const name = SIDE_ARTS[cab.idx];
+      if (name){
+        const S = TW2 - 1;                            // fill the side face
+        World.drawArt(c, 0.5, -CH + 5, S, name);
+      }
     }
     c.fillStyle = 'rgba(0,0,0,.5)';
     c.fillRect(0, -3, TW2, 3);
@@ -464,16 +468,45 @@ const Cabinets = window.Cabinets = {
 
   // crisp, device-resolution screens drawn on the overlay canvas.
   // Called by World.render with the camera transform already applied.
-  drawCrispScreens(c, t){
+  drawCrispScreens(c, t, player){
+    // player sprite bbox in buffer space, for occlusion of the always-on-top layer
+    let pX = 0, pY = 0, pDepth = -1e9;
+    if (player){
+      const pp = World.iso(player.x, player.y);
+      pX = pp[0]; pY = pp[1];
+      pDepth = player.x + player.y;
+    }
     for (const cab of this.cabs){
       if (!cab.imgFull) continue;
       if (cab.glitchT > 0) continue;                       // let the low-res glitch show
       if (this.active === cab && this.msg) continue;       // CREDIT/PRESS START on low-res
+      const o = cab.faceO, sl = cab.faceSlope;
+      // does the player stand IN FRONT of + overlap this screen? if so the
+      // always-on-top crisp layer would paint over the player — clip them out.
+      let occl = false;
+      if (player && pDepth > cab.tx + cab.ty){
+        const x0 = o[0] + SCREEN.x, x1 = x0 + SCREEN.w;
+        const yA = o[1] - SCREEN.top + SCREEN.x * sl;
+        const yB = yA + SCREEN.w * sl;
+        const yTop = Math.min(yA, yB), yBot = Math.max(yA, yB) + SCREEN.h;
+        occl = pX + 5 > x0 && pX - 5 < x1 && pY + 2 > yTop && pY - 17 < yBot;
+      }
       const img = cab.imgFull;
       const a = cab._shownAlpha != null ? cab._shownAlpha : .82;
       c.save();
-      c.translate(cab.faceO[0], cab.faceO[1]);
-      c.transform(1, cab.faceSlope, 0, 1, 0, 0);
+      c.translate(o[0], o[1]);
+      c.transform(1, sl, 0, 1, 0, 0);
+      if (occl){
+        // punch the player's silhouette out of the crisp screen → the pixel-layer
+        // player shows through, correctly occluding the CRT
+        const toLocal = (bx, by) => { const lx = bx - o[0]; return [lx, by - o[1] - sl * lx]; };
+        const a1 = toLocal(pX - 5, pY - 17), b1 = toLocal(pX + 5, pY - 17),
+              c1 = toLocal(pX + 5, pY + 2),  d1 = toLocal(pX - 5, pY + 2);
+        c.beginPath();
+        c.rect(SCREEN.x, -SCREEN.top, SCREEN.w, SCREEN.h);
+        c.moveTo(a1[0], a1[1]); c.lineTo(b1[0], b1[1]); c.lineTo(c1[0], c1[1]); c.lineTo(d1[0], d1[1]); c.closePath();
+        c.clip('evenodd');
+      }
       c.globalAlpha = a;
       // cover-crop the full-res screenshot into the screen quad
       const s = Math.max(SCREEN.w / img.width, SCREEN.h / img.height);

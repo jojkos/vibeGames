@@ -89,6 +89,19 @@ const AudioSys = window.AudioSys = {
     const hum2 = ctx.createOscillator(); hum2.type = 'sine'; hum2.frequency.value = 110.7;
     const hum2G = ctx.createGain(); hum2G.gain.value = .006;
     hum2.connect(hum2G); hum2G.connect(this.master); hum2.start();
+
+    // soft arcade ambient pad — a calm chord, very low, slow tremolo
+    const padG = ctx.createGain(); padG.gain.value = .02; padG.connect(this.master);
+    const padLp = ctx.createBiquadFilter(); padLp.type = 'lowpass'; padLp.frequency.value = 900; padLp.connect(padG);
+    [110, 164.81, 220, 329.63].forEach((f, i) => {
+      const o = ctx.createOscillator(); o.type = i < 2 ? 'sine' : 'triangle';
+      o.frequency.value = f; o.detune.value = (i - 1.5) * 4;
+      const g = ctx.createGain(); g.gain.value = i < 2 ? .3 : .16;
+      o.connect(g); g.connect(padLp); o.start();
+    });
+    const padLfo = ctx.createOscillator(); padLfo.frequency.value = .05;
+    const padLfoG = ctx.createGain(); padLfoG.gain.value = .01;
+    padLfo.connect(padLfoG); padLfoG.connect(padG.gain); padLfo.start();
   },
 
   // ------------------------------------------------------------ chiptunes
@@ -194,7 +207,7 @@ const AudioSys = window.AudioSys = {
   },
 
   footstep(){
-    this.noiseHit(.05, .05, 600 + Math.random() * 250, 0, 'bandpass');
+    this.noiseHit(.045, .028, 560 + Math.random() * 220, 0, 'bandpass');
   },
   wake(){
     this.blip(420, 'triangle', .12, .07, 0, 880);
