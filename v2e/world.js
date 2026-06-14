@@ -416,6 +416,21 @@ const World = window.World = {
   },
   setDoor(target){ this.doorTarget = target; },
 
+  // true iso occlusion: should a box footprint [x0,y0,x1,y1] (tile coords) be
+  // drawn IN FRONT OF (cover) the player at (px,py)? It must (a) overlap the
+  // player on screen-x and (b) present a surface nearer the camera than the
+  // player along that screen column. Fixes wide cabinets clipping the sprite.
+  structOccludesPlayer(foot, px, py){
+    const x0 = foot[0], y0 = foot[1], x1 = foot[2], y1 = foot[3];
+    const c = px - py;                       // player screen-x (tile units)
+    const HALF = 0.45;                       // half the sprite width, in tiles
+    if (c + HALF <= x0 - y1 || c - HALF >= x1 - y0) return false;   // no overlap
+    let nx = Math.min(x1, c + y1);           // nearest box surface in this column
+    if (nx < x0) nx = x0;
+    const nearestDepth = 2 * nx - c;         // = x + y at that surface point
+    return px + py < nearestDepth - 0.05;    // player is behind it → it covers player
+  },
+
   // sheared drawing helper: local x runs along the wall, local -y is up
   shear(c, ox, oy, slope){ c.save(); c.translate(ox, oy); c.transform(1, slope, 0, 1, 0, 0); },
 
@@ -893,25 +908,33 @@ const World = window.World = {
     this.drawScoreBoard(c, t);     // HI-SCORE (front-left wall)
     this.drawPuddleShimmer(c, t);
 
-    // depth-sorted entities
+    // depth-sorted entities (structures carry a `foot` footprint for occlusion)
     const items = [];
     Cabinets.collectDrawables(items, t);
     for (const m of this.machines){
       const mm = m;
-      items.push({ depth: mm.tx + mm.ty + 1, draw: (cc) => {
-        this.drawVendingBox(cc, mm.tx, mm.ty, mm, t, true);
-      }});
+      items.push({ depth: mm.tx + mm.ty + 1, foot: [mm.tx, mm.ty, mm.tx + 1, mm.ty + 1],
+        draw: (cc) => this.drawVendingBox(cc, mm.tx, mm.ty, mm, t, true) });
     }
-    items.push({ depth: this.claw.tx + this.claw.ty + 1, draw: (cc) => this.drawClaw(cc, t) });
-    items.push({ depth: this.juke.tx + this.juke.ty + 1, draw: (cc) => this.drawJuke(cc, t) });
-    // +0.9 bias so the player sorts ahead of cabinets in the same depth band
-    // (e.g. the neighbour one row over) instead of being clipped by their edge
-    items.push({ depth: player.x + player.y + 0.9, draw: (cc) => player.draw(cc, t) });
+    const cl = this.claw, jk = this.juke;
+    items.push({ depth: cl.tx + cl.ty + 1, foot: [cl.tx, cl.ty, cl.tx + 1, cl.ty + 1], draw: (cc) => this.drawClaw(cc, t) });
+    items.push({ depth: jk.tx + jk.ty + 1, foot: [jk.tx, jk.ty, jk.tx + 1, jk.ty + 1], draw: (cc) => this.drawJuke(cc, t) });
     for (const g of ghostFrames){
       items.push({ depth: g.x + g.y, draw: (cc) => Player.drawSprite(cc, g.x, g.y, g.f, g.phase, true, t) });
     }
-    items.sort((a, b) => a.depth - b.depth);
-    for (const it of items) it.draw(c, t);
+    // split structures into those the player is in front of (drawn behind the
+    // player) vs those genuinely covering the player (drawn over it). A scalar
+    // depth sort can't do this for wide boxes — the per-column test can.
+    const back = [], front = [];
+    for (const it of items){
+      if (it.foot && this.structOccludesPlayer(it.foot, player.x, player.y)) front.push(it);
+      else back.push(it);
+    }
+    back.sort((a, b) => a.depth - b.depth);
+    front.sort((a, b) => a.depth - b.depth);
+    for (const it of back) it.draw(c, t);
+    player.draw(c, t);
+    for (const it of front) it.draw(c, t);
 
     this.drawNotes(c, t);
     this.drawMarker(c, t);

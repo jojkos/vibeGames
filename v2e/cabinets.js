@@ -56,8 +56,8 @@ const Cabinets = window.Cabinets = {
         cab.sideO = World.iso(L.tx + 2, L.ty + 1); cab.sideSlope = -.5;
         cab.top = [[L.tx, L.ty], [L.tx + 2, L.ty], [L.tx + 2, L.ty + 1], [L.tx, L.ty + 1]];
         cab.frontPoint = [L.tx + 1, L.ty + 1.8];
-        cab.depth = L.tx + L.ty + 0.5;   // anchored near the back corner so a
-                                          // player standing in front always sorts ahead
+        cab.depth = L.tx + L.ty + 0.5;   // structure-vs-structure sort key
+        cab.foot = [L.tx, L.ty, L.tx + 2, L.ty + 1];   // footprint for occlusion
         cab.labelAt = World.iso(L.tx + 1, L.ty + .5);
       } else { // 'E' — left wall, 1 wide × 2 deep
         cab.tiles = [[L.tx, L.ty], [L.tx, L.ty + 1]];
@@ -65,8 +65,8 @@ const Cabinets = window.Cabinets = {
         cab.sideO = World.iso(L.tx, L.ty + 2); cab.sideSlope = .5;
         cab.top = [[L.tx, L.ty], [L.tx + 1, L.ty], [L.tx + 1, L.ty + 2], [L.tx, L.ty + 2]];
         cab.frontPoint = [L.tx + 1.8, L.ty + 1];
-        cab.depth = L.tx + L.ty + 0.5;   // anchored near the back corner so a
-                                          // player standing in front always sorts ahead
+        cab.depth = L.tx + L.ty + 0.5;   // structure-vs-structure sort key
+        cab.foot = [L.tx, L.ty, L.tx + 1, L.ty + 2];   // footprint for occlusion
         cab.labelAt = World.iso(L.tx + .5, L.ty + 1);
       }
       for (const tl of cab.tiles) World.block(tl[0], tl[1]);
@@ -84,6 +84,7 @@ const Cabinets = window.Cabinets = {
       tiles: [[7, 1]],
       frontPoint: [7.5, 2.6],
       depth: 7.5 + 2,
+      foot: [7, 1, 8, 2],
       labelAt: World.iso(7.5, 1.5),
       msgT: 0,
     };
@@ -303,13 +304,13 @@ const Cabinets = window.Cabinets = {
   // ----------------------------------------------------------------- draw
   collectDrawables(items, t){
     for (const cab of this.cabs){
-      items.push({ depth: cab.depth, draw: (c) => this.drawCabinet(c, cab, t) });
+      items.push({ depth: cab.depth, foot: cab.foot, draw: (c) => this.drawCabinet(c, cab, t) });
       if (cab === this.catCab){
-        items.push({ depth: cab.depth + .01, draw: (c) => this.drawCat(c, cab, t) });
+        items.push({ depth: cab.depth + .01, foot: cab.foot, draw: (c) => this.drawCat(c, cab, t) });
       }
     }
     const cf = this.coffee;
-    items.push({ depth: cf.depth, draw: (c) => this.drawCoffee(c, cf, t) });
+    items.push({ depth: cf.depth, foot: cf.foot, draw: (c) => this.drawCoffee(c, cf, t) });
   },
 
   litOf(cab){
@@ -483,8 +484,9 @@ const Cabinets = window.Cabinets = {
       const o = cab.faceO, sl = cab.faceSlope;
       // does the player stand IN FRONT of + overlap this screen? if so the
       // always-on-top crisp layer would paint over the player — clip them out.
+      // (when the cabinet genuinely covers the player, leave the screen intact)
       let occl = false;
-      if (player && pDepth > cab.tx + cab.ty){
+      if (player && cab.foot && !World.structOccludesPlayer(cab.foot, player.x, player.y)){
         const x0 = o[0] + SCREEN.x, x1 = x0 + SCREEN.w;
         const yA = o[1] - SCREEN.top + SCREEN.x * sl;
         const yB = yA + SCREEN.w * sl;
