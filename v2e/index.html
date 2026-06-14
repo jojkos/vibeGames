@@ -387,11 +387,17 @@ let attractPhantomIn = 0;
 
 // ---------------------------------------------------------------- buffer sizing (fullscreen)
 function sizeBuffers(){
-  const aspect = Math.max(.45, innerWidth / Math.max(1, innerHeight));
-  CFG.BH = 270;
-  CFG.BW = Math.max(360, Math.min(960, Math.round(CFG.BH * aspect / 2) * 2));
-  // keep the wide "see-the-whole-hall" framing; big monitors get a bigger
-  // buffer (sharper, less chunky) rather than a tighter zoom
+  const aspect = innerWidth / Math.max(1, innerHeight);
+  // The #view canvas is stretched to fill the viewport (width/height:100%), so
+  // the buffer MUST share the viewport's aspect or the pixels get squished.
+  // Scale the buffer uniformly (preserving aspect) to bound its resolution.
+  let BW = aspect * 300, BH = 300;            // nominal vertical resolution
+  const short = Math.min(BW, BH);
+  if (short < 320){ const s = 320 / short; BW *= s; BH *= s; }   // legibility floor
+  const long = Math.max(BW, BH);
+  if (long > 1000){ const s = 1000 / long; BW *= s; BH *= s; }   // perf / sharpness cap
+  CFG.BW = Math.round(BW / 2) * 2;
+  CFG.BH = Math.round(BH / 2) * 2;
   const z = 1.3;
   CFG.BASE_ZOOM = z;
   CFG.FOCUS_ZOOM = 1.62;

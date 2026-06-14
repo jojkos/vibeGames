@@ -904,7 +904,9 @@ const World = window.World = {
     }
     items.push({ depth: this.claw.tx + this.claw.ty + 1, draw: (cc) => this.drawClaw(cc, t) });
     items.push({ depth: this.juke.tx + this.juke.ty + 1, draw: (cc) => this.drawJuke(cc, t) });
-    items.push({ depth: player.x + player.y + 0.5, draw: (cc) => player.draw(cc, t) });
+    // +0.9 bias so the player sorts ahead of cabinets in the same depth band
+    // (e.g. the neighbour one row over) instead of being clipped by their edge
+    items.push({ depth: player.x + player.y + 0.9, draw: (cc) => player.draw(cc, t) });
     for (const g of ghostFrames){
       items.push({ depth: g.x + g.y, draw: (cc) => Player.drawSprite(cc, g.x, g.y, g.f, g.phase, true, t) });
     }
