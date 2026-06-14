@@ -395,7 +395,11 @@ const World = window.World = {
     const cv = document.createElement('canvas');
     cv.width = BW; cv.height = BH;
     const c = cv.getContext('2d');
-    const g = c.createRadialGradient(BW / 2, BH / 2, BH * .45, BW / 2, BH / 2, BW * .62);
+    // radii from the short/long side (NOT BH/BW) so the vignette stays a
+    // corner-darkening on any aspect. With BH/BW it inverted on portrait
+    // (outer < inner) and dumped the dark wash into the screen CENTER.
+    const rIn = Math.min(BW, BH) * .45, rOut = Math.max(BW, BH) * .62;
+    const g = c.createRadialGradient(BW / 2, BH / 2, rIn, BW / 2, BH / 2, rOut);
     g.addColorStop(0, 'rgba(0,0,0,0)');
     g.addColorStop(1, 'rgba(0,0,0,.42)');
     c.fillStyle = g;

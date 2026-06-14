@@ -225,6 +225,20 @@
   .sgHint{ color:var(--dim); font-size:clamp(7px,1vw,10px); opacity:.8; }
   @keyframes sgBlink{ 50%{ opacity:.22; } }
   @keyframes sgPulse{ 50%{ transform:scale(1.045); } }
+  /* ---------- smart touch joystick (floats to where you press) ---------- */
+  #joy{
+    position:fixed; z-index:14; width:118px; height:118px; margin:-59px 0 0 -59px;
+    border-radius:50%; pointer-events:none; display:none; opacity:0; transition:opacity .12s;
+    background:radial-gradient(circle, rgba(255,210,63,.12), rgba(10,6,20,.30) 68%, transparent 72%);
+    border:2px solid rgba(255,210,63,.4); box-shadow:0 0 18px rgba(0,0,0,.5);
+  }
+  #joy.on{ display:block; opacity:1; }
+  #joyKnob{
+    position:absolute; left:50%; top:50%; width:50px; height:50px; margin:-25px 0 0 -25px;
+    border-radius:50%; will-change:transform;
+    background:radial-gradient(circle at 38% 34%, #ffe79a, #ffb13c 60%, #c9641f);
+    box-shadow:0 0 12px rgba(255,210,63,.6), inset 0 0 0 2px rgba(0,0,0,.25);
+  }
   @media (max-width:700px){
     #plateTitle .echo, #plateTitle .coins{ display:none; }
     .plate{ padding:7px 9px; }
@@ -267,6 +281,7 @@
 
   <div id="toast"></div>
   <div id="tip"></div>
+  <div id="joy" aria-hidden="true"><div id="joyKnob"></div></div>
 
   <a id="coffeeLink" href="https://buymeacoffee.com/jojkos" target="_blank" rel="noopener" aria-label="Buy me a coffee">
     <span aria-hidden="true">☕</span><span>Buy me a coffee</span>
@@ -398,9 +413,12 @@ function sizeBuffers(){
   if (long > 1000){ const s = 1000 / long; BW *= s; BH *= s; }   // perf / sharpness cap
   CFG.BW = Math.round(BW / 2) * 2;
   CFG.BH = Math.round(BH / 2) * 2;
-  const z = 1.3;
+  // zoom so the hall ~fills the buffer height — otherwise a tall (portrait /
+  // mobile) buffer shows the small wide hall floating in a dark void, which
+  // reads as "too dark". Desktop landscape lands back at the usual ~1.3.
+  const z = Math.max(1.3, Math.min(2.4, CFG.BH / 300));
   CFG.BASE_ZOOM = z;
-  CFG.FOCUS_ZOOM = 1.62;
+  CFG.FOCUS_ZOOM = z * 1.25;
   canvas.width = CFG.BW; canvas.height = CFG.BH;
   // crisp overlay at (capped) device resolution
   const dpr = Math.min(1.5, devicePixelRatio || 1);
@@ -510,11 +528,8 @@ function eventToWorld(e){
 function faceFor(item){ return item.f === 'E' ? 3 : 0; }
 
 let lastTap = { item: null, t: 0 };
-canvas.addEventListener('pointerdown', e => {
-  if (!entered && !reduced){ startGame(); return; }
-  AudioSys.unlock();
-  idleT = 0; World.setAttract(false);
-  if (Cabinets.launching()){ Cabinets.insertCoin(); return; } // skip
+// a tap (mouse click or a touch that never dragged): walk to / insert
+function tapAction(e){
   const w = eventToWorld(e);
   const hit = Cabinets.hitTest(w[0], w[1]);
   const now = performance.now();
@@ -533,7 +548,54 @@ canvas.addEventListener('pointerdown', e => {
     World.setMarker(w[0], w[1]);
     Player.walkTo(w[0], w[1]);
   }
+}
+
+// smart joystick: a touch becomes an analog stick once it drags past a
+// threshold; a touch that never drags falls through to tapAction()
+const joyEl = $('joy'), joyKnob = $('joyKnob');
+const JOY_MAX = 46, JOY_THRESH = 12;     // px: knob travel, drag-to-arm
+let touch = null;
+function endTouch(e){
+  if (!touch || (e && e.pointerId !== touch.id)) return;
+  if (!touch.joy) tapAction(touch.e);     // never dragged → it was a tap
+  Player.joy = { x: 0, y: 0 };
+  joyEl.classList.remove('on');
+  joyKnob.style.transform = 'translate(0,0)';
+  touch = null;
+}
+
+canvas.addEventListener('pointerdown', e => {
+  if (!entered && !reduced){ startGame(); return; }
+  AudioSys.unlock();
+  idleT = 0; World.setAttract(false);
+  if (Cabinets.launching()){ Cabinets.insertCoin(); return; } // skip
+  if (e.pointerType === 'touch'){
+    touch = { id: e.pointerId, ox: e.clientX, oy: e.clientY, e, joy: false };
+    try { canvas.setPointerCapture(e.pointerId); } catch (_){}
+    return;
+  }
+  tapAction(e);                            // mouse: act on press
 });
+canvas.addEventListener('pointermove', e => {
+  if (!touch || e.pointerId !== touch.id) return;
+  const dx = e.clientX - touch.ox, dy = e.clientY - touch.oy;
+  const dist = Math.hypot(dx, dy);
+  if (!touch.joy && dist > JOY_THRESH){
+    touch.joy = true;
+    joyEl.style.left = touch.ox + 'px';
+    joyEl.style.top  = touch.oy + 'px';
+    joyEl.classList.add('on');
+  }
+  if (touch.joy){
+    const k = Math.min(1, dist / JOY_MAX);
+    const ux = dist ? dx / dist : 0, uy = dist ? dy / dist : 0;
+    joyKnob.style.transform = 'translate(' + (ux * JOY_MAX * k) + 'px,' + (uy * JOY_MAX * k) + 'px)';
+    Player.joy = { x: ux * k, y: uy * k };
+    idleT = 0; World.setAttract(false);
+  }
+});
+canvas.addEventListener('pointerup', endTouch);
+canvas.addEventListener('pointercancel', endTouch);
 
 // hover highlight + tooltip (fine pointers only)
 if (!isTouch){
@@ -710,7 +772,8 @@ function startGame(){
   Player.walkTo(9.0, 2.6, { face: 2, slow: true, onArrive: () => {
     Player.speedMul = 1; World.introCam = false;
   }});
-  toast('WASD / TAP TO WALK · E = INSERT COIN', 3500);
+  toast(isTouch ? 'DRAG TO WALK · TAP A CABINET · TAP IT AGAIN TO PLAY'
+                : 'WASD / TAP TO WALK · E = INSERT COIN', 3800);
 }
 $('btnStart').addEventListener('click', e => { e.stopPropagation(); startGame(); });
 $('startScreen').addEventListener('click', startGame);

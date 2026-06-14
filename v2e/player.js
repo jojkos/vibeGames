@@ -28,6 +28,15 @@ const Player = window.Player = {
     if (keys['d'] || keys['arrowright']) { dx += 1; dy -= 1; }
     // (screen-relative: up on screen = -x-y in world, right = +x-y)
 
+    // analog touch joystick — screen vector (jx right, jy down) → iso world
+    let moveScale = 1;
+    if (!dx && !dy && this.joy && (this.joy.x || this.joy.y)){
+      const jx = this.joy.x, jy = this.joy.y;
+      dx = jx + jy; dy = jy - jx;
+      moveScale = Math.min(1, Math.hypot(jx, jy));
+      this.path = null; this.goal = null; this.speedMul = 1;
+    }
+
     if (dx || dy){
       this.path = null; this.goal = null;  // keys override tap-path
       this.speedMul = 1;
@@ -46,7 +55,7 @@ const Player = window.Player = {
     this.moving = false;
     if (len > .001){
       dx /= len; dy /= len;
-      const step = SPEED * this.speedMul * dt;
+      const step = SPEED * this.speedMul * moveScale * dt;
       const ox = this.x, oy = this.y;
       // axis-separated slide
       if (!this.collides(this.x + dx * step, this.y)) this.x += dx * step;
