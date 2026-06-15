@@ -120,6 +120,8 @@ V2C.imagecast = (function () {
       targets: null, deposited: [], flashes: [],
       total: 0, startT: 0, signal: 0.1, active: false,
       done: false, cancelled: false,
+      order: null, cursor: 0,          // top-down sweep order for the finishing drain
+      draining: false, drainStart: 0,  // eased "pull-down" that finishes the picture
     };
     loadImage(game.img, function (e) {
       if (myCast.cancelled || cast !== myCast) return;
@@ -127,6 +129,10 @@ V2C.imagecast = (function () {
       if (!data) data = fallbackSample(game.name, region.w, region.h);
       myCast.targets = buildTargets(data, region);
       myCast.total = myCast.targets.size;
+      // top-down order (Map keeps insertion order, built row by row) so the
+      // finishing drain continues the same downward sweep the rain started.
+      myCast.order = [];
+      myCast.targets.forEach(function (t, i) { myCast.order.push(i); });
       myCast.startT = G.now;
       myCast.active = true;
       // mark deposit map + aim streams at the region columns
@@ -229,14 +235,25 @@ V2C.imagecast = (function () {
         G.setBright(i % G.cols, (i / G.cols) | 0, Math.abs(nb - f.target) < 0.02 ? f.target : nb);
         if (Math.abs(nb - f.target) < 0.02) fl.splice(j, 1);
       }
-      // force-complete the ramp-in (~1.25s after start)
+      // Finish the picture with a smooth, eased top-down sweep instead of
+      // dumping every remaining cell in a couple of frames (which read as a
+      // jarring jump to the full image). The rain deposits cells organically;
+      // once it has had a head start we drive a `wantDown` target along an
+      // eased curve so the LAST cells trickle in and the pull-down completes.
       const elapsed = G.now - cast.startT;
-      if (elapsed > 1.05 && cast.targets.size > 0) {
-        const rate = Math.max(8, Math.ceil(cast.total * dt * 5));
-        let n = 0;
-        const keys = [];
-        cast.targets.forEach(function (t, i) { if (keys.length < rate) keys.push(i); });
-        for (let j = 0; j < keys.length && n < rate; j++, n++) depositCell(keys[j], cast);
+      const DRAIN_DELAY = 0.8;  // let the rain pull most of it down first
+      const DRAIN_DUR = 0.9;    // then ease the remainder to completion
+      if (elapsed > DRAIN_DELAY && cast.targets.size > 0 && cast.order) {
+        if (!cast.draining) { cast.draining = true; cast.drainStart = G.now; }
+        const p = Math.min(1, (G.now - cast.drainStart) / DRAIN_DUR);
+        const eased = p * p * (3 - 2 * p); // smoothstep — no abrupt edge
+        const wantDown = Math.floor(cast.total * eased);
+        // advance the top-down cursor only as fast as the eased curve allows;
+        // cells the rain already deposited are skipped, so we never re-deposit.
+        while (cast.deposited.length < wantDown && cast.cursor < cast.order.length) {
+          const i = cast.order[cast.cursor++];
+          if (cast.targets.has(i)) depositCell(i, cast);
+        }
       }
       if (!cast.done && cast.targets.size === 0) cast.done = true;
       // idle signal pulse 0.1 → 0.35
