@@ -137,7 +137,44 @@ const Cabinets = window.Cabinets = {
         cab.mini = cv;
       };
       img.src = cab.game.img;
+
+      // optional animated sprite-strip (screenshots/anim/<name>.png): N frames
+      // laid out horizontally, each with the same aspect as the capture. When
+      // present the screen cycles through them; otherwise it stays on the
+      // single static screenshot above.
+      const animSrc = cab.game.img.replace(/screenshots\/([^/]+)$/, 'screenshots/anim/$1');
+      if (animSrc !== cab.game.img){
+        const strip = new Image();
+        strip.decoding = 'async';
+        strip.onload = () => {
+          const fh = strip.height, fw = Math.round(fh * (304 / 220));
+          const n = Math.max(1, Math.round(strip.width / fw));
+          if (n < 2) return;                          // not a real strip → keep static
+          const minis = [];
+          for (let f = 0; f < n; f++){
+            const cv = document.createElement('canvas');
+            cv.width = SCREEN.w; cv.height = SCREEN.h;
+            const c = cv.getContext('2d');
+            const s = Math.max(SCREEN.w / fw, SCREEN.h / fh);
+            const dw = fw * s, dh = fh * s;
+            c.drawImage(strip, f * fw, 0, fw, fh, (SCREEN.w - dw) / 2, (SCREEN.h - dh) / 2, dw, dh);
+            c.fillStyle = 'rgba(0,0,0,.10)';
+            for (let y = 0; y < SCREEN.h; y += 2) c.fillRect(0, y, SCREEN.w, 1);
+            minis.push(cv);
+          }
+          cab.anim = { img: strip, n, fw, fh };
+          cab.animMinis = minis;
+        };
+        strip.src = animSrc;
+      }
     }
+  },
+
+  // current animation frame for a cabinet's screen (-1 when it has no strip).
+  // ~2.4 fps with a per-cabinet phase offset so screens don't flip in sync.
+  animFrame(cab, t){
+    if (!cab.anim) return -1;
+    return Math.floor(t * 2.4 + cab.idx * 0.7) % cab.anim.n;
   },
 
   list(){ return this.items; },
@@ -408,14 +445,16 @@ const Cabinets = window.Cabinets = {
       if (litUp < .5 && Math.sin(t * 5.3 + cab.flickSeed * 7.1) > .992) a *= .35;
       cab._shownAlpha = a;                         // reused by the crisp overlay
       c.globalAlpha = a;
+      const fi = this.animFrame(cab, t);
+      const mini = fi >= 0 ? cab.animMinis[fi] : cab.mini;
       if (cab.glitchT > 0){
         const off = Math.sin(t * 71 + cab.idx) * 2.5;
         const s3 = Math.ceil(sh / 3);
-        c.drawImage(cab.mini, 0, 0, sw, s3, sx + off, sy, sw, s3);
-        c.drawImage(cab.mini, 0, s3, sw, s3, sx - off, sy + s3, sw, s3);
-        c.drawImage(cab.mini, 0, s3 * 2, sw, sh - s3 * 2, sx + off * .5, sy + s3 * 2, sw, sh - s3 * 2);
+        c.drawImage(mini, 0, 0, sw, s3, sx + off, sy, sw, s3);
+        c.drawImage(mini, 0, s3, sw, s3, sx - off, sy + s3, sw, s3);
+        c.drawImage(mini, 0, s3 * 2, sw, sh - s3 * 2, sx + off * .5, sy + s3 * 2, sw, sh - s3 * 2);
       } else {
-        c.drawImage(cab.mini, sx, sy, sw, sh);
+        c.drawImage(mini, sx, sy, sw, sh);
       }
       c.globalAlpha = 1;
       // screen glass glint
@@ -510,10 +549,14 @@ const Cabinets = window.Cabinets = {
         c.clip('evenodd');
       }
       c.globalAlpha = a;
-      // cover-crop the full-res screenshot into the screen quad
-      const s = Math.max(SCREEN.w / img.width, SCREEN.h / img.height);
+      // cover-crop the current frame (animated strip cell, or the full-res
+      // screenshot when the cabinet has no strip) into the screen quad
+      const fi = this.animFrame(cab, t);
+      let src = img, srcX0 = 0, srcW = img.width, srcH = img.height;
+      if (fi >= 0){ src = cab.anim.img; srcW = cab.anim.fw; srcH = cab.anim.fh; srcX0 = fi * cab.anim.fw; }
+      const s = Math.max(SCREEN.w / srcW, SCREEN.h / srcH);
       const sw = SCREEN.w / s, sh = SCREEN.h / s;
-      c.drawImage(img, (img.width - sw) / 2, (img.height - sh) / 2, sw, sh,
+      c.drawImage(src, srcX0 + (srcW - sw) / 2, (srcH - sh) / 2, sw, sh,
                   SCREEN.x, -SCREEN.top, SCREEN.w, SCREEN.h);
       // subtle CRT scanlines + glass glint
       c.globalAlpha = a * .35;

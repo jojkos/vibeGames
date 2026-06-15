@@ -17,6 +17,8 @@ const smoothstep = (a, b, x) => {
 };
 const posMod = (v, m) => ((v % m) + m) % m;
 
+const REST_FLOOR = 0.18;   // every loaded tile keeps this much signal — legible at rest
+
 export function start() {
   gsap.registerPlugin(Draggable, InertiaPlugin);
 
@@ -55,6 +57,7 @@ export function start() {
 
   const $ = (id) => document.getElementById(id);
   const freqEl = $('freq'), sigEl = $('sig'), teachEl = $('teach');
+  const presEl = $('presence');   // DEBUG readout
   const overlay = $('indexOverlay');
   const sndBtn = $('sndBtn');
 
@@ -100,9 +103,9 @@ export function start() {
     const tc = state.tuneCenter;
     tc.x = isTouch ? state.w / 2 : state.cursor.x;
     tc.y = isTouch ? state.h / 2 : state.cursor.y;
-    state.tuneRadius = m.TW * 1.5;
+    state.tuneRadius = m.TW * 5.0;            // wide field — neighbours bloom, not just one tile
 
-    const R0 = m.TW * 0.32, R1 = m.TW * 1.05;
+    const R0 = m.TW * 0.45, R1 = m.TW * 3.0;  // generous tune-in falloff
     const k = 1 - Math.exp(-dt * 9);          // ≈130ms time constant — reads fast
     const seen = new Set();
     let best = null, bestSig = 0;
@@ -115,9 +118,9 @@ export function start() {
       sigMap.set(inst.key, v);
       seen.add(inst.key);
       if (autoTune.amount > 0.001 && inst.key === autoTune.key) v = Math.max(v, autoTune.amount);
-      inst.signal = v;
       if (v > bestSig) { bestSig = v; best = inst; }
       if (v > tileMax[inst.ti]) tileMax[inst.ti] = v;
+      inst.signal = Math.max(v, REST_FLOOR);    // floored for render; best/captions use the true value
     }
     // drop eased values for instances that scrolled away
     if (sigMap.size > seen.size * 3) {
@@ -259,6 +262,8 @@ export function start() {
     freqEl.textContent = `${f.toFixed(1).padStart(5, '0')} FM · CH ${String(ch).padStart(2, '0')}`;
     const bars = Math.round(clamp(state.focus.sig, 0, 1) * 5);
     sigEl.textContent = 'SIG ' + '▮'.repeat(bars) + '▯'.repeat(5 - bars);
+    if (presEl) presEl.textContent =
+      `DBG tiles:${wall.instances.length} tex:${wall.texLoaded}/${GAMES.length} err:${wall.texError}`;
   }
 
   // ---- resize ------------------------------------------------------------------------

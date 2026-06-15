@@ -46,9 +46,8 @@ uniform vec2 uSize;  // quad size, css px
 varying vec2 vUv;
 void main() {
   vUv = uv;
-  vec2 p = uPos + position.xy * uSize;
-  vec2 ndc = p / uRes * 2.0 - 1.0;
-  gl_Position = vec4(ndc.x, -ndc.y, 0.0, 1.0);
+  // DEBUG: fullscreen so it always rasterises; fragment reports whether uSize arrived.
+  gl_Position = vec4(position.xy * 2.0, 0.0, 1.0);
 }`;
 
 const TILE_FRAG = /* glsl */ `
@@ -67,31 +66,9 @@ varying vec2 vUv;
 float hash21(vec2 p){ p = fract(p * vec2(123.34, 456.21)); p += dot(p, p + 45.32); return fract(p.x * p.y); }
 
 void main() {
-  vec2 uv = vUv;                                      // y-down, screen-aligned
-  vec2 cuv = (uv - 0.5) * uCover + 0.5;
-  vec3 img = texture2D(uTex, vec2(cuv.x, 1.0 - cuv.y)).rgb;  // flipY textures
-
-  // not-yet-loaded tiles broadcast raw static (they "tune in from black")
-  float n = hash21(floor(uv * vec2(96.0, 60.0)) + floor(uTime * 22.0) * 0.371 + uSeed * 17.0);
-  vec3 stat = vec3(0.09, 0.30, 0.14) * (0.2 + 0.8 * n);
-  vec3 col = mix(stat, img, uLoaded);
-
-  // 'static' easter egg: glyph-map the artwork (Efecto-style)
-  if (uAscii > 0.001 && uMask > 0.5) {
-    vec2 grid = vec2(46.0, 28.0);
-    vec2 cid = floor(uv * grid);
-    vec2 suv = ((cid + 0.5) / grid - 0.5) * uCover + 0.5;
-    vec3 cellCol = texture2D(uTex, vec2(suv.x, 1.0 - suv.y)).rgb;
-    float lum = dot(cellCol, vec3(0.299, 0.587, 0.114));
-    float gi = floor(clamp(lum, 0.0, 0.999) * 16.0);
-    vec2 gxy = vec2(mod(gi, 4.0), floor(gi / 4.0));
-    vec2 guv = (gxy + fract(uv * grid)) / 4.0;
-    float g = texture2D(uGlyphs, vec2(guv.x, 1.0 - guv.y)).r;
-    col = mix(col, vec3(0.30, 1.0, 0.48) * g * (0.3 + 0.7 * lum), uAscii);
-  }
-
-  float a = uMask * uSignal * uLoaded * (1.0 - uAscii);
-  gl_FragColor = vec4(col, a);
+  // DEBUG: green if the uSize uniform reached this program, red if it's zero.
+  float ok = step(1.0, uSize.x);
+  gl_FragColor = vec4(1.0 - ok, ok, 0.0, 1.0);
 }`;
 
 // Ambient inter-tile content: drifting ASCII static, calibration crosses,
@@ -202,6 +179,7 @@ export class Wall {
     this.callbacks = callbacks;
     this.instances = [];
     this.isWebgl2 = !!this.gl.texSubImage3D;
+    this.texLoaded = 0; this.texError = 0;   // DEBUG counters
 
     this.glyphTex = makeGlyphAtlas(this.gl);
     this._buildPrograms();
@@ -509,9 +487,10 @@ export class Wall {
           tile.tex.needsUpdate = true;
           tile.aspect = img.naturalWidth / img.naturalHeight;
           gsap.to(tile, { loadedMix: 1, duration: 0.7, ease: 'power2.out' });
+          this.texLoaded++;                  // DEBUG
           next();
         };
-        img.onerror = () => next();
+        img.onerror = () => { this.texError++; console.warn('v2d: image failed', tile.game.img); next(); };
         img.src = tile.game.img;
         return;
       }

@@ -341,7 +341,7 @@
 window.CFG = {
   BW: 480, BH: 270,          // low-res pixel buffer (BW recomputed from viewport aspect)
   TW: 24, TH: 12,            // iso tile size
-  GW: 22, GH: 14,            // hall grid (GW may grow with the games list)
+  GW: 24, GH: 18,            // hall grid (deeper hall; GW may grow with the games list)
   BASE_ZOOM: 1.3,
   FOCUS_ZOOM: 1.62,
   LAYOUT: null,              // filled by the generator below
@@ -359,13 +359,34 @@ window.CFG = {
   // at ty=4 (front-left stays clear for the HI-SCORE board); two center rows.
   function slotsFor(GW, GH){
     const back = [], left = [], center = [];
+    // The HI-SCORE board hangs in the CENTRE of the left wall — keep that span
+    // clear of cabinets (displaced ones spill into the centre rows below).
+    const scoreLo = Math.round(GH / 2) - 3, scoreHi = Math.round(GH / 2) + 2;
     for (let x = 2; x + 1 <= 6; x += 3)            back.push({ tx:x, ty:1, f:'S' });   // left of door
     for (let x = 13; x + 1 <= GW - 2; x += 3)      back.push({ tx:x, ty:1, f:'S' });   // right of window
-    for (let y = 4; y + 1 <= GH - 2; y += 3)       left.push({ tx:1, ty:y, f:'E' });
-    for (const ry of [5, 9]){
-      if (ry + 1 > GH - 2) continue;
-      for (let x = 8; x + 1 <= GW - 6; x += 3)     center.push({ tx:x, ty:ry, f:'S' });
+    for (let y = 4; y + 1 <= GH - 2; y += 3){
+      if (y >= scoreLo && y <= scoreHi) continue;  // reserve the score-board span
+      left.push({ tx:1, ty:y, f:'E' });
     }
+    // Free-standing cabinets: columns flanking a central walking aisle, each
+    // spanning the hall depth. Columns emit outer-first and fill their full
+    // depth before the next, so a partial games list spreads evenly front-to-
+    // back instead of clustering at the back. Shallow left columns are skipped
+    // where they would render over the HI-SCORE board on the left wall.
+    const aisleLo = 10, aisleHi = 13;              // keep the door↔front corridor clear
+    const rowYs = [];
+    for (let y = 5; y + 1 <= GH - 3; y += 4) rowYs.push(y);
+    const cols = [];
+    for (let x = 5; x + 1 <= GW - 6; x += 3){
+      if (x >= aisleLo && x <= aisleHi) continue;
+      cols.push(x);
+    }
+    cols.sort((a, b) => Math.abs(a - 11) - Math.abs(b - 11));   // inner columns first (tight flanks, clean aisle)
+    for (const x of cols)
+      for (const y of rowYs){
+        if (x <= 6 && y >= 7) continue;            // don't cover the score board
+        center.push({ tx:x, ty:y, f:'S' });
+      }
     return back.concat(left, center);
   }
   let GW = CFG.GW;

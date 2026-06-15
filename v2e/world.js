@@ -324,8 +324,8 @@ const World = window.World = {
   // decorative props, spaced along the right wall so the corner isn't crowded
   claw: { tx: GW - 2, ty: 8, phase: 0, dropIn: 7, drift: 0 },
   juke: { tx: GW - 2, ty: 11, noteIn: 1 },
-  // HI-SCORE hangs on the FRONT-LEFT wall (clear of the 'E' cabinets at ty>=4)
-  board: { ty: 1 },
+  // HI-SCORE hangs in the CENTRE of the left wall (layout keeps the span clear)
+  board: { ty: GH / 2 },
   pugImg: null, pugReady: false,
   walker: { active: false, p: 0, dir: 1, nextIn: 14 },
   marker: null,                          // click destination ping
@@ -909,7 +909,6 @@ const World = window.World = {
     this.drawDoor(c, t);
     this.drawSign(c, t);
     this.drawWallPosters(c, t);    // PUG BANGER hero (left wall)
-    this.drawScoreBoard(c, t);     // HI-SCORE (front-left wall)
     this.drawPuddleShimmer(c, t);
 
     // depth-sorted entities (structures carry a `foot` footprint for occlusion)
@@ -920,6 +919,9 @@ const World = window.World = {
       items.push({ depth: mm.tx + mm.ty + 1, foot: [mm.tx, mm.ty, mm.tx + 1, mm.ty + 1],
         draw: (cc) => this.drawVendingBox(cc, mm.tx, mm.ty, mm, t, true) });
     }
+    // HI-SCORE hangs on the left wall (tx 0, ty ≈ GH/2). Depth-sort it so wall
+    // cabinets behind it are covered and the player walks in front of it.
+    items.push({ depth: GH / 2, draw: (cc) => this.drawScoreBoard(cc, t) });
     const cl = this.claw, jk = this.juke;
     items.push({ depth: cl.tx + cl.ty + 1, foot: [cl.tx, cl.ty, cl.tx + 1, cl.ty + 1], draw: (cc) => this.drawClaw(cc, t) });
     items.push({ depth: jk.tx + jk.ty + 1, foot: [jk.tx, jk.ty, jk.tx + 1, jk.ty + 1], draw: (cc) => this.drawJuke(cc, t) });
@@ -1127,48 +1129,53 @@ const World = window.World = {
     c.restore();
   },
 
-  // HI-SCORE — proper-sized panel on the FRONT-LEFT wall (clear of cabinets)
+  // HI-SCORE — large marquee centred on the LEFT wall. The layout generator
+  // keeps the wall-centre span clear of cabinets, and render() depth-sorts this
+  // (depth ≈ GH/2) so nothing in the room obstructs it.
   drawScoreBoard(c, t){
     const lw = this.iso(0, GH);
-    const W = TW + TW2;                            // 3 tiles wide (36px) — wider
-    const X = GH * TW2 - W;                        // pinned to the back-left corner
-    const TOP = -46, BOT = -6, IH = BOT - TOP;     // taller, with margin around it
+    const W = 2 * TW + TW2;                        // ~5 tiles wide (60px) — roomy
+    const X = (GH / 2) * TW2 - W / 2;              // centred along the left wall
+    const TOP = -50, BOT = -1, IH = BOT - TOP;     // tall marquee, hangs from above
     this.shear(c, lw[0], lw[1], -.5);
-    c.fillStyle = '#241a38'; c.fillRect(X + W / 2 - 1, TOP - 3, 2, 3);   // ceiling bracket
+    c.fillStyle = '#241a38'; c.fillRect(X + W / 2 - 1, TOP - 4, 2, 4);   // ceiling bracket
     c.fillStyle = '#0b0518'; c.fillRect(X, TOP, W, IH);
     c.strokeStyle = '#5d4a7d'; c.strokeRect(X + .5, TOP + .5, W - 1, IH - 1);
-    for (let i = 0; i < 6; i++){
+    const bulbs = 9;                               // chasing marquee bulbs, top & bottom
+    for (let i = 0; i < bulbs; i++){
+      const bx = X + 3 + i * ((W - 6) / (bulbs - 1));
       c.fillStyle = ((i + (t * 4 | 0)) % 3) === 0 ? '#ffd23f' : '#4a3a18';
-      c.fillRect(X + 2 + i * 4, TOP + 1, 1, 1);
-      c.fillRect(X + 2 + i * 4, BOT - 2, 1, 1);
+      c.fillRect(bx, TOP + 1, 1, 1);
+      c.fillRect(bx, BOT - 2, 1, 1);
     }
     c.save();
     c.beginPath(); c.rect(X + 2, TOP + 2, W - 4, IH - 4); c.clip();
     const IW = W - 4;
     c.textBaseline = 'alphabetic';
-    c.font = 'bold 6px monospace';
+    c.font = 'bold 7px monospace';
     const tw = c.measureText('HI·SCORE').width;
     c.save();
-    c.translate(X + W / 2, TOP + 10);
+    c.translate(X + W / 2, TOP + 11);
     if (tw > IW) c.scale(IW / tw, 1);
     c.shadowColor = '#ffd23f'; c.shadowBlur = 3;
     c.fillStyle = '#ffd23f';
     c.fillText('HI·SCORE', -tw / 2, 0);
     c.restore();
-    c.fillStyle = '#3a2b52'; c.fillRect(X + 2, TOP + 13, IW, 1);
-    const top = (window.Cabinets && Cabinets.topScores) ? Cabinets.topScores(3) : [];
-    c.font = '5px monospace';
+    c.fillStyle = '#3a2b52'; c.fillRect(X + 3, TOP + 15, IW - 2, 1);
+    const top = (window.Cabinets && Cabinets.topScores) ? Cabinets.topScores(5) : [];
+    c.font = '6px monospace';
     if (!top.length){
       c.fillStyle = (t * 1.4 % 1) < .6 ? '#9b8cc0' : '#5d4a7d';
-      c.fillText('PLAY!', X + 8, TOP + 24);
+      c.fillText('PLAY TO RANK!', X + 5, TOP + 28);
     } else {
-      const COLS = ['#fff', '#cfd8ff', '#9b8cc0'];
+      const COLS = ['#fff', '#cfd8ff', '#bdb0d8', '#9b8cc0', '#7d6fa0'];
       for (let i = 0; i < top.length; i++){
+        const ry = TOP + 23 + i * 6;
         c.fillStyle = i === 0 && (t * 2 % 1) < .7 ? '#ffd23f' : COLS[i];
-        const nm = (i + 1) + ' ' + (top[i].short || '').slice(0, 5);
+        const nm = (i + 1) + ' ' + (top[i].short || '').slice(0, 6);
         const sc = String(top[i].n);
-        c.fillText(nm, X + 3, TOP + 22 + i * 7);
-        c.fillText(sc, X + W - 3 - c.measureText(sc).width, TOP + 22 + i * 7);
+        c.fillText(nm, X + 5, ry);
+        c.fillText(sc, X + W - 5 - c.measureText(sc).width, ry);
       }
     }
     c.restore();
@@ -1276,7 +1283,7 @@ const World = window.World = {
     // window spill + open door + score bay + jukebox
     hole(11.5, 1.2, 30, .4 + this.flash * .5);
     hole(9, 1.4, 20, .25 + this.doorOpen * .35);
-    hole(0.8, this.board.ty + 2, 16, .4);          // HI-SCORE (front-left wall)
+    hole(0.8, this.board.ty, 18, .42);             // HI-SCORE (left-wall centre)
     hole(0.8, GH - 1.5, 14, .34);                  // PUG hero (left wall corner)
     hole(this.juke.tx + .5, this.juke.ty + .8, 20, .35);
 
@@ -1302,7 +1309,7 @@ const World = window.World = {
     }
     glow(player.x, player.y, 16, '#ffb45c', .06);
     glow(9, 1.4, 16, '#7f9bd8', .04 + this.doorOpen * .08);   // night spill through the door
-    glow(0.8, this.board.ty + 2, 12, '#ffd23f', .08);         // HI-SCORE
+    glow(0.8, this.board.ty, 13, '#ffd23f', .08);            // HI-SCORE
     glow(this.juke.tx + .5, this.juke.ty + .8, 16, '#ff3df0', .09);
     c.globalCompositeOperation = 'source-over';
   },
