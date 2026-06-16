@@ -50,7 +50,7 @@ touch v2g/style.css v2g/boot.js
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>CONSOLE BOOT — JOJKO'S GAMES</title>
+<title>CONSOLE BOOT — JOJKOS GAMES</title>
 <meta name="description" content="Boot a game console and step into the cartridge bay. 14 playable experiments by jojko, loaded and ready. No installs.">
 <meta name="theme-color" content="#0a0a0f">
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -93,7 +93,7 @@ touch v2g/style.css v2g/boot.js
   <!-- ACT 1 — HERO -->
   <section id="hero" class="act" data-section="BOOT">
     <div class="hero-copy">
-      <h1 id="heroTitle">JOJKO'S GAMES</h1>
+      <h1 id="heroTitle">JOJKOS GAMES</h1>
       <p id="heroSub">INSERT CARTRIDGE TO PLAY · <span class="mono">&lt;count&gt;14 LOADED&lt;/count&gt;</span></p>
       <div class="hero-actions">
         <button id="playBtn" type="button">PLAY ▸</button>
@@ -176,7 +176,7 @@ Also update `var VALID` in `/index.html` root loader to include `'v2g'`:
 
 - [ ] **Step 4: Verify in browser**
 
-Serve and open `http://localhost:8000/v2g/`. Expected: page loads with the boot overlay (empty), hero text "JOJKO'S GAMES", placeholder sections; **zero console errors**; GSAP + Lenis are defined (`window.gsap`, `window.Lenis` in console). The VER switcher chip lists "Console Boot".
+Serve and open `http://localhost:8000/v2g/`. Expected: page loads with the boot overlay (empty), hero text "JOJKOS GAMES", placeholder sections; **zero console errors**; GSAP + Lenis are defined (`window.gsap`, `window.Lenis` in console). The VER switcher chip lists "Console Boot".
 
 - [ ] **Step 5: Commit**
 
@@ -493,7 +493,7 @@ Add `initKeycaps` stub near the other stubs (it gets implemented in Task 6):
 
 - [ ] **Step 2: Verify in browser**
 
-Reload `/v2g/`. Expected: after boot, the title scrambles into "JOJKO'S GAMES", subhead words stagger in, buttons fade up. Hovering PLAY/INDEX makes them follow the cursor (magnetic) and snap back. Clicking PLAY smooth-scrolls to the bay. No console errors.
+Reload `/v2g/`. Expected: after boot, the title scrambles into "JOJKOS GAMES", subhead words stagger in, buttons fade up. Hovering PLAY/INDEX makes them follow the cursor (magnetic) and snap back. Clicking PLAY smooth-scrolls to the bay. No console errors.
 
 - [ ] **Step 3: Commit**
 

@@ -38,7 +38,7 @@ Reuses `window.GAMES` (14 games: `name/short/tag/url/img`), `window.TAG_COLORS`,
   (`> POWER ON SELF TEST`, `> MOUNTING CARTRIDGES… [14/14]`, `> READY`) with a **segmented progress
   bar** whose segments fill one per game (count derived from `GAMES.length`), ending `100%`.
 - Bar completes → boot panel lifts/wipes away (Flip/clip-path) and **Act 1 hero reveals**:
-  - Oversized headline **`JOJKO'S GAMES`** — animates in via `ScrambleTextPlugin` + `SplitText`
+  - Oversized headline **`JOJKOS GAMES`** — animates in via `ScrambleTextPlugin` + `SplitText`
     line/char stagger.
   - Subhead `INSERT CARTRIDGE TO PLAY` + `<count>14 GAMES LOADED</count>` monospace tag.
   - Primary **magnetic `PLAY` button** (scrolls to the bay) + secondary index button.

@@ -70,7 +70,7 @@ Two-pass pipeline:
 - **Launch**: click/tap a tile with `uSignal > 0.6` → tile scales to fullscreen while OVER-tuning
   (color blows out, aberration spikes, one frame of full static) → snap to black with a CRT
   power-off line → navigate. ~1.1s, skip on second click.
-- **HUD** (DOM, minimal mono text, corners): top-left `JOJKO'S GAMES — 14 TRANSMISSIONS`;
+- **HUD** (DOM, minimal mono text, corners): top-left `JOJKOS GAMES — 14 TRANSMISSIONS`;
   top-right sound toggle + `INDEX` button (overlay list of all games as plain links — the
   zero-effort / a11y / SEO path); bottom-left live "frequency" readout that changes as you drag
   (pure flavor); bottom-right Buy-me-a-coffee as a small amber "ON AIR"-style sign — the only

@@ -43,7 +43,7 @@ The feeling: Stardew-Valley-cozy meets 80s arcade. Warm, lived-in, slightly mela
   every other row. Idle cabinets dim slightly; one random cabinet occasionally "demo-glitches".
 - **Ambience**: rain streaking past the entrance window + faint thunder light; a snack machine and
   a change machine (decor); ceiling lamps with soft radial glow pools; dust motes; an animated
-  "JOJKO'S GAMES" neon sign above the entrance inside the hall, letters buzzing on at load.
+  "JOJKOS GAMES" neon sign above the entrance inside the hall, letters buzzing on at load.
 - **Lighting model (cheap)**: each light/cabinet contributes a radial gradient on a multiply/screen
   overlay buffer; player carries a subtle glow. Night mood, pools of color.
 
