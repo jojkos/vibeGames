@@ -65,22 +65,22 @@
       '> RENDER PIPELINE ............... OK',
       '> MOUNTING CARTRIDGES [' + n + ']',
     ];
-    var tl = gsap.timeline({ defaults:{ ease:'of' } });
+    var tl = gsap.timeline({ defaults:{ ease:'none' } });
     log.textContent = '';
     // reveal header lines, then fill one segment per game with a live %, then READY
     lines.forEach(function(line){
-      tl.add(function(){ log.textContent += line + '\n'; }, '+=0.18');
+      tl.to({}, { duration:0.18, onComplete:function(){ log.textContent += line + '\n'; } });
     });
     for (var i=0;i<n;i++){
       (function(idx){
-        tl.add(function(){
+        tl.to({}, { duration:0.05, onComplete:function(){
           segs[idx].classList.add('on');
           var pct = Math.round(((idx+1)/n)*100);
           log.textContent = lines.join('\n') + '\n> LOADING ' + pct + '%';
-        }, '+=0.05');
+        } });
       })(i);
     }
-    tl.add(function(){ log.textContent += '\n> READY'; }, '+=0.15');
+    tl.to({}, { duration:0.15, onComplete:function(){ log.textContent += '\n> READY'; } });
     // hand off to hero
     tl.to('#boot', { duration:0.6, yPercent:-100, ease:'of' }, '+=0.35');
     tl.add(function(){ document.getElementById('boot').style.display='none'; });
@@ -139,12 +139,17 @@
       .to(words, { opacity:1, stagger:0.4, ease:'none' });
 
     // theme cross-fade: light paper -> dark bay, scrubbed across the same section
+    var gridEl = document.getElementById('bgGrid');
+    var gridProxy = { t:0 };
     gsap.timeline({ scrollTrigger:{
         trigger:'#insert', start:'top 60%', end:'bottom top', scrub:true,
         onLeave:function(){ document.body.classList.add('is-dark'); },
         onEnterBack:function(){ document.body.classList.remove('is-dark'); } } })
       .to('#bgFill', { backgroundColor:'#0a0a0f', ease:'none' }, 0)
-      .to('#bgGrid', { '--grid-light':'#1c2233', ease:'none' }, 0);
+      .to(gridProxy, { t:1, ease:'none', onUpdate:function(){
+        gridEl.style.setProperty('--grid-light',
+          gsap.utils.interpolate('#c9d4ff', '#1c2233', gridProxy.t));
+      } }, 0);
   }
 
   function scrollToEl(sel){
