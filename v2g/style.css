@@ -145,3 +145,11 @@ body.is-dark{color:var(--text-dark)}
   background:transparent;color:var(--text-dark);opacity:.55;
   transition:opacity .2s,background .2s,color .2s,border-color .2s}
 #filterBar .chip.active{opacity:1;background:var(--accent);color:#0a0a0f;border-color:var(--accent)}
+
+@media (prefers-reduced-motion:reduce){
+  body{background:var(--bg-dark);color:var(--text-dark)}
+  #bgFill{background:var(--bg-dark)}
+  #demoArrow,#demoHand{display:none!important}
+  .word{opacity:1!important}
+  #cursor{display:none!important}
+}

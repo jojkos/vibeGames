@@ -36,9 +36,18 @@
     setupScroll();
 
     buildBay();          // build grid from data first (needed even in reduced mode)
-    if (REDUCED){ document.body.classList.add('is-dark'); return; }  // skip all choreography
+    if (REDUCED){
+      // reduced-motion: dark bay immediately, nav present, no choreography
+      document.body.classList.add('is-dark');
+      initNav();
+      return;
+    }
     buildBoot();
     runBoot();           // runBoot() -> revealHero() -> the rest
+    // recalc pin/scrub positions once fonts+images have laid out
+    if (window.ScrollTrigger){
+      window.addEventListener('load', function(){ ScrollTrigger.refresh(); });
+    }
   }
 
   // --- stubs filled in by later tasks ---
