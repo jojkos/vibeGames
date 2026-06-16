@@ -8,7 +8,7 @@
 <meta name="theme-color" content="#0a0a0f">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700;800&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700;800&family=Space+Grotesk:wght@500;600;700&display=swap">
 <link rel="stylesheet" href="style.css">
 <script>
   // Crash overlay (mirrors other variants) — surfaces any runtime error loudly.
@@ -58,16 +58,29 @@
     </div>
   </section>
 
-  <!-- ACT 3 — CARTRIDGE BAY (js fills #grid from GAMES) -->
+  <!-- ACT 3 — LIBRARY (index list + sticky preview; js fills both from GAMES) -->
   <section id="bay" class="act" data-section="LIBRARY">
     <div class="bay-intro">
-      <h2 class="bay-head">CARTRIDGE<br>BAY</h2>
-      <p class="bay-sub mono">SELECT A CARTRIDGE · 14 LOADED · SCROLL ▾</p>
+      <h2 class="bay-head">THE&nbsp;LIBRARY</h2>
+      <p class="bay-sub mono">14 PLAYABLE TOYS · BROWSE THE INDEX ▾</p>
     </div>
-    <div id="grid"></div>
+    <div class="index-wrap">
+      <ol id="indexList"></ol>
+      <aside id="preview" aria-hidden="true">
+        <div class="prev-stage"></div>
+        <div class="prev-meta">
+          <span class="prev-num">01</span>
+          <span class="prev-info">
+            <span class="prev-tag mono"></span>
+            <span class="prev-name"></span>
+          </span>
+          <a class="prev-play" href="#" target="_blank" rel="noopener">PLAY ▸</a>
+        </div>
+      </aside>
+    </div>
   </section>
 
-  <!-- giant live number watermark, driven by the focused cartridge -->
+  <!-- giant live number watermark behind the library -->
   <div id="bayGhost" class="js-only" aria-hidden="true">01</div>
 
   <!-- ACT 4 — FOOTER -->
@@ -83,6 +96,9 @@
 
 <!-- custom cursor -->
 <div id="cursor" class="js-only" aria-hidden="true"></div>
+
+<!-- power-surge flash layer -->
+<div id="flash" class="js-only" aria-hidden="true"></div>
 
 <!-- NO-JS / SEO fallback: real links to every game -->
 <noscript>
