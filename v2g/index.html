@@ -3,8 +3,8 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>CONSOLE BOOT — JOJKO'S GAMES</title>
-<meta name="description" content="Boot a game console and step into the cartridge bay. 14 playable experiments by jojko, loaded and ready. No installs.">
+<title>JOJKOS GAMES</title>
+<meta name="description" content="JOJKOS GAMES — a pile of playable experiments. 14 games, all free, no installs. Pick a cartridge.">
 <meta name="theme-color" content="#0a0a0f">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -35,26 +35,18 @@
 <div id="bgFill" aria-hidden="true"></div>
 <div id="bgGrid" aria-hidden="true"></div>
 
-<!-- BOOT / POST overlay (js builds its contents) -->
-<div id="boot" class="js-only" aria-hidden="true">
-  <pre id="bootLog"></pre>
-  <div id="bootBar"></div>
-</div>
-
 <main id="stage">
 
-  <!-- ACT 1 — HERO -->
-  <section id="hero" class="act" data-section="BOOT">
-    <div class="hero-copy">
-      <h1 id="heroTitle">JOJKO'S GAMES</h1>
-      <p id="heroSub">INSERT CARTRIDGE TO PLAY · <span class="mono">&lt;count&gt;14 LOADED&lt;/count&gt;</span></p>
-      <div class="hero-actions">
-        <button id="playBtn" type="button">PLAY ▸</button>
-        <button id="indexBtn" type="button">INDEX</button>
-      </div>
-    </div>
+  <!-- ACT 1 — HERO (the keycaps ARE the logo) -->
+  <section id="hero" class="act" data-section="TOP">
+    <h1 id="heroTitle" class="visually-hidden">JOJKOS GAMES</h1>
     <div class="hero-art">
-      <div id="keys" aria-hidden="true"></div>
+      <div id="keys" aria-label="JOJKOS GAMES"></div>
+    </div>
+    <p id="heroSub">INSERT A CARTRIDGE TO PLAY <span class="mono">[ 14 GAMES LOADED ]</span></p>
+    <div class="hero-actions">
+      <button id="playBtn" type="button">PLAY ▸</button>
+      <button id="indexBtn" type="button">INDEX</button>
     </div>
   </section>
 

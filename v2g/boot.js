@@ -1,5 +1,5 @@
-/* v2g/boot.js — conductor. Builds boot sequence + games grid from window.GAMES,
-   then wires Lenis + GSAP timelines act by act. */
+/* v2g/boot.js — conductor. Builds the keycap-logo hero + cartridge bay from
+   window.GAMES, then wires Lenis + GSAP timelines act by act. */
 (function(){
   'use strict';
 
@@ -10,6 +10,7 @@
   var REDUCED = prefersReduced();
 
   var lenis = null;
+  var demoTween = null, demoIdle = null;
 
   function setupScroll(){
     if (REDUCED || !window.Lenis) return;            // native scroll under reduced-motion
@@ -27,7 +28,6 @@
   function init(){
     if (window.gsap && window.ScrollTrigger) gsap.registerPlugin(ScrollTrigger);
     if (window.gsap && window.SplitText) gsap.registerPlugin(SplitText);
-    if (window.gsap && window.ScrambleTextPlugin) gsap.registerPlugin(ScrambleTextPlugin);
     if (window.gsap && window.Flip) gsap.registerPlugin(Flip);
     if (window.gsap && window.CustomEase){
       gsap.registerPlugin(CustomEase);
@@ -37,55 +37,19 @@
 
     buildBay();          // build grid from data first (needed even in reduced mode)
     if (REDUCED){
-      // reduced-motion: dark bay immediately, nav present, no choreography
+      // reduced-motion: dark bay immediately, static keycap logo, nav present
       document.body.classList.add('is-dark');
+      initKeycaps();
       initNav();
       return;
     }
-    buildBoot();
-    runBoot();           // runBoot() -> revealHero() -> the rest
+    revealHero();        // keycaps + subhead + actions + initInsert + initNav
     // recalc pin/scrub positions once fonts+images have laid out
     if (window.ScrollTrigger){
       window.addEventListener('load', function(){ ScrollTrigger.refresh(); });
     }
   }
 
-  // --- stubs filled in by later tasks ---
-  function buildBoot(){
-    var bar = document.getElementById('bootBar');
-    for (var i=0;i<window.GAMES.length;i++){ bar.appendChild(document.createElement('i')); }
-  }
-
-  function runBoot(){
-    var log = document.getElementById('bootLog');
-    var segs = document.querySelectorAll('#bootBar i');
-    var n = window.GAMES.length;
-    var lines = [
-      '> POWER ON SELF TEST ............ OK',
-      '> RENDER PIPELINE ............... OK',
-      '> MOUNTING CARTRIDGES [' + n + ']',
-    ];
-    var tl = gsap.timeline({ defaults:{ ease:'none' } });
-    log.textContent = '';
-    // reveal header lines, then fill one segment per game with a live %, then READY
-    lines.forEach(function(line){
-      tl.to({}, { duration:0.18, onComplete:function(){ log.textContent += line + '\n'; } });
-    });
-    for (var i=0;i<n;i++){
-      (function(idx){
-        tl.to({}, { duration:0.05, onComplete:function(){
-          segs[idx].classList.add('on');
-          var pct = Math.round(((idx+1)/n)*100);
-          log.textContent = lines.join('\n') + '\n> LOADING ' + pct + '%';
-        } });
-      })(i);
-    }
-    tl.to({}, { duration:0.15, onComplete:function(){ log.textContent += '\n> READY'; } });
-    // hand off to hero
-    tl.to('#boot', { duration:0.6, yPercent:-100, ease:'of' }, '+=0.35');
-    tl.add(function(){ document.getElementById('boot').style.display='none'; });
-    tl.add(revealHero, '<');
-  }
   function magnetic(el, strength){
     if (isTouch) return;
     var s = strength || 0.4;
@@ -98,32 +62,25 @@
   }
 
   function revealHero(){
-    var title = document.getElementById('heroTitle');
-    var tl = gsap.timeline({ defaults:{ ease:'of' } });
-    // scramble the title in
-    if (window.ScrambleTextPlugin){
-      var finalText = title.textContent;
-      tl.to(title, { duration:1.1, scrambleText:{ text:finalText, chars:'upperCase', speed:0.5 } });
-    }
-    // split + stagger the subhead and actions
+    initKeycaps();   // builds + animates the keycap logo
     if (window.SplitText){
       var split = new SplitText('#heroSub', { type:'words' });
-      tl.from(split.words, { duration:0.5, y:14, opacity:0, stagger:0.03 }, '-=0.4');
+      gsap.from(split.words, { duration:0.5, ease:'of', y:14, opacity:0, stagger:0.03, delay:0.55 });
+    } else {
+      gsap.from('#heroSub', { duration:0.5, ease:'of', opacity:0, delay:0.55 });
     }
-    tl.from('.hero-actions > *', { duration:0.5, y:18, opacity:0, stagger:0.08 }, '-=0.2');
-    tl.add(initKeycaps, '-=0.6');   // keycaps animate in alongside
+    gsap.from('.hero-actions > *', { duration:0.5, ease:'of', y:18, opacity:0, stagger:0.08, delay:0.75 });
 
-    // button actions
     var play = document.getElementById('playBtn');
     var index = document.getElementById('indexBtn');
     magnetic(play, 0.5); magnetic(index, 0.4);
     play.addEventListener('click', function(){ scrollToEl('#bay'); });
     index.addEventListener('click', function(){
-      if (window.GAMELIST && window.GAMELIST.open) return window.GAMELIST.open();  // shared overlay if present
+      if (window.GAMELIST && window.GAMELIST.open) return window.GAMELIST.open();
       scrollToEl('#bay');
     });
     initInsert();
-    initNav();    // implemented in a later task (safe stub for now)
+    initNav();
   }
 
   function initInsert(){
@@ -158,169 +115,106 @@
     else el.scrollIntoView({ behavior: REDUCED ? 'auto' : 'smooth' });
   }
 
-  function buildBay(){
-    var grid = document.getElementById('grid');
-    var colors = window.TAG_COLORS || {};
-    // asymmetric rhythm: which indices get bigger spans
-    var wide = {0:1, 5:1, 10:1}, tall = {2:1, 8:1};
-    window.GAMES.forEach(function(g, i){
-      var cc = colors[g.tag] || '#3d7bff';
-      var a = document.createElement('a');
-      a.className = 'cartridge' + (wide[i]?' wide':'') + (tall[i]?' tall':'');
-      a.href = g.url;
-      a.style.setProperty('--cc', cc);
-      a.dataset.tag = g.tag;
-      a.innerHTML =
-        '<span class="num">'+String(i+1).padStart(2,'0')+'</span>' +
-        '<img loading="lazy" alt="" src="'+g.img+'">' +
-        '<span class="meta"><span class="tag">&lt;'+g.tag+'&gt;</span>' +
-        '<span class="name">'+g.name+'</span></span>';
-      grid.appendChild(a);
-      bindTileHover(a);
-    });
-    if (!REDUCED && window.ScrollTrigger){
-      ScrollTrigger.batch('.cartridge', {
-        start:'top 88%',
-        onEnter:function(els){ gsap.from(els, { duration:0.7, ease:'of',
-          y:60, opacity:0, scale:0.92, stagger:0.07, overwrite:true }); }
-      });
-    }
-    initFilter();
-  }
+  /* ---------- ACT 1: keycap logo ---------- */
 
-  function bindTileHover(tile){
-    var img = tile.querySelector('img');
-    if (!isTouch && !REDUCED){
-      tile.addEventListener('mousemove', function(e){
-        var r = tile.getBoundingClientRect();
-        var rx = ((e.clientY-r.top)/r.height - 0.5)*-12;
-        var ry = ((e.clientX-r.left)/r.width  - 0.5)* 12;
-        gsap.to(tile, { duration:0.3, ease:'of', rotationX:rx, rotationY:ry, z:30 });
-        gsap.to(img,  { duration:0.3, opacity:0.85, scale:1.06 });
-      });
-      tile.addEventListener('mouseleave', function(){
-        gsap.to(tile, { duration:0.5, ease:'of', rotationX:0, rotationY:0, z:0 });
-        gsap.to(img,  { duration:0.5, opacity:0.55, scale:1 });
-      });
-    }
-    tile.addEventListener('click', function(e){
-      e.preventDefault();
-      // "cartridge inserted": press + screen-flash, then navigate
-      gsap.timeline({ onComplete:function(){ launch(tile.href); } })
-        .to(tile, { duration:0.12, scale:0.94, ease:'of' })
-        .to(tile, { duration:0.18, scale:1, ease:'of' })
-        .to('#bgFill', { duration:0.18, backgroundColor:'#fff' }, 0)
-        .to('#bgFill', { duration:0.25, backgroundColor:'#0a0a0f' }, 0.18);
-    });
+  function pressCap(cap){
+    cap.classList.add('pressed');
+    clearTimeout(cap._pt);
+    cap._pt = setTimeout(function(){ cap.classList.remove('pressed'); }, 160);
   }
-
-  function launch(url){ window.location.href = url; }
 
   function initKeycaps(){
     var host = document.getElementById('keys');
-    var caps = [
-      { ch:'P', cap:'#9b5cff', x:8,  y:6  },
-      { ch:'L', cap:'#ff9a3c', x:34, y:30 },
-      { ch:'A', cap:'#3dff7a', x:58, y:10 },
-      { ch:'Y', cap:'#3d7bff', x:78, y:40 },
-    ];
-    caps.forEach(function(c, i){
-      var el = document.createElement('div');
-      el.className = 'keycap';
-      el.style.cssText = '--cap:'+c.cap+';left:'+c.x+'%;top:'+c.y+'%';
-      el.dataset.depth = String(0.6 + i*0.25);
-      el.innerHTML = '<div class="side"></div><div class="top">'+c.ch+'</div>';
-      host.appendChild(el);
+    if (!host || host.childElementCount) return;
+    var rows = ['JOJKOS', 'GAMES'];
+    var palette = ['#9b5cff','#ff9a3c','#3dff7a','#3d7bff','#ff3df0','#2fd6e0','#ffd23f','#ff4757'];
+    var ci = 0;
+    rows.forEach(function(word){
+      var row = document.createElement('div'); row.className = 'keyrow';
+      word.split('').forEach(function(ch){
+        var col = palette[ci % palette.length]; ci++;
+        var cap = document.createElement('div'); cap.className = 'keycap';
+        cap.style.setProperty('--cap', col);
+        cap.innerHTML = '<span class="cap-face">' + ch + '</span>';
+        cap.addEventListener('click', function(){ pressCap(cap); scrollToEl('#bay'); });
+        row.appendChild(cap);
+      });
+      host.appendChild(row);
     });
-    var capsEls = host.querySelectorAll('.keycap');
-    // GSAP owns the full transform so the isometric tilt survives the tween
-    gsap.set(capsEls, { rotationX:55, rotationZ:-45 });
-    // animate in (drop + spin to settle), staggered
-    gsap.from(capsEls, { duration:0.8, ease:'of', y:-120, opacity:0,
-      stagger:0.08, rotationZ:-135 });
+    var caps = host.querySelectorAll('.keycap');
+    if (REDUCED) return;   // static logo; click still works
 
-    // whole-cluster parallax to pointer (desktop only)
+    // slight per-cap rotation jitter (in-plane) + drop-in entrance forming the logo
+    gsap.set(caps, { rotation:function(i){ return ((i * 53) % 9) - 4; } });
+    gsap.from(caps, { duration:0.7, ease:'of', y:-90, opacity:0,
+      stagger:{ each:0.045, from:'center' },
+      onComplete:function(){ demoLoop(); bindHeroHover(); } });
+
+    // gentle pointer parallax (translate only — keeps demo-cursor math exact)
     if (!isTouch){
       window.addEventListener('mousemove', function(e){
-        var rx = (e.clientY/window.innerHeight - 0.5)*-10;
-        var ry = (e.clientX/window.innerWidth - 0.5)*14;
-        gsap.to(host, { duration:0.6, ease:'of', rotationX:rx, rotationY:ry });
+        var dx = (e.clientX/window.innerWidth  - 0.5) * 22;
+        var dy = (e.clientY/window.innerHeight - 0.5) * 16;
+        gsap.to('#keys', { duration:0.8, ease:'of', x:dx, y:dy });
       });
     }
-    initCursor();         // custom cursor (later task) — safe stub until then
-    demoLoop();           // teach loop (later task)
-    bindHeroHover();      // real hover handoff (later task)
+    initCursor();
   }
-  var demoTween = null, demoIdle = null;
 
   function demoLoop(){
     var host = document.getElementById('keys');
     var caps = host.querySelectorAll('.keycap');
     if (!caps.length) return;
     var arrow = document.createElement('div'); arrow.id = 'demoArrow';
+    arrow.innerHTML =
+      '<svg viewBox="0 0 24 24" width="42" height="42" aria-hidden="true">' +
+      '<path d="M4 3 L4 21 L9 16.5 L12.5 22.5 L15.5 21 L11.8 15.2 L19 15.2 Z" ' +
+      'fill="#fff" stroke="#0a0a0f" stroke-width="1.6" stroke-linejoin="round"/></svg>' +
+      '<span class="demo-pulse" aria-hidden="true"></span>';
     host.appendChild(arrow);
+    var pulse = arrow.querySelector('.demo-pulse');
 
-    function capCenter(cap){
+    function center(cap){
       var hr = host.getBoundingClientRect(), cr = cap.getBoundingClientRect();
-      return { x: cr.left-hr.left + cr.width/2, y: cr.top-hr.top + cr.height/2 };
+      return { x: cr.left - hr.left + cr.width * 0.5, y: cr.top - hr.top + cr.height * 0.66 };
     }
+    var c0 = center(caps[0]);
+    gsap.set(arrow, { x:c0.x, y:c0.y, opacity:0 });
+
+    var visit = [0, 3, 6, 9, 10].filter(function(i){ return i < caps.length; });
     var tl = gsap.timeline({ repeat:-1, repeatDelay:0.6, defaults:{ ease:'of' } });
-    caps.forEach(function(cap){
-      var c = capCenter(cap);
-      tl.to(arrow, { duration:0.7, x:c.x, y:c.y });
-      tl.add(function(){ cap.classList.add('pressed'); });   // press
-      tl.to(arrow, { duration:0.12, scale:0.85 });
+    tl.to(arrow, { duration:0.3, opacity:1 });
+    visit.forEach(function(idx){
+      var cap = caps[idx];
+      tl.to(arrow, { duration:0.55, x:function(){ return center(cap).x; }, y:function(){ return center(cap).y; } });
+      tl.to(arrow, { duration:0.1, scale:0.8 });
+      tl.add(function(){ pressCap(cap); });
+      tl.fromTo(pulse, { scale:0, opacity:0.55 }, { duration:0.55, scale:1.8, opacity:0, ease:'of' }, '<');
       tl.to(arrow, { duration:0.18, scale:1 });
-      tl.add(function(){ cap.classList.remove('pressed'); });
-      tl.to({}, { duration:0.25 });
+      tl.to({}, { duration:0.35 });
     });
     demoTween = tl;
   }
 
   function bindHeroHover(){
     var host = document.getElementById('keys');
-    var caps = host.querySelectorAll('.keycap');
-    if (!caps.length) return;
-
-    function pauseDemo(){
+    if (!host) return;
+    // hover lift is pure CSS (:hover on the stable .keycap box → no retrigger).
+    // JS only pauses/resumes the teach loop as the pointer enters/leaves the cluster.
+    host.addEventListener('mouseenter', function(){
       clearTimeout(demoIdle);
       if (demoTween) demoTween.pause();
       var a = document.getElementById('demoArrow'); if (a) a.classList.add('demo-hidden');
-    }
-    function resumeDemoSoon(){
+    });
+    host.addEventListener('mouseleave', function(){
       clearTimeout(demoIdle);
       demoIdle = setTimeout(function(){
         var a = document.getElementById('demoArrow'); if (a) a.classList.remove('demo-hidden');
         if (demoTween) demoTween.restart();
-      }, 1600);
-    }
-
-    caps.forEach(function(cap){
-      cap.addEventListener('mouseenter', function(){
-        pauseDemo();
-        cap.classList.add('pressed');
-        gsap.to(cap, { duration:0.3, ease:'of', scale:1.06 });
-        // neighbors lift slightly
-        caps.forEach(function(o){ if(o!==cap) gsap.to(o,{duration:0.3,ease:'of',scale:1.02}); });
-      });
-      cap.addEventListener('mouseleave', function(){
-        cap.classList.remove('pressed');
-        gsap.to(caps, { duration:0.4, ease:'of', scale:1 });
-        resumeDemoSoon();
-      });
-      cap.addEventListener('click', function(){
-        cap.classList.add('pressed');
-        gsap.fromTo(cap, {scale:0.92}, {duration:0.4, ease:'of', scale:1,
-          onComplete:function(){ cap.classList.remove('pressed'); }});
-        scrollToEl('#bay');   // keycaps ARE the PLAY action
-      });
+      }, 1200);
     });
-    if (isTouch){
-      // touch: keep the teach loop running; tap presses + scrolls
-      return;
-    }
-    host.addEventListener('mouseleave', resumeDemoSoon);
   }
+
   function initCursor(){
     if (isTouch || REDUCED) return;
     var dot = document.getElementById('cursor');
@@ -334,12 +228,93 @@
     });
   }
 
+  /* ---------- ACT 3: cartridge bay ---------- */
+
+  function buildBay(){
+    var grid = document.getElementById('grid');
+    var colors = window.TAG_COLORS || {};
+    window.GAMES.forEach(function(g, i){
+      var cc = colors[g.tag] || '#3d7bff';
+      var a = document.createElement('a');
+      a.className = 'cartridge';
+      a.href = g.url;
+      a.dataset.tag = g.tag;
+      a.style.setProperty('--cc', cc);
+      a.innerHTML =
+        '<span class="cart-media"><img loading="lazy" alt="" src="' + g.img + '"></span>' +
+        '<span class="cart-body">' +
+          '<span class="num">' + String(i+1).padStart(2,'0') + '</span>' +
+          '<span class="tag">&lt;' + g.tag + '&gt;</span>' +
+          '<span class="name">' + g.name + '</span>' +
+          '<span class="play">PLAY ▸</span>' +
+        '</span>';
+      grid.appendChild(a);
+      bindTileHover(a);
+    });
+    if (!REDUCED && window.ScrollTrigger){
+      var cards = grid.querySelectorAll('.cartridge');
+      cards.forEach(function(card, i){
+        gsap.from(card, {
+          scrollTrigger:{ trigger:card, start:'top 86%' },
+          x:(i % 2 === 0 ? -90 : 90), opacity:0, duration:0.8, ease:'of' });
+      });
+    }
+    initFilter();
+  }
+
+  function bindTileHover(tile){
+    if (!isTouch && !REDUCED){
+      tile.addEventListener('mousemove', function(e){
+        var r = tile.getBoundingClientRect();
+        var rx = ((e.clientY-r.top)/r.height - 0.5) * -8;
+        var ry = ((e.clientX-r.left)/r.width  - 0.5) *  8;
+        gsap.to(tile, { duration:0.3, ease:'of', rotationX:rx, rotationY:ry, z:24 });
+      });
+      tile.addEventListener('mouseleave', function(){
+        gsap.to(tile, { duration:0.5, ease:'of', rotationX:0, rotationY:0, z:0 });
+      });
+    }
+    tile.addEventListener('click', function(e){
+      e.preventDefault();
+      // "cartridge inserted": press + screen-flash, then navigate
+      gsap.timeline({ onComplete:function(){ launch(tile.href); } })
+        .to(tile, { duration:0.12, scale:0.96, ease:'of' })
+        .to(tile, { duration:0.18, scale:1, ease:'of' })
+        .to('#bgFill', { duration:0.18, backgroundColor:'#fff' }, 0)
+        .to('#bgFill', { duration:0.25, backgroundColor:'#0a0a0f' }, 0.18);
+    });
+  }
+
+  function launch(url){ window.location.href = url; }
+
+  function initFilter(){
+    // distinct tags, in first-seen order
+    var tags = [], seen = {};
+    window.GAMES.forEach(function(g){ if(!seen[g.tag]){ seen[g.tag]=1; tags.push(g.tag); } });
+    window.__BAY_TAGS = ['ALL'].concat(tags);   // consumed by initFilterBar
+
+    window.__applyFilter = function(tag){
+      var tiles = document.querySelectorAll('.cartridge');
+      var state = window.Flip ? Flip.getState(tiles) : null;
+      tiles.forEach(function(t){
+        var show = (tag === 'ALL' || t.dataset.tag === tag);
+        t.classList.toggle('filtered', !show);
+      });
+      if (state && !REDUCED){
+        Flip.from(state, { duration:0.6, ease:'of', scale:true, absolute:true,
+          onEnter:function(els){ return gsap.from(els,{opacity:0,scale:0.8,duration:0.4}); },
+          onLeave:function(els){ return gsap.to(els,{opacity:0,scale:0.8,duration:0.3}); } });
+      }
+    };
+  }
+
+  /* ---------- nav + filter chips ---------- */
+
   function initNav(){
     initFilterBar();
     var nav = document.getElementById('nav');
-    // section nav items map to the acts; ☕ opens the coffee link
     var sections = [
-      { label:'BOOT',    sel:'#hero',   accent:'#3d7bff' },
+      { label:'TOP',     sel:'#hero',   accent:'#3d7bff' },
       { label:'ABOUT',   sel:'#insert', accent:'#9b5cff' },
       { label:'LIBRARY', sel:'#bay',    accent:'#3dff7a' },
       { label:'☕',       href:(window.SITE&&window.SITE.coffee)||'#', accent:'#ff9a3c' },
@@ -358,7 +333,6 @@
       btns.forEach(function(b){ b.classList.toggle('active', b.dataset.sel===sel); });
       document.documentElement.style.setProperty('--accent', accent);
     }
-    // tie active state to scroll position
     if (window.ScrollTrigger){
       sections.forEach(function(s){
         if (!s.sel) return;
@@ -380,35 +354,13 @@
       b.type = 'button'; b.className = 'chip' + (i===0 ? ' active' : '');
       b.textContent = tag;
       b.addEventListener('click', function(){
-        var chips = bar.querySelectorAll('.chip');
-        chips.forEach(function(c){ c.classList.remove('active'); });
+        bar.querySelectorAll('.chip').forEach(function(c){ c.classList.remove('active'); });
         b.classList.add('active');
         if (window.__applyFilter) window.__applyFilter(tag);
       });
       bar.appendChild(b);
     });
     bay.insertBefore(bar, grid);
-  }
-
-  function initFilter(){
-    // distinct tags, in first-seen order
-    var tags = [], seen = {};
-    window.GAMES.forEach(function(g){ if(!seen[g.tag]){ seen[g.tag]=1; tags.push(g.tag); } });
-    window.__BAY_TAGS = ['ALL'].concat(tags);   // consumed by initNav (later task)
-
-    window.__applyFilter = function(tag){
-      var tiles = document.querySelectorAll('.cartridge');
-      var state = window.Flip ? Flip.getState(tiles) : null;
-      tiles.forEach(function(t){
-        var show = (tag === 'ALL' || t.dataset.tag === tag);
-        t.classList.toggle('filtered', !show);
-      });
-      if (state && !REDUCED){
-        Flip.from(state, { duration:0.6, ease:'of', scale:true, absolute:true,
-          onEnter:function(els){ return gsap.from(els,{opacity:0,scale:0.8,duration:0.4}); },
-          onLeave:function(els){ return gsap.to(els,{opacity:0,scale:0.8,duration:0.3}); } });
-      }
-    };
   }
 
   function boot(){
