@@ -171,6 +171,7 @@
           y:60, opacity:0, scale:0.92, stagger:0.07, overwrite:true }); }
       });
     }
+    initFilter();
   }
 
   function bindTileHover(tile){
@@ -308,6 +309,27 @@
   }
   function initCursor(){}
   function initNav(){}
+
+  function initFilter(){
+    // distinct tags, in first-seen order
+    var tags = [], seen = {};
+    window.GAMES.forEach(function(g){ if(!seen[g.tag]){ seen[g.tag]=1; tags.push(g.tag); } });
+    window.__BAY_TAGS = ['ALL'].concat(tags);   // consumed by initNav (later task)
+
+    window.__applyFilter = function(tag){
+      var tiles = document.querySelectorAll('.cartridge');
+      var state = window.Flip ? Flip.getState(tiles) : null;
+      tiles.forEach(function(t){
+        var show = (tag === 'ALL' || t.dataset.tag === tag);
+        t.classList.toggle('filtered', !show);
+      });
+      if (state && !REDUCED){
+        Flip.from(state, { duration:0.6, ease:'of', scale:true, absolute:true,
+          onEnter:function(els){ return gsap.from(els,{opacity:0,scale:0.8,duration:0.4}); },
+          onLeave:function(els){ return gsap.to(els,{opacity:0,scale:0.8,duration:0.3}); } });
+      }
+    };
+  }
 
   function boot(){
     // GAMES is loaded via shared/games.js (defer, before this file). Guard anyway.

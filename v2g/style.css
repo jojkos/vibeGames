@@ -123,3 +123,4 @@ body.is-dark{color:var(--text-dark)}
 .cartridge.wide{grid-column:span 2}
 .cartridge.tall{grid-row:span 2}
 @media (max-width:860px){ .cartridge.wide{grid-column:span 2} .cartridge.tall{grid-row:span 1} }
+.cartridge.filtered{display:none}
