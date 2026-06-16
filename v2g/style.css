@@ -39,10 +39,10 @@ body.is-dark{color:var(--text-dark)}
 #heroSub{font-size:clamp(13px,1.4vw,18px);margin:0;opacity:.85;letter-spacing:.04em}
 #heroSub .mono{display:inline-block;margin-left:8px;opacity:.6}
 .hero-actions{display:flex;gap:14px;flex-wrap:wrap;justify-content:center}
-#playBtn,#indexBtn{font:inherit;font-weight:700;cursor:pointer;
+#playBtn,#randomBtn{font:inherit;font-weight:700;cursor:pointer;
   padding:15px 28px;border:2px solid currentColor;background:var(--ink);color:#fff;
   letter-spacing:.04em;border-radius:10px;transition:background .2s,color .2s}
-#indexBtn{background:transparent;color:inherit}
+#randomBtn{background:transparent;color:inherit}
 
 /* the keycap cluster */
 #keys{position:relative;display:flex;flex-direction:column;align-items:center;

@@ -71,13 +71,17 @@
     }
     gsap.from('.hero-actions > *', { duration:0.5, ease:'of', y:18, opacity:0, stagger:0.08, delay:0.75 });
 
-    var play = document.getElementById('playBtn');
-    var index = document.getElementById('indexBtn');
-    magnetic(play, 0.5); magnetic(index, 0.4);
-    play.addEventListener('click', function(){ scrollToEl('#bay'); });
-    index.addEventListener('click', function(){
-      if (window.GAMELIST && window.GAMELIST.open) return window.GAMELIST.open();
-      scrollToEl('#bay');
+    var browse = document.getElementById('playBtn');
+    var rnd = document.getElementById('randomBtn');
+    magnetic(browse, 0.5); magnetic(rnd, 0.4);
+    browse.addEventListener('click', function(){ scrollToEl('#bay'); });   // go pick one
+    rnd.addEventListener('click', function(){                              // surprise me
+      var list = window.GAMES || [];
+      if (!list.length) return scrollToEl('#bay');
+      var g = list[Math.floor(Math.random() * list.length)];
+      gsap.timeline({ onComplete:function(){ launch(g.url); } })
+        .to('#bgFill', { duration:0.18, backgroundColor:'#fff' }, 0)
+        .to('#bgFill', { duration:0.25, backgroundColor:'#0a0a0f' }, 0.18);
     });
     initInsert();
     initNav();
@@ -265,21 +269,31 @@
     if (REDUCED || !window.ScrollTrigger) return;
 
     var cards = grid.querySelectorAll('.cartridge');
-    cards.forEach(function(card, i){
+    cards.forEach(function(card){
       var img = card.querySelector('img');
-      var side = (i % 2 === 0) ? -1 : 1;
-      // reveal: clip-path wipe + slide + slight rotate as the card enters (plays once)
+      var num = card.querySelector('.num');
+      // entrance: clip-path wipe + fade (once) — clip-path doesn't touch transform
       gsap.fromTo(card,
-        { clipPath:'inset(0 0 100% 0)', y:80, rotation:side*2.5, autoAlpha:0 },
-        { clipPath:'inset(0 0 0% 0)', y:0, rotation:0, autoAlpha:1, duration:0.9, ease:'of',
-          scrollTrigger:{ trigger:card, start:'top 88%' } });
-      // continuous screenshot parallax while the card travels through the viewport
+        { clipPath:'inset(0 0 100% 0)', autoAlpha:0 },
+        { clipPath:'inset(0 0 0% 0)', autoAlpha:1, duration:0.9, ease:'of',
+          scrollTrigger:{ trigger:card, start:'top 90%' } });
+      // CONTINUOUS 3D "deck" tilt + scale that peaks when the card is centered (scrubbed
+      // across the whole viewport pass — this is the always-on, scroll-driven motion)
+      gsap.timeline({ defaults:{ ease:'none' },
+          scrollTrigger:{ trigger:card, start:'top bottom', end:'bottom top', scrub:0.6 } })
+        .fromTo(card, { rotationX:13, scale:0.9 }, { rotationX:0, scale:1 })
+        .to(card, { rotationX:-13, scale:0.9 });
+      // screenshot + number parallax at different rates → depth
       if (img){
         gsap.fromTo(img, { yPercent:-9 }, { yPercent:9, ease:'none',
           scrollTrigger:{ trigger:card, start:'top bottom', end:'bottom top', scrub:true } });
       }
-      // focus: when a card is centered, spotlight it + drive the big ghost number
-      ScrollTrigger.create({ trigger:card, start:'top 58%', end:'bottom 58%',
+      if (num){
+        gsap.fromTo(num, { yPercent:45 }, { yPercent:-45, ease:'none',
+          scrollTrigger:{ trigger:card, start:'top bottom', end:'bottom top', scrub:true } });
+      }
+      // focus: centered card glows in its accent + drives the giant ghost number
+      ScrollTrigger.create({ trigger:card, start:'top 60%', end:'bottom 60%',
         onToggle:function(self){
           card.classList.toggle('focused', self.isActive);
           if (self.isActive && ghost){
@@ -288,6 +302,9 @@
           }
         } });
     });
+    // bay header drifts (parallax) as you scroll into the section
+    gsap.to('.bay-intro', { yPercent:-22, ease:'none',
+      scrollTrigger:{ trigger:'#bay', start:'top top', end:'+=90%', scrub:true } });
     // show the giant ghost number only while the bay is on screen
     if (ghost){
       ScrollTrigger.create({ trigger:'#bay', start:'top 55%', end:'bottom 45%',
