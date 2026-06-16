@@ -68,3 +68,12 @@ body.is-dark{color:var(--text-dark)}
   #boot{display:none!important}
   *{animation:none!important}
 }
+
+/* boot / POST overlay */
+#boot{position:fixed;inset:0;z-index:50;background:var(--paper);
+  display:flex;flex-direction:column;align-items:center;justify-content:center;gap:22px}
+#bootLog{font-size:clamp(12px,1.6vw,16px);line-height:1.7;margin:0;
+  min-width:min(560px,82vw);color:var(--ink);white-space:pre}
+#bootBar{display:flex;gap:4px}
+#bootBar i{width:14px;height:30px;background:var(--ink);opacity:.12;border-radius:2px}
+#bootBar i.on{opacity:1}

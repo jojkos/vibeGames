@@ -42,8 +42,41 @@
   }
 
   // --- stubs filled in by later tasks ---
-  function buildBoot(){}
-  function runBoot(){ revealHero(); }
+  function buildBoot(){
+    var bar = document.getElementById('bootBar');
+    for (var i=0;i<window.GAMES.length;i++){ bar.appendChild(document.createElement('i')); }
+  }
+
+  function runBoot(){
+    var log = document.getElementById('bootLog');
+    var segs = document.querySelectorAll('#bootBar i');
+    var n = window.GAMES.length;
+    var lines = [
+      '> POWER ON SELF TEST ............ OK',
+      '> RENDER PIPELINE ............... OK',
+      '> MOUNTING CARTRIDGES [' + n + ']',
+    ];
+    var tl = gsap.timeline({ defaults:{ ease:'of' } });
+    log.textContent = '';
+    // reveal header lines, then fill one segment per game with a live %, then READY
+    lines.forEach(function(line){
+      tl.add(function(){ log.textContent += line + '\n'; }, '+=0.18');
+    });
+    for (var i=0;i<n;i++){
+      (function(idx){
+        tl.add(function(){
+          segs[idx].classList.add('on');
+          var pct = Math.round(((idx+1)/n)*100);
+          log.textContent = lines.join('\n') + '\n> LOADING ' + pct + '%';
+        }, '+=0.05');
+      })(i);
+    }
+    tl.add(function(){ log.textContent += '\n> READY'; }, '+=0.15');
+    // hand off to hero
+    tl.to('#boot', { duration:0.6, yPercent:-100, ease:'of' }, '+=0.35');
+    tl.add(function(){ document.getElementById('boot').style.display='none'; });
+    tl.add(revealHero, '<');
+  }
   function revealHero(){}
   function buildBay(){}
 
