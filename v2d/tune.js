@@ -57,7 +57,6 @@ export function start() {
 
   const $ = (id) => document.getElementById(id);
   const freqEl = $('freq'), sigEl = $('sig'), teachEl = $('teach');
-  const presEl = $('presence');   // DEBUG readout
   const overlay = $('indexOverlay');
   const sndBtn = $('sndBtn');
 
@@ -103,9 +102,9 @@ export function start() {
     const tc = state.tuneCenter;
     tc.x = isTouch ? state.w / 2 : state.cursor.x;
     tc.y = isTouch ? state.h / 2 : state.cursor.y;
-    state.tuneRadius = m.TW * 5.0;            // wide field — neighbours bloom, not just one tile
+    state.tuneRadius = m.TW * 2.0;
 
-    const R0 = m.TW * 0.45, R1 = m.TW * 3.0;  // generous tune-in falloff
+    const R0 = m.TW * 0.30, R1 = m.TW * 1.25; // tight falloff — tune one tile at a time
     const k = 1 - Math.exp(-dt * 9);          // ≈130ms time constant — reads fast
     const seen = new Set();
     let best = null, bestSig = 0;
@@ -262,8 +261,6 @@ export function start() {
     freqEl.textContent = `${f.toFixed(1).padStart(5, '0')} FM · CH ${String(ch).padStart(2, '0')}`;
     const bars = Math.round(clamp(state.focus.sig, 0, 1) * 5);
     sigEl.textContent = 'SIG ' + '▮'.repeat(bars) + '▯'.repeat(5 - bars);
-    if (presEl) presEl.textContent =
-      `DBG tiles:${wall.instances.length} tex:${wall.texLoaded}/${GAMES.length} err:${wall.texError}`;
   }
 
   // ---- resize ------------------------------------------------------------------------

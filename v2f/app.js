@@ -44,10 +44,10 @@
   }
 
   /* ============================================================
-     SOUND — tiny, procedural, OFF by default
+     SOUND — tiny, procedural, ON by default
      ============================================================ */
   var SND = window.SND = {
-    on: false,
+    on: true,
     ctx: null,
     whirGain: null,
     ensure: function () {
@@ -112,6 +112,10 @@
     sndBtn.setAttribute('aria-pressed', String(SND.on));
     if (SND.on) SND.kachunk();
   });
+
+  // sound on by default — browsers block audio until a gesture, so init the
+  // context and ambient whir on the first user interaction
+  addEventListener('pointerdown', function () { if (SND.on && SND.ensure()) SND.initWhir(); }, { once: true });
 
   /* ============================================================
      TOAST

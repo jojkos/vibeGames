@@ -46,8 +46,9 @@ uniform vec2 uSize;  // quad size, css px
 varying vec2 vUv;
 void main() {
   vUv = uv;
-  // DEBUG: fullscreen so it always rasterises; fragment reports whether uSize arrived.
-  gl_Position = vec4(position.xy * 2.0, 0.0, 1.0);
+  vec2 p = uPos + position.xy * uSize;
+  vec2 ndc = p / uRes * 2.0 - 1.0;
+  gl_Position = vec4(ndc.x, -ndc.y, 0.0, 1.0);
 }`;
 
 const TILE_FRAG = /* glsl */ `
@@ -66,9 +67,43 @@ varying vec2 vUv;
 float hash21(vec2 p){ p = fract(p * vec2(123.34, 456.21)); p += dot(p, p + 45.32); return fract(p.x * p.y); }
 
 void main() {
-  // DEBUG: green if the uSize uniform reached this program, red if it's zero.
-  float ok = step(1.0, uSize.x);
-  gl_FragColor = vec4(1.0 - ok, ok, 0.0, 1.0);
+  vec2 uv = vUv;                                      // y-down, screen-aligned
+  vec2 cuv = (uv - 0.5) * uCover + 0.5;
+  vec3 img = texture2D(uTex, vec2(cuv.x, 1.0 - cuv.y)).rgb;  // real screenshot
+
+  // not-yet-loaded tiles broadcast raw static (they "tune in from black")
+  float n = hash21(floor(uv * vec2(96.0, 60.0)) + floor(uTime * 22.0) * 0.371 + uSeed * 17.0);
+  vec3 stat = vec3(0.09, 0.30, 0.14) * (0.2 + 0.8 * n);
+
+  // captions (uMask 0) skip the glyph treatment — post.js phosphors them.
+  if (uMask < 0.5) {
+    gl_FragColor = vec4(mix(stat, img, uLoaded), 0.0);
+    return;
+  }
+
+  // ---- glyph condensation (the rest state, v2c-style) -----------------------
+  // sample the artwork at grid resolution, map luminance → glyph, tint green.
+  vec2 grid = vec2(42.0, 26.0);
+  vec2 cid = floor(uv * grid);
+  vec2 suv = ((cid + 0.5) / grid - 0.5) * uCover + 0.5;
+  vec3 cellCol = texture2D(uTex, vec2(suv.x, 1.0 - suv.y)).rgb;
+  float lum = dot(cellCol, vec3(0.299, 0.587, 0.114));
+  float gi = floor(clamp(pow(lum, 0.85), 0.0, 0.999) * 16.0);
+  vec2 gxy = vec2(mod(gi, 4.0), floor(gi / 4.0));
+  vec2 guv = (gxy + fract(uv * grid)) / 4.0;
+  float g = texture2D(uGlyphs, vec2(guv.x, 1.0 - guv.y)).r;
+  vec3 glyphCol = vec3(0.22, 0.95, 0.42) * g * (0.22 + 0.9 * lum);
+
+  // before load → static; tune-in (uSignal) resolves glyphs → true screenshot.
+  vec3 rest  = mix(stat, glyphCol, uLoaded);
+  vec3 photo = mix(stat, img,      uLoaded);
+  float reveal = smoothstep(0.30, 0.85, uSignal);
+  vec3 col = mix(rest, photo, reveal);
+
+  // 'static' easter egg forces the glyph collapse regardless of tune.
+  col = mix(col, glyphCol, uAscii);
+
+  gl_FragColor = vec4(col, uMask * uLoaded);
 }`;
 
 // Ambient inter-tile content: drifting ASCII static, calibration crosses,
@@ -179,7 +214,6 @@ export class Wall {
     this.callbacks = callbacks;
     this.instances = [];
     this.isWebgl2 = !!this.gl.texSubImage3D;
-    this.texLoaded = 0; this.texError = 0;   // DEBUG counters
 
     this.glyphTex = makeGlyphAtlas(this.gl);
     this._buildPrograms();
@@ -214,6 +248,7 @@ export class Wall {
       uniforms: this.tileUniforms,
       depthTest: false,
       depthWrite: false,
+      cullFace: false,   // QUAD_VERT y-flip reverses winding — culling would hide every quad
     });
     this.tileMesh = new Mesh(gl, { geometry: plane, program: tileProgram });
 
@@ -255,6 +290,7 @@ export class Wall {
       transparent: true,
       depthTest: false,
       depthWrite: false,
+      cullFace: false,   // QUAD_VERT y-flip reverses winding — culling would hide every quad
     });
     decoProgram.setBlendFunc(gl.ONE, gl.ONE); // additive — glyphs only, no panels
     this.decoMesh = new Mesh(gl, { geometry: plane, program: decoProgram });
@@ -354,7 +390,7 @@ export class Wall {
     const TW = Math.max(190, Math.min(520, vmin * 0.38));
     const TH = TW * 0.62;
     const capH = Math.max(22, TW * 0.075);
-    const G = TW * 0.55;                       // generous gutters — ambient lives here
+    const G = TW * 0.95;                       // wide gutters — space to tune one tile at a time
     const cellW = TW + G;
     const cellH = TH + capH + G;
     this.m = {
@@ -487,10 +523,9 @@ export class Wall {
           tile.tex.needsUpdate = true;
           tile.aspect = img.naturalWidth / img.naturalHeight;
           gsap.to(tile, { loadedMix: 1, duration: 0.7, ease: 'power2.out' });
-          this.texLoaded++;                  // DEBUG
           next();
         };
-        img.onerror = () => { this.texError++; console.warn('v2d: image failed', tile.game.img); next(); };
+        img.onerror = () => next();
         img.src = tile.game.img;
         return;
       }

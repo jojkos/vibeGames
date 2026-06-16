@@ -39,23 +39,19 @@ const vec3 P3 = vec3(0.302, 1.000, 0.478);  // #4dff7a
 
 vec3 grade(vec4 scn, vec2 fpx) {
   float lum = dot(scn.rgb, vec3(0.299, 0.587, 0.114));
-  float field = 1.0 - smoothstep(uRadius * 0.15, uRadius, distance(fpx, uTune));
-  float tune = clamp(scn.a * field + scn.a * uOverdrive, 0.0, 1.0);
+  float isTile = step(0.001, scn.a);
 
-  float cell = mix(2.5, 1.0, smoothstep(0.0, 0.6, tune)) * max(uDpr, 1.0);
+  // background + captions → 4-step green ordered dither (the phosphor wall)
+  float cell = 2.5 * max(uDpr, 1.0);
   float b = bayer8(fpx / cell);
-  float l2 = pow(clamp(lum, 0.0, 1.0), 0.75);   // brighten midtones so darks don't vanish
+  float l2 = pow(clamp(lum, 0.0, 1.0), 0.85);
   float q = clamp(floor(l2 * 3.0 + (b - 0.5) * 0.9 + 0.5), 0.0, 3.0);
   vec3 ramp = q < 0.5 ? P0 : (q < 1.5 ? P1 : (q < 2.5 ? P2 : P3));
-  vec3 dith = ramp * (1.0 + tune * 0.15);
 
-  // Recognisable at rest: every loaded tile (scn.a > 0) shows mostly its real
-  // colour under a green phosphor wash; approaching the cursor blooms to full.
-  // DEBUG PROBE: show the raw scene buffer. Tiles paint solid magenta if they draw.
-  return scn.rgb;
-  // float cmix = isTile * mix(0.55, 1.0, smoothstep(0.0, 0.7, tune));
-  // vec3 trueCol = scn.rgb * (1.0 + uOverdrive * 1.6);
-  // return mix(dith, trueCol, clamp(cmix, 0.0, 1.0));
+  // tiles carry their own glyph→photo styling from wall.js — pass them through
+  // (overdrive blows them out on launch); bg + captions stay dithered green.
+  vec3 tileCol = scn.rgb * (1.0 + uOverdrive * 1.6);
+  return mix(ramp, tileCol, isTile);
 }`;
 
 const FINISH = /* glsl */ `
