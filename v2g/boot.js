@@ -174,8 +174,31 @@
   }
 
   function bindTileHover(tile){
-    tile.addEventListener('click', function(e){ e.preventDefault(); launch(tile.href); });
+    var img = tile.querySelector('img');
+    if (!isTouch && !REDUCED){
+      tile.addEventListener('mousemove', function(e){
+        var r = tile.getBoundingClientRect();
+        var rx = ((e.clientY-r.top)/r.height - 0.5)*-12;
+        var ry = ((e.clientX-r.left)/r.width  - 0.5)* 12;
+        gsap.to(tile, { duration:0.3, ease:'of', rotationX:rx, rotationY:ry, z:30 });
+        gsap.to(img,  { duration:0.3, opacity:0.85, scale:1.06 });
+      });
+      tile.addEventListener('mouseleave', function(){
+        gsap.to(tile, { duration:0.5, ease:'of', rotationX:0, rotationY:0, z:0 });
+        gsap.to(img,  { duration:0.5, opacity:0.55, scale:1 });
+      });
+    }
+    tile.addEventListener('click', function(e){
+      e.preventDefault();
+      // "cartridge inserted": press + screen-flash, then navigate
+      gsap.timeline({ onComplete:function(){ launch(tile.href); } })
+        .to(tile, { duration:0.12, scale:0.94, ease:'of' })
+        .to(tile, { duration:0.18, scale:1, ease:'of' })
+        .to('#bgFill', { duration:0.18, backgroundColor:'#fff' }, 0)
+        .to('#bgFill', { duration:0.25, backgroundColor:'#0a0a0f' }, 0.18);
+    });
   }
+
   function launch(url){ window.location.href = url; }
 
   function initKeycaps(){
