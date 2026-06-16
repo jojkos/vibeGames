@@ -64,10 +64,11 @@
   }
 
   /* ------------------------------------------------------------
-     procedural sound (on by default, toggle in header)
+     procedural sound (off by default — browsers need a gesture to play audio,
+     so it stays an explicit opt-in via the header toggle)
      ------------------------------------------------------------ */
   const sound = {
-    on: true,
+    on: false,
     ctx: null,
     ensure() {
       if (!this.ctx) {
@@ -117,10 +118,6 @@
       if (sound.on) sound.tick(6);
     });
   }
-
-  // sound is on by default — browsers block audio until a gesture, so create /
-  // resume the context on the first user interaction
-  addEventListener('pointerdown', () => { if (sound.on) sound.ensure(); }, { once: true });
 
   /* ------------------------------------------------------------
      image preload (feeds the preloader + WebGL textures)

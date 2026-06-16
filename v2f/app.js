@@ -44,10 +44,11 @@
   }
 
   /* ============================================================
-     SOUND — tiny, procedural, ON by default
+     SOUND — tiny, procedural, OFF by default (browsers need a gesture to play
+     audio, so it stays an explicit opt-in via the [SND] toggle)
      ============================================================ */
   var SND = window.SND = {
-    on: true,
+    on: false,
     ctx: null,
     whirGain: null,
     ensure: function () {
@@ -113,10 +114,6 @@
     if (SND.on) SND.kachunk();
   });
 
-  // sound on by default — browsers block audio until a gesture, so init the
-  // context and ambient whir on the first user interaction
-  addEventListener('pointerdown', function () { if (SND.on && SND.ensure()) SND.initWhir(); }, { once: true });
-
   /* ============================================================
      TOAST
      ============================================================ */
@@ -146,6 +143,8 @@
   }
 
   function revealEntry(entry) {
+    if (entry.dataset.revealed) return;   /* guard: IO + ticker sweep can both target it */
+    entry.dataset.revealed = '1';
     var kids = entry.querySelectorAll('.log > *');
     var img = entry.querySelector('.fig img');
     var rail = entry.querySelector('.rail span');
@@ -175,8 +174,28 @@
             revealEntry(en.target);
           }
         });
-      }, { rootMargin: '0px 0px -6% 0px', threshold: 0.05 });
+      }, { rootMargin: '200px 0px 200px 0px', threshold: 0 });
       all.forEach(function (e) { revealIO.observe(e); });
+
+      /* Safety net: on the cloned infinite-loop layout the IntersectionObserver can
+         fail to deliver reveal callbacks, leaving every entry clipped forever. Sweep
+         on the (already-running) ticker and reveal anything that is actually on-screen
+         but still hidden; stop once nothing is left to reveal. */
+      var revealSweep = function () {
+        var vh = window.innerHeight, remaining = 0;
+        for (var i = 0; i < all.length; i++) {
+          var e = all[i];
+          if (e.dataset.revealed) continue;
+          remaining++;
+          var r = e.getBoundingClientRect();
+          if (r.top < vh + 200 && r.bottom > -200) {
+            revealIO.unobserve(e);
+            revealEntry(e);
+          }
+        }
+        if (!remaining) gsap.ticker.remove(revealSweep);
+      };
+      gsap.ticker.add(revealSweep);
     }
 
     var focusIO = new IntersectionObserver(function (ents) {
