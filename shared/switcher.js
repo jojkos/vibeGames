@@ -18,6 +18,7 @@ window.VARIANTS = [
   { id:'v2d', name:'The Signal Degrades',      blurb:'Infinite draggable dithered phosphor wall.' },
   { id:'v2e', name:'Insert Coin Arcade',       blurb:'Walk a rainy pixel arcade. Insert coin.' },
   { id:'v2f', name:'Patch Notes from the Void',blurb:'Brutalist release-log zine with physics type.' },
+  { id:'v2g', name:'Console Boot',             blurb:'Boot a game console; the bay fills with playable cartridges.' },
 ];
 
 function currentId(){
