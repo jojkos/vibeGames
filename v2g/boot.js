@@ -307,8 +307,74 @@
     }
     host.addEventListener('mouseleave', resumeDemoSoon);
   }
-  function initCursor(){}
-  function initNav(){}
+  function initCursor(){
+    if (isTouch || REDUCED) return;
+    var dot = document.getElementById('cursor');
+    document.body.style.cursor = 'none';
+    window.addEventListener('mousemove', function(e){
+      gsap.to(dot, { duration:0.18, x:e.clientX, y:e.clientY, ease:'of' });
+    });
+    document.addEventListener('mouseover', function(e){
+      var hot = e.target.closest('a,button,.keycap,.cartridge');
+      dot.classList.toggle('hot', !!hot);
+    });
+  }
+
+  function initNav(){
+    initFilterBar();
+    var nav = document.getElementById('nav');
+    // section nav items map to the acts; ☕ opens the coffee link
+    var sections = [
+      { label:'BOOT',    sel:'#hero',   accent:'#3d7bff' },
+      { label:'ABOUT',   sel:'#insert', accent:'#9b5cff' },
+      { label:'LIBRARY', sel:'#bay',    accent:'#3dff7a' },
+      { label:'☕',       href:(window.SITE&&window.SITE.coffee)||'#', accent:'#ff9a3c' },
+    ];
+    sections.forEach(function(s){
+      var b = document.createElement('button'); b.type='button'; b.textContent=s.label;
+      b.addEventListener('click', function(){
+        if (s.href) return window.open(s.href,'_blank','noopener');
+        scrollToEl(s.sel);
+      });
+      b.dataset.sel = s.sel || ''; b.dataset.accent = s.accent;
+      nav.appendChild(b);
+    });
+    var btns = nav.querySelectorAll('button');
+    function setActive(sel, accent){
+      btns.forEach(function(b){ b.classList.toggle('active', b.dataset.sel===sel); });
+      document.documentElement.style.setProperty('--accent', accent);
+    }
+    // tie active state to scroll position
+    if (window.ScrollTrigger){
+      sections.forEach(function(s){
+        if (!s.sel) return;
+        ScrollTrigger.create({ trigger:s.sel, start:'top 60%', end:'bottom 60%',
+          onToggle:function(self){ if(self.isActive) setActive(s.sel, s.accent); } });
+      });
+    }
+    setActive('#hero', '#3d7bff');
+  }
+
+  function initFilterBar(){
+    var tags = window.__BAY_TAGS || ['ALL'];
+    var bay = document.getElementById('bay');
+    var grid = document.getElementById('grid');
+    if (!bay || !grid || document.getElementById('filterBar')) return;
+    var bar = document.createElement('div'); bar.id = 'filterBar';
+    tags.forEach(function(tag, i){
+      var b = document.createElement('button');
+      b.type = 'button'; b.className = 'chip' + (i===0 ? ' active' : '');
+      b.textContent = tag;
+      b.addEventListener('click', function(){
+        var chips = bar.querySelectorAll('.chip');
+        chips.forEach(function(c){ c.classList.remove('active'); });
+        b.classList.add('active');
+        if (window.__applyFilter) window.__applyFilter(tag);
+      });
+      bar.appendChild(b);
+    });
+    bay.insertBefore(bar, grid);
+  }
 
   function initFilter(){
     // distinct tags, in first-seen order
