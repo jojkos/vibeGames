@@ -113,6 +113,29 @@
       if (window.GAMELIST && window.GAMELIST.open) return window.GAMELIST.open();  // shared overlay if present
       scrollToEl('#bay');
     });
+    initInsert();
+    initNav();    // implemented in a later task (safe stub for now)
+  }
+
+  function initInsert(){
+    if (!window.ScrollTrigger) return;
+    // split manifesto into words for the scrubbed reveal
+    var split = window.SplitText ? new SplitText('#manifesto p:first-child', { type:'words' }) : null;
+    var words = split ? split.words : [];
+    words.forEach(function(w){ w.classList.add('word'); });
+
+    // pin the section and scrub word opacity 0.18 -> 1 across its scroll
+    gsap.timeline({ scrollTrigger:{
+        trigger:'#insert', start:'top top', end:'+=120%', pin:true, scrub:true } })
+      .to(words, { opacity:1, stagger:0.4, ease:'none' });
+
+    // theme cross-fade: light paper -> dark bay, scrubbed across the same section
+    gsap.timeline({ scrollTrigger:{
+        trigger:'#insert', start:'top 60%', end:'bottom top', scrub:true,
+        onLeave:function(){ document.body.classList.add('is-dark'); },
+        onEnterBack:function(){ document.body.classList.remove('is-dark'); } } })
+      .to('#bgFill', { backgroundColor:'#0a0a0f', ease:'none' }, 0)
+      .to('#bgGrid', { '--grid-light':'#1c2233', ease:'none' }, 0);
   }
 
   function scrollToEl(sel){
@@ -229,6 +252,7 @@
     host.addEventListener('mouseleave', resumeDemoSoon);
   }
   function initCursor(){}
+  function initNav(){}
 
   function boot(){
     // GAMES is loaded via shared/games.js (defer, before this file). Guard anyway.

@@ -103,3 +103,6 @@ body.is-dark{color:var(--text-dark)}
 #demoHand{font-size:24px;line-height:1}
 #demoHand::after{content:'👆'}
 .demo-hidden{opacity:0!important}
+
+#insert{justify-content:center;align-items:center;text-align:center}
+#insert .word{opacity:.18}      /* faded until scrubbed in */
