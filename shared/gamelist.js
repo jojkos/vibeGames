@@ -23,7 +23,7 @@ function boot(){
 
   var css = document.createElement('style');
   css.textContent =
-    '#glsChip{position:fixed;left:12px;bottom:12px;z-index:99992;font:11px/1 ui-monospace,Menlo,monospace;' +
+    '#glsChip{position:fixed;left:12px;bottom:12px;z-index:99989;font:11px/1 ui-monospace,Menlo,monospace;' +
       'background:rgba(12,12,18,.92);color:#cfcde0;border:1px solid #4a4660;padding:10px 12px;cursor:pointer;' +
       'border-radius:6px;letter-spacing:.08em;min-height:38px;backdrop-filter:blur(3px)}' +
     '#glsChip:hover{color:#fff;border-color:#8a86ad}' +
@@ -131,15 +131,23 @@ function boot(){
   document.body.appendChild(chip);
   document.body.appendChild(overlay);
 
-  // Dock the games chip directly to the right of the VER switcher chip (which
-  // boots right after this one, so measure on the next tick). The switcher's
-  // panel opens above this row, so they don't overlap. Falls back to the
-  // bottom-left corner if the switcher is absent (data-no-switcher).
+  // Dock the games chip directly to the right of the VER switcher chip. The
+  // switcher boots right after this script and appends its chip, so we can't
+  // measure it synchronously — watch for it and dock the moment it appears
+  // (plus retries), rather than a single timer that can miss and leave the two
+  // chips stacked on the same spot (which hid the version picker underneath).
+  // If the switcher is absent (data-no-switcher), the chip just stays bottom-left.
   function place(){
     var ver = document.getElementById('vswChip');
-    if (ver) chip.style.left = (ver.offsetLeft + ver.offsetWidth + 8) + 'px';
+    if (ver && ver.offsetWidth) { chip.style.left = (ver.offsetLeft + ver.offsetWidth + 8) + 'px'; return true; }
+    return false;
   }
-  setTimeout(place, 0);
+  if (!place() && typeof MutationObserver === 'function'){
+    var obs = new MutationObserver(function(){ if (place()) obs.disconnect(); });
+    obs.observe(document.body, { childList: true });
+    setTimeout(function(){ obs.disconnect(); }, 5000);   // stop watching eventually
+  }
+  window.addEventListener('load', place);
   window.addEventListener('resize', place);
 }
 
