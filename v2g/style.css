@@ -77,3 +77,19 @@ body.is-dark{color:var(--text-dark)}
 #bootBar{display:flex;gap:4px}
 #bootBar i{width:14px;height:30px;background:var(--ink);opacity:.12;border-radius:2px}
 #bootBar i.on{opacity:1}
+
+/* isometric keycap cluster */
+#keys{position:absolute;inset:0;perspective:1200px;
+  transform-style:preserve-3d}
+.keycap{position:absolute;width:120px;height:120px;
+  transform-style:preserve-3d;cursor:pointer;
+  /* isometric tilt of the whole cap */
+  transform:rotateX(55deg) rotateZ(-45deg) translateZ(0)}
+.keycap .top{position:absolute;inset:0;border-radius:14px;
+  background:var(--cap);border:3px solid #0a0a0f;
+  display:flex;align-items:center;justify-content:center;
+  font-size:54px;font-weight:800;color:#0a0a0f;
+  transform:translateZ(34px)}
+.keycap .side{position:absolute;inset:0;border-radius:14px;background:#0a0a0f}
+.keycap.pressed .top{transform:translateZ(10px)}
+@media (max-width:860px){ .keycap{width:84px;height:84px} .keycap .top{font-size:36px} }

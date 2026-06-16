@@ -122,7 +122,43 @@
   }
 
   function buildBay(){}
-  function initKeycaps(){}
+
+  function initKeycaps(){
+    var host = document.getElementById('keys');
+    var caps = [
+      { ch:'P', cap:'#9b5cff', x:8,  y:6  },
+      { ch:'L', cap:'#ff9a3c', x:34, y:30 },
+      { ch:'A', cap:'#3dff7a', x:58, y:10 },
+      { ch:'Y', cap:'#3d7bff', x:78, y:40 },
+    ];
+    caps.forEach(function(c, i){
+      var el = document.createElement('div');
+      el.className = 'keycap';
+      el.style.cssText = '--cap:'+c.cap+';left:'+c.x+'%;top:'+c.y+'%';
+      el.dataset.depth = String(0.6 + i*0.25);
+      el.innerHTML = '<div class="side"></div><div class="top">'+c.ch+'</div>';
+      host.appendChild(el);
+    });
+    var capsEls = host.querySelectorAll('.keycap');
+    // animate in (drop + settle), staggered
+    gsap.from(capsEls, { duration:0.8, ease:'of', y:-120, opacity:0,
+      stagger:0.08, rotateZ:-90 });
+
+    // whole-cluster parallax to pointer (desktop only)
+    if (!isTouch){
+      window.addEventListener('mousemove', function(e){
+        var rx = (e.clientY/window.innerHeight - 0.5)*-10;
+        var ry = (e.clientX/window.innerWidth - 0.5)*14;
+        gsap.to(host, { duration:0.6, ease:'of', rotateX:rx, rotateY:ry });
+      });
+    }
+    initCursor();         // custom cursor (later task) — safe stub until then
+    demoLoop();           // teach loop (later task)
+    bindHeroHover();      // real hover handoff (later task)
+  }
+  function demoLoop(){}
+  function bindHeroHover(){}
+  function initCursor(){}
 
   function boot(){
     // GAMES is loaded via shared/games.js (defer, before this file). Guard anyway.
