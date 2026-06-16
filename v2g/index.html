@@ -60,9 +60,15 @@
 
   <!-- ACT 3 — CARTRIDGE BAY (js fills #grid from GAMES) -->
   <section id="bay" class="act" data-section="LIBRARY">
-    <h2 class="bay-head">CARTRIDGE BAY</h2>
+    <div class="bay-intro">
+      <h2 class="bay-head">CARTRIDGE<br>BAY</h2>
+      <p class="bay-sub mono">SELECT A CARTRIDGE · 14 LOADED · SCROLL ▾</p>
+    </div>
     <div id="grid"></div>
   </section>
+
+  <!-- giant live number watermark, driven by the focused cartridge -->
+  <div id="bayGhost" class="js-only" aria-hidden="true">01</div>
 
   <!-- ACT 4 — FOOTER -->
   <footer id="footer">

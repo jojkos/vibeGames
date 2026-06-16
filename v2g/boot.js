@@ -136,8 +136,7 @@
         var cap = document.createElement('div'); cap.className = 'keycap';
         cap.style.setProperty('--cap', col);
         cap.innerHTML = '<span class="cap-face">' + ch + '</span>';
-        cap.addEventListener('click', function(){ pressCap(cap); scrollToEl('#bay'); });
-        row.appendChild(cap);
+        row.appendChild(cap);   // press is pure CSS :active; clicking a cap does NOT navigate
       });
       host.appendChild(row);
     });
@@ -157,6 +156,11 @@
         var dy = (e.clientY/window.innerHeight - 0.5) * 16;
         gsap.to('#keys', { duration:0.8, ease:'of', x:dx, y:dy });
       });
+    }
+    // keycap logo drifts up + fades as you scroll past the hero (parallax depth)
+    if (window.ScrollTrigger){
+      gsap.to('.hero-art', { yPercent:-26, autoAlpha:0.3, ease:'none',
+        scrollTrigger:{ trigger:'#hero', start:'top top', end:'bottom top', scrub:true } });
     }
     initCursor();
   }
@@ -204,6 +208,8 @@
     host.addEventListener('mouseenter', function(){
       clearTimeout(demoIdle);
       if (demoTween) demoTween.pause();
+      // clear any demo-applied press so the user's :hover lift always wins
+      host.querySelectorAll('.keycap.pressed').forEach(function(c){ c.classList.remove('pressed'); });
       var a = document.getElementById('demoArrow'); if (a) a.classList.add('demo-hidden');
     });
     host.addEventListener('mouseleave', function(){
@@ -232,18 +238,22 @@
 
   function buildBay(){
     var grid = document.getElementById('grid');
+    var ghost = document.getElementById('bayGhost');
     var colors = window.TAG_COLORS || {};
+    var widths = [62,50,68,48,60,54,66,52];   // varied widths -> scattered composition
     window.GAMES.forEach(function(g, i){
       var cc = colors[g.tag] || '#3d7bff';
       var a = document.createElement('a');
       a.className = 'cartridge';
       a.href = g.url;
       a.dataset.tag = g.tag;
+      a.dataset.num = String(i+1).padStart(2,'0');
       a.style.setProperty('--cc', cc);
+      a.style.setProperty('--w', widths[i % widths.length] + '%');
       a.innerHTML =
         '<span class="cart-media"><img loading="lazy" alt="" src="' + g.img + '"></span>' +
         '<span class="cart-body">' +
-          '<span class="num">' + String(i+1).padStart(2,'0') + '</span>' +
+          '<span class="num">' + a.dataset.num + '</span>' +
           '<span class="tag">&lt;' + g.tag + '&gt;</span>' +
           '<span class="name">' + g.name + '</span>' +
           '<span class="play">PLAY ▸</span>' +
@@ -251,15 +261,38 @@
       grid.appendChild(a);
       bindTileHover(a);
     });
-    if (!REDUCED && window.ScrollTrigger){
-      var cards = grid.querySelectorAll('.cartridge');
-      cards.forEach(function(card, i){
-        gsap.from(card, {
-          scrollTrigger:{ trigger:card, start:'top 86%' },
-          x:(i % 2 === 0 ? -90 : 90), opacity:0, duration:0.8, ease:'of' });
-      });
-    }
     initFilter();
+    if (REDUCED || !window.ScrollTrigger) return;
+
+    var cards = grid.querySelectorAll('.cartridge');
+    cards.forEach(function(card, i){
+      var img = card.querySelector('img');
+      var side = (i % 2 === 0) ? -1 : 1;
+      // reveal: clip-path wipe + slide + slight rotate as the card enters (plays once)
+      gsap.fromTo(card,
+        { clipPath:'inset(0 0 100% 0)', y:80, rotation:side*2.5, autoAlpha:0 },
+        { clipPath:'inset(0 0 0% 0)', y:0, rotation:0, autoAlpha:1, duration:0.9, ease:'of',
+          scrollTrigger:{ trigger:card, start:'top 88%' } });
+      // continuous screenshot parallax while the card travels through the viewport
+      if (img){
+        gsap.fromTo(img, { yPercent:-9 }, { yPercent:9, ease:'none',
+          scrollTrigger:{ trigger:card, start:'top bottom', end:'bottom top', scrub:true } });
+      }
+      // focus: when a card is centered, spotlight it + drive the big ghost number
+      ScrollTrigger.create({ trigger:card, start:'top 58%', end:'bottom 58%',
+        onToggle:function(self){
+          card.classList.toggle('focused', self.isActive);
+          if (self.isActive && ghost){
+            ghost.textContent = card.dataset.num;
+            ghost.style.color = card.style.getPropertyValue('--cc');
+          }
+        } });
+    });
+    // show the giant ghost number only while the bay is on screen
+    if (ghost){
+      ScrollTrigger.create({ trigger:'#bay', start:'top 55%', end:'bottom 45%',
+        onToggle:function(self){ ghost.classList.toggle('show', self.isActive); } });
+    }
   }
 
   function bindTileHover(tile){
@@ -313,11 +346,13 @@
   function initNav(){
     initFilterBar();
     var nav = document.getElementById('nav');
+    // left spacer keeps the labelled buttons clear of the global VER / game-list chips
+    var spacer = document.createElement('div'); spacer.className = 'nav-spacer'; nav.appendChild(spacer);
     var sections = [
       { label:'TOP',     sel:'#hero',   accent:'#3d7bff' },
       { label:'ABOUT',   sel:'#insert', accent:'#9b5cff' },
       { label:'LIBRARY', sel:'#bay',    accent:'#3dff7a' },
-      { label:'☕',       href:(window.SITE&&window.SITE.coffee)||'#', accent:'#ff9a3c' },
+      { label:'COFFEE ☕', href:(window.SITE&&window.SITE.coffee)||'#', accent:'#ffd23f' },
     ];
     sections.forEach(function(s){
       var b = document.createElement('button'); b.type='button'; b.textContent=s.label;
