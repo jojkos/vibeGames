@@ -77,8 +77,52 @@
     tl.add(function(){ document.getElementById('boot').style.display='none'; });
     tl.add(revealHero, '<');
   }
-  function revealHero(){}
+  function magnetic(el, strength){
+    if (isTouch) return;
+    var s = strength || 0.4;
+    el.addEventListener('mousemove', function(e){
+      var r = el.getBoundingClientRect();
+      gsap.to(el, { duration:0.4, ease:'of',
+        x:(e.clientX-(r.left+r.width/2))*s, y:(e.clientY-(r.top+r.height/2))*s });
+    });
+    el.addEventListener('mouseleave', function(){ gsap.to(el,{duration:0.5,ease:'of',x:0,y:0}); });
+  }
+
+  function revealHero(){
+    var title = document.getElementById('heroTitle');
+    var tl = gsap.timeline({ defaults:{ ease:'of' } });
+    // scramble the title in
+    if (window.ScrambleTextPlugin){
+      var finalText = title.textContent;
+      tl.to(title, { duration:1.1, scrambleText:{ text:finalText, chars:'upperCase', speed:0.5 } });
+    }
+    // split + stagger the subhead and actions
+    if (window.SplitText){
+      var split = new SplitText('#heroSub', { type:'words' });
+      tl.from(split.words, { duration:0.5, y:14, opacity:0, stagger:0.03 }, '-=0.4');
+    }
+    tl.from('.hero-actions > *', { duration:0.5, y:18, opacity:0, stagger:0.08 }, '-=0.2');
+    tl.add(initKeycaps, '-=0.6');   // keycaps animate in alongside
+
+    // button actions
+    var play = document.getElementById('playBtn');
+    var index = document.getElementById('indexBtn');
+    magnetic(play, 0.5); magnetic(index, 0.4);
+    play.addEventListener('click', function(){ scrollToEl('#bay'); });
+    index.addEventListener('click', function(){
+      if (window.GAMELIST && window.GAMELIST.open) return window.GAMELIST.open();  // shared overlay if present
+      scrollToEl('#bay');
+    });
+  }
+
+  function scrollToEl(sel){
+    var el = document.querySelector(sel);
+    if (lenis) lenis.scrollTo(el, { duration:1.2 });
+    else el.scrollIntoView({ behavior: REDUCED ? 'auto' : 'smooth' });
+  }
+
   function buildBay(){}
+  function initKeycaps(){}
 
   function boot(){
     // GAMES is loaded via shared/games.js (defer, before this file). Guard anyway.
