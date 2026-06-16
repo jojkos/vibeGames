@@ -106,3 +106,20 @@ body.is-dark{color:var(--text-dark)}
 
 #insert{justify-content:center;align-items:center;text-align:center}
 #insert .word{opacity:.18}      /* faded until scrubbed in */
+
+/* cartridge tiles */
+.cartridge{position:relative;border:3px solid var(--text-dark);border-radius:14px;
+  overflow:hidden;cursor:pointer;background:#11131c;color:var(--text-dark);
+  aspect-ratio:1/1;display:flex;flex-direction:column;justify-content:flex-end;
+  transform-style:preserve-3d;will-change:transform}
+.cartridge img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;
+  opacity:.55;transition:opacity .3s,transform .4s}
+.cartridge .meta{position:relative;z-index:2;padding:14px;background:linear-gradient(transparent,#000a)}
+.cartridge .num{position:absolute;top:10px;left:10px;z-index:2;font-weight:800;font-size:13px;
+  background:var(--cc);color:#0a0a0f;padding:2px 7px;border-radius:5px}
+.cartridge .tag{font-size:11px;color:var(--cc);font-weight:700}
+.cartridge .name{font-size:clamp(14px,1.4vw,20px);font-weight:800;margin-top:3px}
+/* asymmetric spans: a few tiles are larger for rhythm */
+.cartridge.wide{grid-column:span 2}
+.cartridge.tall{grid-row:span 2}
+@media (max-width:860px){ .cartridge.wide{grid-column:span 2} .cartridge.tall{grid-row:span 1} }

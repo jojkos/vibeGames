@@ -144,7 +144,39 @@
     else el.scrollIntoView({ behavior: REDUCED ? 'auto' : 'smooth' });
   }
 
-  function buildBay(){}
+  function buildBay(){
+    var grid = document.getElementById('grid');
+    var colors = window.TAG_COLORS || {};
+    // asymmetric rhythm: which indices get bigger spans
+    var wide = {0:1, 5:1, 10:1}, tall = {2:1, 8:1};
+    window.GAMES.forEach(function(g, i){
+      var cc = colors[g.tag] || '#3d7bff';
+      var a = document.createElement('a');
+      a.className = 'cartridge' + (wide[i]?' wide':'') + (tall[i]?' tall':'');
+      a.href = g.url;
+      a.style.setProperty('--cc', cc);
+      a.dataset.tag = g.tag;
+      a.innerHTML =
+        '<span class="num">'+String(i+1).padStart(2,'0')+'</span>' +
+        '<img loading="lazy" alt="" src="'+g.img+'">' +
+        '<span class="meta"><span class="tag">&lt;'+g.tag+'&gt;</span>' +
+        '<span class="name">'+g.name+'</span></span>';
+      grid.appendChild(a);
+      bindTileHover(a);
+    });
+    if (!REDUCED && window.ScrollTrigger){
+      ScrollTrigger.batch('.cartridge', {
+        start:'top 88%',
+        onEnter:function(els){ gsap.from(els, { duration:0.7, ease:'of',
+          y:60, opacity:0, scale:0.92, stagger:0.07, overwrite:true }); }
+      });
+    }
+  }
+
+  function bindTileHover(tile){
+    tile.addEventListener('click', function(e){ e.preventDefault(); launch(tile.href); });
+  }
+  function launch(url){ window.location.href = url; }
 
   function initKeycaps(){
     var host = document.getElementById('keys');
