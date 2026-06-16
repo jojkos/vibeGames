@@ -12,7 +12,7 @@ const SOX = GH * TW2 + 8;               // static layer origin offset
 const SOY = 66;
 const STATIC_W = (GW + GH) * TW2 + 16;
 const STATIC_H = SOY + (GW + GH) * TH2 + 24;
-const SIGN_TEXT = "JOJKO'S GAMES";
+const SIGN_TEXT = "JOJKOS GAMES";
 // camera clamp bounds (world iso extents)
 const CAM_MIN_X = -GH * TW2 + 4, CAM_MAX_X = GW * TW2 - 4;
 const CAM_MIN_Y = -WALL_H - 16,  CAM_MAX_Y = (GW + GH) * TH2 + 14;

@@ -25,7 +25,7 @@ export class Park {
     this.balloons = [];
     this.spotCones = [];
     this.rng = mulberry32(1337);
-    this.archLetters = "JOJKO'S GAMES";
+    this.archLetters = "JOJKOS GAMES";
     this.archShown = 0;
     this.archFlicker = { idx: -1, t: 0 };
     this.archAmbientTimer = 4;

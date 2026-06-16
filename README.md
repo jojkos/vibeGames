@@ -1,6 +1,6 @@
 # vibeGames
 
-JOJKO'S GAMES — a personal portal to a pile of playable experiments.
+JOJKOS GAMES — a personal portal to a pile of playable experiments.
 
 ▶ **[Play vibeGames](https://jojkos.github.io/vibeGames/)**
 

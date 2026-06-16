@@ -30,7 +30,7 @@ moment you touch the list.
 1. **Preloader / load choreography** (~1.5s, real loading masked as design): counter 0→100 in huge
    type bottom-left, thin progress hairline; screenshots preload during it. Exit: counter slams to
    100, page wipes open with a vertical curtain split. (Skip instantly on repeat visits via sessionStorage.)
-2. **Hero**: full viewport. "JOJKO'S GAMES" set gigantic, broken across 2 lines, each word animating
+2. **Hero**: full viewport. "JOJKOS GAMES" set gigantic, broken across 2 lines, each word animating
    in with a masked line-reveal (translateY + clip). Under it one mono line:
    "14 playable experiments · vibe-coded · 2024–2026". A slow marquee strip of tag words
    (ARCADE · PUZZLE · SHOOTER · …) scrolls along the bottom edge. Scroll hint: animated ↓.

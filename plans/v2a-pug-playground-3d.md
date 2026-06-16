@@ -40,7 +40,7 @@ no textures except the 14 screenshot PNGs. Cartoon-flat materials (`MeshToonMate
   gets a hue from its tag (ARCADE=orange, PUZZLE=violet, TOOL=cyan, ACTION=red, SHOOTER=yellow,
   PVP=magenta, CLICKER=green, RNG=pink, RACE=blue). Subtle idle bob/hum on the screen brightness.
 - **Layout**: cabinets arranged as a midway — two gentle arcs forming a boulevard, pug spawns at the
-  entrance under a neon archway sign "JOJKO'S GAMES" (built from glowing tube geometry or canvas
+  entrance under a neon archway sign "JOJKOS GAMES" (built from glowing tube geometry or canvas
   texture on a plane). Spacing ≥ 8 units so each cabinet reads individually.
 - **Props for life** (cheap, procedural): floating balloons on strings, a few trees made of cones,
   popcorn-cart, spotlight cones of volumetric-ish transparent geometry, fireflies (drifting points).

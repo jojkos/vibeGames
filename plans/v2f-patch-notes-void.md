@@ -38,7 +38,7 @@ The feeling: an engineer's zine pinned to a wall — raw, funny, obsessively typ
 - **Texture**: registration marks, `[FIG 04]` labels on screenshots, a running footer line like a
   printout: page counter, build hash (fake), `PRINTED FROM MEMORY · JOJKOS PRESS`.
 - Header: masthead `PATCH NOTES FROM THE VOID` + subline `the complete shipping record of
-  jojko's games · 14 releases · all playable`. Sticky thin top bar with progress + sound + menu.
+  jojkos games · 14 releases · all playable`. Sticky thin top bar with progress + sound + menu.
 
 ## Copy (half the work — treat it as a deliverable)
 

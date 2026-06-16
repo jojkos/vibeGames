@@ -1,0 +1,184 @@
+/* v2g — JOJKOS GAMES. Two themes via CSS vars; JS scrubs bg layer colors in Act 2. */
+:root{
+  --paper:#f3f1ea; --ink:#0a0a0f; --grid-light:#c9d4ff;
+  --bg-dark:#0a0a0f; --text-dark:#eceaf5; --grid-dark:#1c2233;
+  --accent:#3d7bff;                 /* recolored per active section by JS */
+  --ease-of:cubic-bezier(.16,1,.3,1);
+  --pad:clamp(20px,5vw,80px);
+}
+*{box-sizing:border-box}
+html,body{margin:0;padding:0}
+body{
+  font-family:'JetBrains Mono',ui-monospace,Menlo,monospace;
+  color:var(--ink); background:var(--bg-dark);
+  -webkit-font-smoothing:antialiased; overflow-x:hidden;
+}
+body.is-dark{color:var(--text-dark)}
+.mono{font-variant-ligatures:none;letter-spacing:.02em}
+.js-only{display:none}
+.has-js .js-only{display:block}
+.visually-hidden{position:absolute;width:1px;height:1px;overflow:hidden;
+  clip:rect(0 0 0 0);white-space:nowrap;border:0;padding:0;margin:-1px}
+
+/* fixed background layers */
+#bgFill{position:fixed;inset:0;z-index:-2;background:var(--paper)}
+#bgGrid{position:fixed;inset:0;z-index:-1;pointer-events:none;
+  background-image:
+    linear-gradient(var(--grid-light) 1px,transparent 1px),
+    linear-gradient(90deg,var(--grid-light) 1px,transparent 1px);
+  background-size:48px 48px; opacity:.5; transition:opacity .4s}
+
+/* acts */
+.act{position:relative;min-height:100vh;padding:var(--pad);
+  display:flex;flex-direction:column;justify-content:center}
+#stage{position:relative;z-index:1}
+
+/* ---------- HERO (keycaps are the logo) ---------- */
+#hero{align-items:center;text-align:center;gap:clamp(22px,3.5vw,46px)}
+.hero-art{position:relative;width:100%;display:flex;align-items:center;justify-content:center}
+#heroSub{font-size:clamp(13px,1.4vw,18px);margin:0;opacity:.85;letter-spacing:.04em}
+#heroSub .mono{display:inline-block;margin-left:8px;opacity:.6}
+.hero-actions{display:flex;gap:14px;flex-wrap:wrap;justify-content:center}
+#playBtn,#randomBtn{font:inherit;font-weight:700;cursor:pointer;
+  padding:15px 28px;border:2px solid currentColor;background:var(--ink);color:#fff;
+  letter-spacing:.04em;border-radius:10px;transition:background .2s,color .2s}
+#randomBtn{background:transparent;color:inherit}
+
+/* the keycap cluster */
+#keys{position:relative;display:flex;flex-direction:column;align-items:center;
+  gap:clamp(12px,2.2vw,26px);will-change:transform}
+.keyrow{display:flex;gap:clamp(8px,1.5vw,18px)}
+.keycap{position:relative;width:clamp(46px,8vw,98px);aspect-ratio:1;cursor:pointer}
+.cap-face{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;
+  --cap-edge:color-mix(in srgb, var(--cap) 52%, #000);
+  border-radius:clamp(9px,1.4vw,16px);background:var(--cap);color:#0a0a0f;
+  border:3px solid #0a0a0f;font-weight:800;font-size:clamp(22px,4vw,46px);
+  box-shadow:0 9px 0 0 var(--cap-edge), 0 9px 0 3px #0a0a0f, 0 26px 30px rgba(0,0,0,.30);
+  transition:transform .14s var(--ease-of), box-shadow .14s var(--ease-of), filter .2s}
+/* demo auto-press (lowest priority — declared first so user states win the cascade) */
+.keycap.pressed .cap-face{transform:translateY(7px);
+  box-shadow:0 2px 0 0 var(--cap-edge), 0 2px 0 3px #0a0a0f, 0 10px 14px rgba(0,0,0,.3)}
+/* hover = lift UP (overrides demo press) */
+.keycap:hover .cap-face{transform:translateY(-8px);filter:brightness(1.08);
+  box-shadow:0 16px 0 0 var(--cap-edge), 0 16px 0 3px #0a0a0f, 0 36px 40px rgba(0,0,0,.36)}
+/* click = press DOWN (overrides hover); the keycap does not navigate */
+.keycap:active .cap-face{transform:translateY(8px);filter:brightness(.96);
+  box-shadow:0 1px 0 0 var(--cap-edge), 0 1px 0 3px #0a0a0f, 0 8px 12px rgba(0,0,0,.3)}
+
+/* demo teach-cursor */
+#demoArrow{position:absolute;top:0;left:0;z-index:8;pointer-events:none;
+  filter:drop-shadow(0 4px 5px rgba(0,0,0,.45));will-change:transform;transition:opacity .3s}
+#demoArrow svg{display:block}
+.demo-pulse{position:absolute;left:5px;top:5px;width:20px;height:20px;
+  border:2px solid #fff;border-radius:50%;box-shadow:0 0 0 2px rgba(0,0,0,.5)}
+.demo-hidden{opacity:0!important}
+
+/* ---------- INSERT / manifesto ---------- */
+#insert{justify-content:center;align-items:center;text-align:center}
+#manifesto{max-width:680px;margin:0 auto;font-size:clamp(20px,3vw,40px);
+  font-weight:700;line-height:1.3}
+#manifesto .mono{display:block;font-size:.5em;font-weight:400;margin-top:1em;opacity:.7}
+#insert .word{opacity:.18}      /* faded until scrubbed in */
+
+/* ---------- THE LIBRARY (index list + sticky preview) ---------- */
+/* NB: no overflow on #bay — it would trap the sticky #preview. Ghost is fixed. */
+.bay-intro{max-width:1180px;margin:0 auto clamp(26px,5vw,60px);width:100%}
+.bay-head{font-family:'Space Grotesk',sans-serif;font-weight:700;text-transform:uppercase;
+  font-size:clamp(48px,11vw,150px);line-height:.84;letter-spacing:-.03em;margin:0}
+.bay-sub{margin:14px 0 0;opacity:.6;font-size:13px;letter-spacing:.06em}
+
+.index-wrap{display:grid;grid-template-columns:1fr 1fr;gap:clamp(24px,5vw,80px);
+  max-width:1180px;margin:0 auto;width:100%;align-items:start}
+
+/* index list (left) */
+#indexList{list-style:none;margin:0;padding:0;display:flex;flex-direction:column}
+.idx-item{position:relative;display:grid;grid-template-columns:2ch auto 1fr auto;
+  align-items:center;gap:14px;padding:clamp(12px,1.7vw,22px) 4px;cursor:pointer;
+  border-bottom:1px solid #ffffff14;opacity:.4;transition:opacity .3s}
+.idx-item.active{opacity:1}
+.idx-num{font-size:12px;font-weight:700;opacity:.6}
+.idx-dot{width:9px;height:9px;border-radius:50%;background:var(--cc);
+  box-shadow:0 0 10px var(--cc);transition:transform .3s}
+.idx-item.active .idx-dot{transform:scale(1.6)}
+.idx-name{font-family:'Space Grotesk',sans-serif;font-weight:700;
+  font-size:clamp(20px,3.2vw,40px);line-height:1.04;letter-spacing:-.01em;
+  color:var(--text-dark);transform-origin:left center;transition:transform .3s,color .3s}
+.idx-item.active .idx-name{transform:scale(1.05)}
+.idx-tag{font-size:11px;font-weight:700;letter-spacing:.05em;opacity:.45;justify-self:end}
+.idx-item.active .idx-tag{color:var(--cc);opacity:1}
+
+/* sticky preview (right) */
+#preview{position:sticky;top:11vh;height:78vh;display:flex;flex-direction:column;
+  perspective:1200px}
+.prev-stage{position:relative;flex:1;border-radius:18px;overflow:hidden;background:#05060a;
+  border:1px solid #ffffff1a;transform-style:preserve-3d;box-shadow:0 30px 70px rgba(0,0,0,.5)}
+.prev-stage::after{content:"";position:absolute;inset:0;z-index:2;pointer-events:none;
+  background:var(--cc,#3d7bff);mix-blend-mode:color;opacity:.78;transition:opacity .4s}
+#preview:hover .prev-stage::after{opacity:0}        /* hover reveals true color */
+.prev-img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;
+  filter:grayscale(1) contrast(1.05) brightness(.92);opacity:0;transition:opacity .4s}
+.prev-img.active{opacity:1}
+#preview:hover .prev-img{filter:none}
+.prev-meta{display:grid;grid-template-columns:auto 1fr auto;align-items:center;gap:16px;padding-top:18px}
+.prev-num{font-family:'Space Grotesk',sans-serif;font-size:clamp(40px,5vw,64px);font-weight:700;
+  line-height:.9;color:var(--cc)}
+.prev-info{display:flex;flex-direction:column;gap:4px;min-width:0}
+.prev-tag{font-size:12px;font-weight:700;letter-spacing:.05em;color:var(--cc)}
+.prev-name{font-family:'Space Grotesk',sans-serif;font-size:clamp(18px,2.4vw,30px);font-weight:700;
+  line-height:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.prev-play{justify-self:end;font-weight:700;font-size:13px;letter-spacing:.05em;text-decoration:none;
+  color:#0a0a0f;background:var(--accent);padding:12px 20px;border-radius:999px;
+  transition:transform .2s var(--ease-of)}
+.prev-play:hover{transform:translateY(-2px)}
+
+/* giant live number watermark behind the library */
+#bayGhost{position:fixed;right:2vw;bottom:9vh;z-index:0;pointer-events:none;
+  font-family:'Space Grotesk',sans-serif;font-size:clamp(140px,30vw,460px);font-weight:700;
+  line-height:.74;color:var(--accent);opacity:0;transition:opacity .5s,color .4s;user-select:none}
+#bayGhost.show{opacity:.06}
+
+/* power-surge flash on entering the library */
+#flash{position:fixed;inset:0;z-index:60;background:#fff;opacity:0;pointer-events:none}
+
+/* ---------- FOOTER ---------- */
+#footer{align-items:center;text-align:center;gap:20px;min-height:60vh;padding-bottom:110px}
+#footer .mono{opacity:.6;font-size:13px}
+#coffee{display:inline-flex;align-items:center;gap:8px;padding:14px 26px;border-radius:999px;
+  border:2px solid #ffd23f;background:#ffd23f;color:#0a0a0f;font-weight:800;
+  text-decoration:none;transition:transform .2s var(--ease-of),box-shadow .2s}
+#coffee:hover{transform:translateY(-3px);box-shadow:0 10px 26px -6px #ffd23f}
+
+/* ---------- sticky nav + custom cursor ---------- */
+#nav{position:fixed;left:0;right:0;bottom:0;z-index:40;display:flex;
+  background:#0a0a0f;color:#fff;border-top:2px solid var(--accent);
+  font-weight:700;font-size:13px;letter-spacing:.04em}
+#nav button{flex:1;background:none;border:0;color:inherit;font:inherit;
+  padding:16px 8px;cursor:pointer;border-right:1px solid #ffffff22;
+  transition:background .25s,color .25s}
+#nav button:last-child{border-right:0}
+#nav button.active{background:var(--accent);color:#0a0a0f}
+.nav-spacer{flex:0 0 clamp(140px,24vw,260px);pointer-events:none}
+#cursor{position:fixed;top:0;left:0;width:26px;height:26px;border:2px solid var(--accent);
+  border-radius:50%;transform:translate(-50%,-50%);pointer-events:none;z-index:9999;
+  mix-blend-mode:difference;transition:width .2s,height .2s,opacity .2s}
+#cursor.hot{width:46px;height:46px}
+@media (pointer:coarse){ #cursor{display:none!important} }
+
+@media (max-width:860px){
+  .index-wrap{grid-template-columns:1fr;gap:18px}
+  #preview{position:relative;top:0;height:auto;order:-1}
+  .prev-stage{aspect-ratio:16/10;flex:none}
+  .nav-spacer{flex-basis:118px}
+  #bayGhost{display:none!important}
+}
+
+/* reduced motion: everything visible & static (JS also branches) */
+@media (prefers-reduced-motion:reduce){
+  *{animation:none!important}
+  body{background:var(--bg-dark);color:var(--text-dark)}
+  #bgFill{background:var(--bg-dark)}
+  #demoArrow,.demo-pulse,#flash{display:none!important}
+  .word{opacity:1!important}
+  .idx-item{opacity:1!important}
+  #cursor{display:none!important}
+}

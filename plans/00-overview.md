@@ -22,7 +22,7 @@ These are baked into each plan, but listed once here as the source of truth.
 ### Core functionality (non-negotiable)
 - The page is a portal to all 14 games/apps. Every game must be reachable and launchable.
 - Keep the "Buy me a coffee" link: `https://buymeacoffee.com/jojkos` (visible, but it may be restyled to fit the concept).
-- Site title/identity: JOJKO'S GAMES (jojkos).
+- Site title/identity: JOJKOS GAMES (jojkos).
 
 ### Game data (canonical list — same as root `index.html`)
 ```js
