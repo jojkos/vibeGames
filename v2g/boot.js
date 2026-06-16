@@ -140,16 +140,18 @@
       host.appendChild(el);
     });
     var capsEls = host.querySelectorAll('.keycap');
-    // animate in (drop + settle), staggered
+    // GSAP owns the full transform so the isometric tilt survives the tween
+    gsap.set(capsEls, { rotationX:55, rotationZ:-45 });
+    // animate in (drop + spin to settle), staggered
     gsap.from(capsEls, { duration:0.8, ease:'of', y:-120, opacity:0,
-      stagger:0.08, rotateZ:-90 });
+      stagger:0.08, rotationZ:-135 });
 
     // whole-cluster parallax to pointer (desktop only)
     if (!isTouch){
       window.addEventListener('mousemove', function(e){
         var rx = (e.clientY/window.innerHeight - 0.5)*-10;
         var ry = (e.clientX/window.innerWidth - 0.5)*14;
-        gsap.to(host, { duration:0.6, ease:'of', rotateX:rx, rotateY:ry });
+        gsap.to(host, { duration:0.6, ease:'of', rotationX:rx, rotationY:ry });
       });
     }
     initCursor();         // custom cursor (later task) — safe stub until then
@@ -188,6 +190,7 @@
     if (!caps.length) return;
 
     function pauseDemo(){
+      clearTimeout(demoIdle);
       if (demoTween) demoTween.pause();
       var a = document.getElementById('demoArrow'); if (a) a.classList.add('demo-hidden');
     }
