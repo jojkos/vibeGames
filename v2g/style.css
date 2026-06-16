@@ -1,0 +1,70 @@
+/* v2g — Console Boot. Two themes via CSS vars; JS scrubs bg layer colors in Act 2. */
+:root{
+  --paper:#f3f1ea; --ink:#0a0a0f; --grid-light:#c9d4ff;
+  --bg-dark:#0a0a0f; --text-dark:#eceaf5; --grid-dark:#1c2233;
+  --accent:#3d7bff;                 /* recolored per active section by JS */
+  --ease-of:cubic-bezier(.16,1,.3,1);
+  --pad:clamp(20px,5vw,80px);
+}
+*{box-sizing:border-box}
+html,body{margin:0;padding:0}
+body{
+  font-family:'JetBrains Mono',ui-monospace,Menlo,monospace;
+  color:var(--ink); background:var(--bg-dark);
+  -webkit-font-smoothing:antialiased; overflow-x:hidden;
+}
+body.is-dark{color:var(--text-dark)}
+.mono{font-variant-ligatures:none;letter-spacing:.02em}
+.js-only{display:none}
+.has-js .js-only{display:block}
+
+/* fixed background layers */
+#bgFill{position:fixed;inset:0;z-index:-2;background:var(--paper)}
+#bgGrid{position:fixed;inset:0;z-index:-1;pointer-events:none;
+  background-image:
+    linear-gradient(var(--grid-light) 1px,transparent 1px),
+    linear-gradient(90deg,var(--grid-light) 1px,transparent 1px);
+  background-size:48px 48px; opacity:.5; transition:opacity .4s}
+
+/* acts */
+.act{position:relative;min-height:100vh;padding:var(--pad);
+  display:flex;flex-direction:column;justify-content:center}
+#stage{position:relative;z-index:1}
+
+/* hero */
+#hero{display:grid;grid-template-columns:1.1fr 1fr;gap:40px;align-items:center}
+#heroTitle{font-size:clamp(48px,9vw,140px);line-height:.92;font-weight:800;
+  margin:0;letter-spacing:-.02em;text-transform:uppercase}
+#heroSub{font-size:clamp(13px,1.4vw,18px);margin:18px 0 28px;opacity:.8}
+.hero-actions{display:flex;gap:14px;flex-wrap:wrap}
+#playBtn,#indexBtn{font:inherit;font-weight:700;cursor:pointer;
+  padding:16px 28px;border:2px solid currentColor;background:var(--ink);color:#fff;
+  letter-spacing:.04em;transition:transform .2s var(--ease-of)}
+#indexBtn{background:transparent;color:inherit}
+.hero-art{position:relative;height:60vh;min-height:380px}
+
+/* insert / manifesto */
+#manifesto{max-width:680px;margin:0 auto;font-size:clamp(20px,3vw,40px);
+  font-weight:700;line-height:1.3}
+#manifesto .mono{display:block;font-size:.5em;font-weight:400;margin-top:1em;opacity:.7}
+
+/* bay */
+.bay-head{font-size:clamp(28px,5vw,72px);font-weight:800;text-transform:uppercase;
+  margin:0 0 var(--pad)}
+#grid{display:grid;grid-template-columns:repeat(6,1fr);gap:18px}
+
+/* footer */
+#footer{align-items:center;text-align:center;gap:18px;min-height:60vh}
+#footer a{color:var(--accent);font-weight:700;text-decoration:none}
+
+@media (max-width:860px){
+  #hero{grid-template-columns:1fr}
+  .hero-art{height:46vh}
+  #grid{grid-template-columns:repeat(2,1fr)}
+}
+
+/* reduced motion: everything visible & static (JS also branches) */
+@media (prefers-reduced-motion:reduce){
+  #boot{display:none!important}
+  *{animation:none!important}
+}
