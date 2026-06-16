@@ -93,3 +93,13 @@ body.is-dark{color:var(--text-dark)}
 .keycap .side{position:absolute;inset:0;border-radius:14px;background:#0a0a0f}
 .keycap.pressed .top{transform:translateZ(10px)}
 @media (max-width:860px){ .keycap{width:84px;height:84px} .keycap .top{font-size:36px} }
+
+/* demo cursor sprites (CSS-drawn, no images) */
+#demoArrow,#demoHand{position:absolute;z-index:6;pointer-events:none;
+  width:26px;height:26px;will-change:transform;transition:opacity .3s}
+#demoArrow{ /* classic arrow via clip-path */
+  background:#fff;filter:drop-shadow(2px 2px 0 #0a0a0f);
+  clip-path:polygon(0 0,0 75%,28% 55%,45% 90%,62% 82%,46% 48%,80% 48%)}
+#demoHand{font-size:24px;line-height:1}
+#demoHand::after{content:'👆'}
+.demo-hidden{opacity:0!important}

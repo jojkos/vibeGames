@@ -156,8 +156,75 @@
     demoLoop();           // teach loop (later task)
     bindHeroHover();      // real hover handoff (later task)
   }
-  function demoLoop(){}
-  function bindHeroHover(){}
+  var demoTween = null, demoIdle = null;
+
+  function demoLoop(){
+    var host = document.getElementById('keys');
+    var caps = host.querySelectorAll('.keycap');
+    if (!caps.length) return;
+    var arrow = document.createElement('div'); arrow.id = 'demoArrow';
+    host.appendChild(arrow);
+
+    function capCenter(cap){
+      var hr = host.getBoundingClientRect(), cr = cap.getBoundingClientRect();
+      return { x: cr.left-hr.left + cr.width/2, y: cr.top-hr.top + cr.height/2 };
+    }
+    var tl = gsap.timeline({ repeat:-1, repeatDelay:0.6, defaults:{ ease:'of' } });
+    caps.forEach(function(cap){
+      var c = capCenter(cap);
+      tl.to(arrow, { duration:0.7, x:c.x, y:c.y });
+      tl.add(function(){ cap.classList.add('pressed'); });   // press
+      tl.to(arrow, { duration:0.12, scale:0.85 });
+      tl.to(arrow, { duration:0.18, scale:1 });
+      tl.add(function(){ cap.classList.remove('pressed'); });
+      tl.to({}, { duration:0.25 });
+    });
+    demoTween = tl;
+  }
+
+  function bindHeroHover(){
+    var host = document.getElementById('keys');
+    var caps = host.querySelectorAll('.keycap');
+    if (!caps.length) return;
+
+    function pauseDemo(){
+      if (demoTween) demoTween.pause();
+      var a = document.getElementById('demoArrow'); if (a) a.classList.add('demo-hidden');
+    }
+    function resumeDemoSoon(){
+      clearTimeout(demoIdle);
+      demoIdle = setTimeout(function(){
+        var a = document.getElementById('demoArrow'); if (a) a.classList.remove('demo-hidden');
+        if (demoTween) demoTween.restart();
+      }, 1600);
+    }
+
+    caps.forEach(function(cap){
+      cap.addEventListener('mouseenter', function(){
+        pauseDemo();
+        cap.classList.add('pressed');
+        gsap.to(cap, { duration:0.3, ease:'of', scale:1.06 });
+        // neighbors lift slightly
+        caps.forEach(function(o){ if(o!==cap) gsap.to(o,{duration:0.3,ease:'of',scale:1.02}); });
+      });
+      cap.addEventListener('mouseleave', function(){
+        cap.classList.remove('pressed');
+        gsap.to(caps, { duration:0.4, ease:'of', scale:1 });
+        resumeDemoSoon();
+      });
+      cap.addEventListener('click', function(){
+        cap.classList.add('pressed');
+        gsap.fromTo(cap, {scale:0.92}, {duration:0.4, ease:'of', scale:1,
+          onComplete:function(){ cap.classList.remove('pressed'); }});
+        scrollToEl('#bay');   // keycaps ARE the PLAY action
+      });
+    });
+    if (isTouch){
+      // touch: keep the teach loop running; tap presses + scrolls
+      return;
+    }
+    host.addEventListener('mouseleave', resumeDemoSoon);
+  }
   function initCursor(){}
 
   function boot(){
