@@ -29,6 +29,10 @@
   .row a,.row button{flex:1;text-align:center;font:inherit;font-size:11px;letter-spacing:.1em;text-decoration:none;
     color:#e8e6df;background:#17171f;border:1px solid #2a2a33;padding:9px 10px;cursor:pointer}
   .row a:hover,.row button:hover{border-color:#d6ff3f;color:#d6ff3f}
+  .enter{display:inline-block;text-decoration:none;font-size:13px;letter-spacing:.12em;color:#0b0b10;
+    background:#d6ff3f;border:1px solid #d6ff3f;padding:12px 22px;font-weight:700;transition:filter .15s}
+  .enter:hover{filter:brightness(1.12)}
+  .enter b{font-weight:700}
   .foot{font-size:11px;color:#55534b;text-align:center;line-height:2}
   .foot a{color:#8b897f}
 </style>
@@ -36,7 +40,8 @@
 <body data-no-switcher>
   <h1>VERSION <span>GALLERY</span></h1>
   <p class="sub">Every landing page jojkos.games has worn — kept browsable as a little design-history museum.
-    <b>SET DEFAULT</b> makes the root URL load that version for you.</p>
+    <b>OPEN</b> visits a version · <b>SET DEFAULT</b> makes the root URL load it for you next time.</p>
+  <a class="enter" id="enterBtn" href="../v2e/index.html">ENTER →</a>
   <div class="grid" id="grid"></div>
   <p class="foot">
     default is remembered in your browser · <span id="curDefault"></span><br>
@@ -65,6 +70,10 @@
     grid.innerHTML = '';
     var def = currentDefault();
     document.getElementById('curDefault').textContent = 'current default: ' + def;
+    var defV = VARIANTS.filter(function(x){ return x.id === def; })[0] || VARIANTS[0];
+    var eb = document.getElementById('enterBtn');
+    eb.href = '../' + defV.id + '/index.html';
+    eb.innerHTML = 'ENTER → <b>' + defV.id + ' · ' + defV.name + '</b>';
     VARIANTS.forEach(function(v){
       var card = document.createElement('div');
       card.className = 'card' + (v.id === def ? ' default' : '');

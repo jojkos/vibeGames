@@ -13,23 +13,30 @@
 <body>
 <p>loading…</p>
 <script>
-// Root entry: send the visitor to their chosen landing-page variant.
-// ?v=v2e overrides and saves; the in-page "VER" switcher saves the same key.
+// Root entry / front door.
+//  · ?v=v2e overrides and saves, then enters that variant.
+//  · a saved "home" variant (set via the gallery or the in-page VER switcher)
+//    is honored — returning visitors go straight in.
+//  · a first-ever visitor with no home is sent to the version gallery, so the
+//    seven different landing pages are visible up front (shown once).
+//  · after that, with still no home set, the default variant loads.
 (function(){
   var VALID = ['v1','v2a','v2b','v2c','v2d','v2e','v2f'];
   var DEFAULT = 'v2e';
+  var GALLERY = 'v2/index.html';
+  function get(k){ try { return localStorage.getItem(k); } catch (e){ return null; } }
+  function set(k, val){ try { localStorage.setItem(k, val); } catch (e){} }
+
   var v = null;
   try { v = new URLSearchParams(location.search).get('v'); } catch (e){}
-  if (v && VALID.indexOf(v) !== -1){
-    try { localStorage.setItem('jojkos_variant', v); } catch (e){}
-  } else {
-    v = null;
-  }
-  if (!v){
-    try { v = localStorage.getItem('jojkos_variant'); } catch (e){}
-  }
-  if (VALID.indexOf(v) === -1) v = DEFAULT;
-  location.replace(v + '/index.html');
+  if (v && VALID.indexOf(v) !== -1){ set('jojkos_variant', v); return location.replace(v + '/index.html'); }
+
+  var saved = get('jojkos_variant');
+  if (saved && VALID.indexOf(saved) !== -1) return location.replace(saved + '/index.html');
+
+  if (!get('jojkos_visited')){ set('jojkos_visited', '1'); return location.replace(GALLERY); }
+
+  location.replace(DEFAULT + '/index.html');
 })();
 </script>
 <noscript>

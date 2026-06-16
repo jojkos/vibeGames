@@ -1,10 +1,10 @@
 // ============================================================================
-// wall.js — virtualized infinite tile wall: layout, drag/inertia, scene pass
-// The 14 games tile the plane in a staggered brick pattern, modulo-wrapped in
-// BOTH axes (with a horizontal shift per vertical period so columns never
-// stack). Everything here renders INTO the scene framebuffer; post.js owns
-// what reaches the screen. Scene alpha channel = per-pixel "tunability" mask
-// (artwork * tile signal) — the raw material of the signal map.
+// wall.js — the RECEIVER: a 1D radio band. The 14 games are stations on an
+// 88.1–105.0 FM dial; a fixed centre needle, the band scrolls under it as you
+// tune. Drag = manual ("assisted analog": momentum + magnetic detents onto
+// stations). Each station renders as green glyphs at rest and resolves to the
+// real screenshot as it centres (uSignal). One hidden "pirate" station hides in
+// a gap. Everything renders INTO the scene framebuffer; post.js owns the screen.
 // ============================================================================
 
 import { Plane, Triangle, Program, Mesh, Texture } from 'ogl';
@@ -26,12 +26,16 @@ export const GAMES = [
   { name: 'OK Corral',            url: 'https://okcorral.onrender.com/',           tag: 'SHOOTER', img: '../screenshots/ok-corral.png' },
 ];
 
-export const freqOf = (i) => (88.1 + i * 1.3).toFixed(1);
+// numeric frequency for the maths, padded string for display
+export const stationFreq = (i) => 88.1 + i * 1.3;
+export const freqOf = (i) => stationFreq(i).toFixed(1);
+export const FREQ_MIN = stationFreq(0);                 // 88.1
+export const FREQ_MAX = stationFreq(GAMES.length - 1);  // 105.0
+const PIRATE_FREQ = 100.45;                              // hidden, sits in the 99.8→101.1 gap
 
-const hash01 = (n) => {
-  const x = Math.sin(n * 127.1 + 311.7) * 43758.5453;
-  return x - Math.floor(x);
-};
+const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
+const smoothstep = (a, b, x) => { const t = clamp((x - a) / (b - a), 0, 1); return t * t * (3 - 2 * t); };
+const hash01 = (n) => { const x = Math.sin(n * 127.1 + 311.7) * 43758.5453; return x - Math.floor(x); };
 
 // ---------------------------------------------------------------------------
 // Shaders (GLSL1 — works on both WebGL1/2 contexts)
@@ -106,14 +110,14 @@ void main() {
   gl_FragColor = vec4(col, uMask * uLoaded);
 }`;
 
-// Ambient inter-tile content: drifting ASCII static, calibration crosses,
-// an oscilloscope trace that reacts to drag velocity. Lives in world space.
+// Ambient between-station content: drifting ASCII static, calibration crosses,
+// an oscilloscope trace that reacts to drag velocity. Scrolls with the dial.
 const BG_FRAG = /* glsl */ `
 precision highp float;
 uniform vec2  uRes;       // css px
-uniform vec2  uCam;       // camera offset, css px
-uniform vec2  uSpacing;   // (cellW/2, cellH/2) world px — calibration grid
-uniform float uPeriodY;   // vertical layout period
+uniform vec2  uCam;       // band scroll, css px
+uniform vec2  uSpacing;   // calibration grid
+uniform float uPeriodY;
 uniform float uTime;
 uniform float uVel;       // 0..1 drag velocity
 uniform float uZoom;
@@ -150,7 +154,7 @@ void main() {
               + (1.0 - step(1.0, gp.y)) * (1.0 - step(7.0, gp.x));
   col += vec3(0.02, 0.09, 0.04) * clamp(cross, 0.0, 1.0);
 
-  // oscilloscope trace in the gutter bands — wakes up with drag velocity
+  // oscilloscope trace through the centre band — wakes up with drag velocity
   float ph = world.x * 0.012;
   float wave = sin(ph + uTime * 1.6) * 0.55 + sin(ph * 2.31 - uTime * 2.2) * 0.3;
   wave *= 5.0 + uVel * 30.0;
@@ -161,7 +165,7 @@ void main() {
   gl_FragColor = vec4(col, 0.0);
 }`;
 
-// Frequency numbers / hex codes floating in the gutters (additive text quads)
+// Per-station frequency tag floating beside the stage (additive text quads)
 const DECO_FRAG = /* glsl */ `
 precision highp float;
 uniform sampler2D uTex;
@@ -197,12 +201,33 @@ function makeGlyphAtlas(gl) {
   return new Texture(gl, { image: cv, generateMipmaps: false });
 }
 
-const SCRAMBLE_POOL = '#%&@$/\\<>+=*0123456789ABCDEFXKZQ';
-
-function captionText(i) {
-  const g = GAMES[i];
-  return `${String(i + 1).padStart(2, '0')} · ${g.name.toUpperCase()} · ${g.tag}`;
+// The hidden pirate station's artwork — pure ASCII, never an external image.
+function makePirateTexture(gl) {
+  const cv = document.createElement('canvas');
+  cv.width = 512; cv.height = 320;
+  const ctx = cv.getContext('2d');
+  ctx.fillStyle = '#020a04';
+  ctx.fillRect(0, 0, cv.width, cv.height);
+  ctx.fillStyle = '#4dff7a';
+  ctx.textAlign = 'center';
+  ctx.font = 'bold 30px monospace';
+  ctx.fillText('☠  PIRATE SIGNAL  ☠', cv.width / 2, 70);
+  ctx.font = '15px monospace';
+  ctx.fillStyle = '#2e7a45';
+  const lines = [
+    'unlicensed transmission · 100.45',
+    '',
+    'you found the gap between',
+    'the stations. nice ears.',
+    '',
+    '> the signal degrades, but',
+    '  someone is always broadcasting.',
+  ];
+  lines.forEach((l, i) => ctx.fillText(l, cv.width / 2, 120 + i * 26));
+  return new Texture(gl, { image: cv, generateMipmaps: false, flipY: true });
 }
+
+const SCRAMBLE_POOL = '#%&@$/\\<>+=*0123456789ABCDEFXKZQ';
 
 // ---------------------------------------------------------------------------
 
@@ -214,6 +239,13 @@ export class Wall {
     this.callbacks = callbacks;
     this.instances = [];
     this.isWebgl2 = !!this.gl.texSubImage3D;
+
+    // tuning physics (feel dials)
+    this.vel = 0;            // MHz / s
+    this.MAGNET = 26;        // gentle detent pull — only near a station
+    this.FRICTION = 3.0;     // inertia damping (lets flicks glide through static)
+    this.DETENT = 0.16;      // MHz: detent only engages within this of a station
+    this._dragDisabled = false;
 
     this.glyphTex = makeGlyphAtlas(this.gl);
     this._buildPrograms();
@@ -229,39 +261,22 @@ export class Wall {
     const plane = new Plane(gl, { width: 1, height: 1 });
 
     this.tileUniforms = {
-      uRes: { value: [1, 1] },
-      uPos: { value: [0, 0] },
-      uSize: { value: [100, 100] },
-      uTex: { value: null },
-      uGlyphs: { value: this.glyphTex },
-      uCover: { value: [1, 1] },
-      uLoaded: { value: 0 },
-      uSignal: { value: 0 },
-      uMask: { value: 1 },
-      uAscii: { value: 0 },
-      uTime: { value: 0 },
-      uSeed: { value: 0 },
+      uRes: { value: [1, 1] }, uPos: { value: [0, 0] }, uSize: { value: [100, 100] },
+      uTex: { value: null }, uGlyphs: { value: this.glyphTex }, uCover: { value: [1, 1] },
+      uLoaded: { value: 0 }, uSignal: { value: 0 }, uMask: { value: 1 },
+      uAscii: { value: 0 }, uTime: { value: 0 }, uSeed: { value: 0 },
     };
     const tileProgram = new Program(gl, {
-      vertex: QUAD_VERT,
-      fragment: TILE_FRAG,
-      uniforms: this.tileUniforms,
-      depthTest: false,
-      depthWrite: false,
+      vertex: QUAD_VERT, fragment: TILE_FRAG, uniforms: this.tileUniforms,
+      depthTest: false, depthWrite: false,
       cullFace: false,   // QUAD_VERT y-flip reverses winding — culling would hide every quad
     });
     this.tileMesh = new Mesh(gl, { geometry: plane, program: tileProgram });
 
     this.bgUniforms = {
-      uRes: { value: [1, 1] },
-      uCam: { value: [0, 0] },
-      uSpacing: { value: [200, 200] },
-      uPeriodY: { value: 800 },
-      uTime: { value: 0 },
-      uVel: { value: 0 },
-      uZoom: { value: 1 },
-      uZoomC: { value: [0, 0] },
-      uGlyphs: { value: this.glyphTex },
+      uRes: { value: [1, 1] }, uCam: { value: [0, 0] }, uSpacing: { value: [200, 200] },
+      uPeriodY: { value: 800 }, uTime: { value: 0 }, uVel: { value: 0 },
+      uZoom: { value: 1 }, uZoomC: { value: [0, 0] }, uGlyphs: { value: this.glyphTex },
     };
     const bgProgram = new Program(gl, {
       vertex: /* glsl */ `
@@ -269,179 +284,210 @@ export class Wall {
         attribute vec2 uv;
         varying vec2 vUv;
         void main(){ vUv = uv; gl_Position = vec4(position, 0.0, 1.0); }`,
-      fragment: BG_FRAG,
-      uniforms: this.bgUniforms,
-      depthTest: false,
-      depthWrite: false,
+      fragment: BG_FRAG, uniforms: this.bgUniforms, depthTest: false, depthWrite: false,
     });
     this.bgMesh = new Mesh(gl, { geometry: new Triangle(gl), program: bgProgram });
 
     this.decoUniforms = {
-      uRes: { value: [1, 1] },
-      uPos: { value: [0, 0] },
-      uSize: { value: [100, 30] },
-      uTex: { value: null },
-      uAlpha: { value: 1 },
+      uRes: { value: [1, 1] }, uPos: { value: [0, 0] }, uSize: { value: [100, 30] },
+      uTex: { value: null }, uAlpha: { value: 1 },
     };
     const decoProgram = new Program(gl, {
-      vertex: QUAD_VERT,
-      fragment: DECO_FRAG,
-      uniforms: this.decoUniforms,
-      transparent: true,
-      depthTest: false,
-      depthWrite: false,
-      cullFace: false,   // QUAD_VERT y-flip reverses winding — culling would hide every quad
+      vertex: QUAD_VERT, fragment: DECO_FRAG, uniforms: this.decoUniforms,
+      transparent: true, depthTest: false, depthWrite: false,
+      cullFace: false,
     });
-    decoProgram.setBlendFunc(gl.ONE, gl.ONE); // additive — glyphs only, no panels
+    decoProgram.setBlendFunc(gl.ONE, gl.ONE); // additive
     this.decoMesh = new Mesh(gl, { geometry: plane, program: decoProgram });
   }
 
   _buildTiles() {
     const gl = this.gl;
-    this.tiles = GAMES.map((game, i) => {
-      const tex = new Texture(gl, {
-        generateMipmaps: this.isWebgl2,
-        minFilter: this.isWebgl2 ? gl.LINEAR_MIPMAP_LINEAR : gl.LINEAR,
-        flipY: true,
-      });
+    const make = (spec, idx) => {
+      const tex = spec.pirate
+        ? makePirateTexture(gl)
+        : new Texture(gl, {
+            generateMipmaps: this.isWebgl2,
+            minFilter: this.isWebgl2 ? gl.LINEAR_MIPMAP_LINEAR : gl.LINEAR,
+            flipY: true,
+          });
 
       // caption strip — canvas texture, redrawable for the glitch-resolve
       const cv = document.createElement('canvas');
       cv.width = 1024; cv.height = 80;
-      const cctx = cv.getContext('2d');
       const capTex = new Texture(gl, { image: cv, generateMipmaps: false, flipY: true });
 
-      // gutter deco — frequency + hex id
+      // frequency tag beside the stage
       const dv = document.createElement('canvas');
       dv.width = 256; dv.height = 96;
       const dctx = dv.getContext('2d');
-      dctx.fillStyle = '#000';
-      dctx.fillRect(0, 0, dv.width, dv.height);
-      dctx.fillStyle = '#9fffc0';
-      dctx.font = '600 34px monospace';
-      dctx.fillText(freqOf(i), 8, 38);
-      dctx.fillStyle = '#5dcf85';
-      dctx.font = '500 22px monospace';
-      dctx.fillText('0x' + (0x4f2a + i * 0x11d).toString(16).toUpperCase(), 8, 76);
+      dctx.fillStyle = '#000'; dctx.fillRect(0, 0, dv.width, dv.height);
+      dctx.fillStyle = '#9fffc0'; dctx.font = '600 34px monospace';
+      dctx.fillText(spec.freq.toFixed(1), 8, 38);
+      dctx.fillStyle = '#5dcf85'; dctx.font = '500 22px monospace';
+      dctx.fillText('0x' + (0x4f2a + idx * 0x11d).toString(16).toUpperCase(), 8, 76);
       const decoTex = new Texture(gl, { image: dv, generateMipmaps: false, flipY: true });
 
       const tile = {
-        game, i,
-        tex, aspect: 16 / 10, loadedMix: 0, loadStarted: false,
-        capCanvas: cv, capCtx: cctx, capTex,
-        capAmount: -1, capLastDraw: 0,
-        decoTex,
-        depth: 1 + (hash01(i * 3 + 1) - 0.5) * 0.11,  // subtle parallax by row depth
-        jx: (hash01(i * 7 + 2) - 0.5), jy: (hash01(i * 5 + 3) - 0.5),
+        game: spec.game, idx, freq: spec.freq, pirate: !!spec.pirate,
+        tex, aspect: spec.pirate ? 512 / 320 : 16 / 10,
+        loadedMix: spec.pirate ? 1 : 0, loadStarted: !!spec.pirate,
+        capCanvas: cv, capCtx: cv.getContext('2d'), capTex,
+        capAmount: -1, capLastDraw: 0, decoTex,
       };
-      this._drawCaption(tile, 1); // start fully scrambled (no signal yet)
+      this._drawCaption(tile, 1); // start scrambled
       return tile;
-    });
+    };
+
+    this.tiles = GAMES.map((game, i) => make({ game, freq: stationFreq(i) }, i));
+    // pirate station: hidden in a gap, not in GAMES / INDEX
+    this.tiles.push(make({
+      game: { name: 'Pirate Signal', url: null, tag: 'SECRET' },
+      freq: PIRATE_FREQ, pirate: true,
+    }, this.tiles.length));
   }
 
   _drawCaption(tile, scramble) {
     const ctx = tile.capCtx;
     const W = tile.capCanvas.width, H = tile.capCanvas.height;
-    ctx.fillStyle = '#04180a';
-    ctx.fillRect(0, 0, W, H);
-    ctx.fillStyle = '#0a3d12';
-    ctx.fillRect(0, 0, W, 4);
-    let text = captionText(tile.i);
+    ctx.fillStyle = '#04180a'; ctx.fillRect(0, 0, W, H);
+    ctx.fillStyle = '#0a3d12'; ctx.fillRect(0, 0, W, 4);
+    let text = `${tile.game.name.toUpperCase()} · ${tile.game.tag}`;
     if (scramble > 0.02) {
       text = text.split('').map(ch =>
         (ch === ' ' || ch === '·' || Math.random() > scramble)
-          ? ch
-          : SCRAMBLE_POOL[(Math.random() * SCRAMBLE_POOL.length) | 0]
+          ? ch : SCRAMBLE_POOL[(Math.random() * SCRAMBLE_POOL.length) | 0]
       ).join('');
     }
     ctx.font = '600 40px ui-monospace, Menlo, Consolas, monospace';
     ctx.textBaseline = 'middle';
+    ctx.textAlign = 'left';
     ctx.fillStyle = scramble > 0.5 ? '#3fae62' : '#7dffa4';
     ctx.fillText(text, 26, H / 2 + 4);
     ctx.textAlign = 'right';
     ctx.fillStyle = '#3fae62';
-    ctx.fillText(freqOf(tile.i), W - 26, H / 2 + 4);
+    ctx.fillText(tile.freq.toFixed(1), W - 26, H / 2 + 4);
     ctx.textAlign = 'left';
     tile.capTex.needsUpdate = true;
   }
 
-  // Called by tune.js — drives caption glitch-resolve. amount: 1 scrambled → 0 clean
-  setCaptionScramble(i, amount) {
-    const tile = this.tiles[i];
+  // amount: 1 scrambled → 0 clean
+  setCaptionScramble(idx, amount) {
+    const tile = this.tiles[idx];
+    if (!tile) return;
     const now = performance.now();
     const settled = amount < 0.02 ? 0 : amount > 0.98 ? 1 : amount;
     if (settled === 0 || settled === 1) {
       if (tile.capAmount === settled) return;
-      tile.capAmount = settled;
-      this._drawCaption(tile, settled);
-      return;
+      tile.capAmount = settled; this._drawCaption(tile, settled); return;
     }
     if (now - tile.capLastDraw < 70) return;
-    tile.capLastDraw = now;
-    tile.capAmount = settled;
-    this._drawCaption(tile, settled);
+    tile.capLastDraw = now; tile.capAmount = settled; this._drawCaption(tile, settled);
   }
 
-  // ---- layout / virtualization -------------------------------------------
+  // ---- layout -------------------------------------------------------------
 
   resize() {
     const { w, h } = this.state;
-    const vmin = Math.min(w, h);
-    const TW = Math.max(190, Math.min(520, vmin * 0.38));
-    const TH = TW * 0.62;
-    const capH = Math.max(22, TW * 0.075);
-    const G = TW * 0.95;                       // wide gutters — space to tune one tile at a time
-    const cellW = TW + G;
-    const cellH = TH + capH + G;
+    const stageW = Math.max(240, Math.min(560, w * 0.40));
+    const stageH = stageW * 0.62;
+    const capH = Math.max(20, stageW * 0.07);
+    const gap = stageW * 0.85;                  // static air between stations
+    const pxPerMhz = (stageW + gap) / 1.3;      // 1.3 MHz channel spacing
     this.m = {
-      TW, TH, capH, G, cellW, cellH,
-      cols: 7, rows: 2,
-      periodX: cellW * 7,
-      periodY: cellH * 2,
-      shiftX: cellW * 2.5,                     // de-correlates vertical wrap
+      stageW, stageH, capH, gap, pxPerMhz,
+      centerX: w / 2, centerY: h / 2,
+      loLock: 0.03, hiLock: 0.20,               // |df| MHz → signal falloff (tight = static between)
     };
-    this.tiles.forEach(t => {
-      const col = t.i % 7, row = (t.i / 7) | 0;
-      t.baseX = col * cellW + row * cellW * 0.5 + t.jx * G * 0.5;
-      t.baseY = row * cellH + t.jy * G * 0.35;
-    });
-    this.bgUniforms.uSpacing.value = [cellW / 2, cellH / 2];
-    this.bgUniforms.uPeriodY.value = this.m.periodY;
+    this.bgUniforms.uSpacing.value = [(stageW + gap) / 2, (stageH + capH + gap) / 2];
+    this.bgUniforms.uPeriodY.value = (stageH + capH) * 2;
   }
 
+  freqToX(freq) { return this.m.centerX + (freq - this.state.freq) * this.m.pxPerMhz; }
+
+  nearestStation(freq) {
+    let best = null, bd = 1e9;
+    for (const t of this.tiles) {
+      if (t.pirate) continue;                   // magnet ignores the hidden one
+      const d = Math.abs(t.freq - freq);
+      if (d < bd) { bd = d; best = t; }
+    }
+    return best;
+  }
+
+  clampFreq(f) { return clamp(f, FREQ_MIN - 0.45, FREQ_MAX + 0.45); }
+
+  // ---- tuning physics (assisted analog) -----------------------------------
+
+  physics(dt) {
+    const s = this.state;
+    if (s.dragging || s.seeking || s.launching) return;
+    s.freq = this.clampFreq(s.freq + this.vel * dt);     // inertia glide
+    this.vel *= Math.exp(-this.FRICTION * dt);           // friction
+    // soft detent: only pull when you've coasted close to a station AND are slow.
+    // Outside the detent zone you rest wherever you stop — in the static.
+    const near = this.nearestStation(s.freq);
+    if (near) {
+      const df = near.freq - s.freq;
+      if (Math.abs(df) < this.DETENT && Math.abs(this.vel) < 1.0) {
+        this.vel += df * this.MAGNET * dt;               // ease the last bit in
+        if (Math.abs(df) < 0.004 && Math.abs(this.vel) < 0.03) { s.freq = near.freq; this.vel = 0; }
+      }
+    }
+  }
+
+  // animate to the previous/next real station
+  seek(dir) {
+    const s = this.state;
+    if (s.launching) return;
+    const eps = 0.04;
+    let target = null;
+    for (const t of this.tiles) {
+      if (t.pirate) continue;
+      if (dir > 0 && t.freq > s.freq + eps) { if (!target || t.freq < target.freq) target = t; }
+      if (dir < 0 && t.freq < s.freq - eps) { if (!target || t.freq > target.freq) target = t; }
+    }
+    if (!target) return;
+    s.seeking = true; this.vel = 0;
+    gsap.killTweensOf(s);
+    gsap.to(s, {
+      freq: target.freq, duration: 0.55, ease: 'power2.inOut',
+      onUpdate: () => { s.freq = this.clampFreq(s.freq); },
+      onComplete: () => { s.seeking = false; this.vel = 0; this.callbacks.onLock && this.callbacks.onLock(target.idx); },
+    });
+    this.callbacks.onSeek && this.callbacks.onSeek(dir);
+  }
+
+  // ---- per-frame layout ---------------------------------------------------
+
   update() {
-    const { w, h, cam, zoom, zoomCenter } = this.state;
-    const m = this.m;
+    const s = this.state, m = this.m;
+    // drive bg scroll + drag-velocity tracking from the dial position
+    s.cam.x = (s.freq - FREQ_MIN) * m.pxPerMhz;
+    s.cam.y = 0;
+
     const out = this.instances;
     out.length = 0;
-    const padX = m.TW, padY = m.TH + m.capH;
+    const cull = s.w / 2 + m.stageW;
 
     for (const t of this.tiles) {
-      const camX = cam.x * t.depth, camY = cam.y * t.depth;
-      const j0 = Math.floor((camY - padY - t.baseY) / m.periodY);
-      const j1 = Math.floor((camY + h + padY - t.baseY) / m.periodY);
-      for (let j = j0; j <= j1; j++) {
-        const sy = t.baseY + j * m.periodY - camY;
-        if (sy + m.TH + m.capH < -padY || sy > h + padY) continue;
-        const bx = t.baseX + j * m.shiftX;
-        const k0 = Math.floor((camX - padX - bx) / m.periodX);
-        const k1 = Math.floor((camX + w + padX - bx) / m.periodX);
-        for (let k = k0; k <= k1; k++) {
-          let sx = bx + k * m.periodX - camX;
-          let isy = sy, tw = m.TW, th = m.TH, ch = m.capH;
-          if (zoom !== 1) {
-            sx = (sx - zoomCenter.x) * zoom + zoomCenter.x;
-            isy = (isy - zoomCenter.y) * zoom + zoomCenter.y;
-            tw *= zoom; th *= zoom; ch *= zoom;
-          }
-          out.push({
-            ti: t.i, key: t.i + '_' + j + '_' + k,
-            x: sx, y: isy, w: tw, h: th, capH: ch,
-            cx: sx + tw / 2, cy: isy + th / 2,
-            signal: 0,
-          });
-        }
+      const dx = (t.freq - s.freq) * m.pxPerMhz;
+      if (Math.abs(dx) > cull) continue;
+      const df = Math.abs(t.freq - s.freq);
+      const signal = 1 - smoothstep(m.loLock, m.hiLock, df);
+
+      let cx = m.centerX + dx, cy = m.centerY;
+      let tw = m.stageW, th = m.stageH, ch = m.capH;
+      if (s.zoom !== 1) {
+        cx = (cx - s.zoomCenter.x) * s.zoom + s.zoomCenter.x;
+        cy = (cy - s.zoomCenter.y) * s.zoom + s.zoomCenter.y;
+        tw *= s.zoom; th *= s.zoom; ch *= s.zoom;
       }
+      out.push({
+        ti: t.idx, key: t.idx,
+        x: cx - tw / 2, y: cy - th / 2, w: tw, h: th, capH: ch,
+        cx, cy, signal,
+      });
     }
   }
 
@@ -462,14 +508,13 @@ export class Wall {
     b.uZoomC.value = [state.zoomCenter.x, state.zoomCenter.y];
     renderer.render({ scene: this.bgMesh, target, clear: true, frustumCull: false, sort: false });
 
-    // tiles + captions (opaque — alpha channel carries the tune mask)
+    // tiles + captions
     u.uRes.value = res;
     u.uTime.value = state.time;
     u.uAscii.value = state.ascii;
     for (const inst of this.instances) {
       const tile = this.tiles[inst.ti];
-      const qa = inst.w / inst.h;
-      const ia = tile.aspect;
+      const qa = inst.w / inst.h, ia = tile.aspect;
       u.uTex.value = tile.tex;
       u.uGlyphs.value = this.glyphTex;
       u.uCover.value = ia > qa ? [qa / ia, 1] : [1, ia / qa];
@@ -481,7 +526,7 @@ export class Wall {
       u.uSize.value = [inst.w, inst.h];
       renderer.render({ scene: this.tileMesh, target, clear: false, frustumCull: false, sort: false });
 
-      // caption strip — never tunes (uMask 0), always phosphor
+      // caption strip below the stage — phosphored by post.js
       u.uTex.value = tile.capTex;
       u.uCover.value = [1, 1];
       u.uLoaded.value = 1;
@@ -491,17 +536,16 @@ export class Wall {
       renderer.render({ scene: this.tileMesh, target, clear: false, frustumCull: false, sort: false });
     }
 
-    // gutter deco (additive; alpha writes off so the tune mask stays clean)
+    // frequency tag (additive; alpha off so the tune mask stays clean)
     gl.colorMask(true, true, true, false);
     const d = this.decoUniforms;
     d.uRes.value = res;
     for (const inst of this.instances) {
       const tile = this.tiles[inst.ti];
-      const dw = Math.max(70, inst.w * 0.26);
-      const dh = dw * 0.375;
+      const dw = Math.max(70, inst.w * 0.26), dh = dw * 0.375;
       d.uTex.value = tile.decoTex;
-      d.uAlpha.value = 0.55;
-      d.uPos.value = [inst.x + inst.w + dw * 0.62, inst.y + dh * 0.4];
+      d.uAlpha.value = 0.5 + 0.5 * inst.signal;
+      d.uPos.value = [inst.x + dw * 0.5 + 6, inst.y - dh * 0.3];
       d.uSize.value = [dw, dh];
       this.renderer.render({ scene: this.decoMesh, target, clear: false, frustumCull: false, sort: false });
     }
@@ -530,90 +574,46 @@ export class Wall {
         return;
       }
     };
-    for (let c = 0; c < 4; c++) next(); // 4 parallel lanes
+    for (let c = 0; c < 4; c++) next();
   }
 
-  // ---- input ---------------------------------------------------------------
+  // ---- input (custom 1D drag: manual tune) --------------------------------
 
   _setupDrag() {
-    const state = this.state;
-    const wall = this;
-    const proxy = document.createElement('div');
-    proxy.style.cssText = 'position:absolute;width:1px;height:1px;left:0;top:0;visibility:hidden';
-    document.body.appendChild(proxy);
+    const el = document.getElementById('stage');
+    const s = this.state;
+    let active = false, startX = 0, startFreq = 0, lastX = 0, lastT = 0, moved = 0, pid = null;
 
-    let pressCam = { x: 0, y: 0 }, pressX = 0, pressY = 0;
-    const apply = function () {
-      state.cam.x = pressCam.x - (this.x - pressX);
-      state.cam.y = pressCam.y - (this.y - pressY);
+    const down = (e) => {
+      if (this._dragDisabled || s.launching) return;
+      active = true; s.dragging = true; this.vel = 0; moved = 0; pid = e.pointerId;
+      startX = e.clientX; startFreq = s.freq; lastX = e.clientX; lastT = performance.now();
+      gsap.killTweensOf(s);
+      this.callbacks.onPress && this.callbacks.onPress();
+      try { el.setPointerCapture(e.pointerId); } catch (err) {}
+    };
+    const move = (e) => {
+      if (!active || e.pointerId !== pid) return;
+      const x = e.clientX;
+      moved += Math.abs(x - lastX);
+      const now = performance.now();
+      const dt = Math.max(0.001, (now - lastT) / 1000);
+      const prev = s.freq;
+      s.freq = this.clampFreq(startFreq - (x - startX) / this.m.pxPerMhz);
+      this.vel = this.vel * 0.55 + ((s.freq - prev) / dt) * 0.45;   // smoothed MHz/s
+      lastX = x; lastT = now;
+    };
+    const up = (e) => {
+      if (!active || e.pointerId !== pid) return;
+      active = false; s.dragging = false; pid = null;
+      if (moved < 6) this.callbacks.onTap && this.callbacks.onTap(e);   // treat as click
     };
 
-    this.draggable = Draggable.create(proxy, {
-      type: 'x,y',
-      trigger: '#stage',
-      inertia: true,
-      throwResistance: 1800,
-      maxDuration: 1.6,
-      onPress() {
-        gsap.killTweensOf(state.cam);
-        pressCam = { x: state.cam.x, y: state.cam.y };
-        pressX = this.x; pressY = this.y;
-        state.dragging = true;
-        wall.callbacks.onPress && wall.callbacks.onPress();
-      },
-      onDrag: apply,
-      onThrowUpdate: apply,
-      onRelease() { state.dragging = false; },
-      onClick(e) { wall.callbacks.onTap && wall.callbacks.onTap(e); },
-    })[0];
+    el.addEventListener('pointerdown', down);
+    addEventListener('pointermove', move, { passive: true });
+    addEventListener('pointerup', up);
+    addEventListener('pointercancel', up);
   }
 
-  hitTest(x, y) {
-    // last-drawn wins (top-most), though tiles never overlap in practice
-    for (let i = this.instances.length - 1; i >= 0; i--) {
-      const t = this.instances[i];
-      if (x >= t.x && x <= t.x + t.w && y >= t.y && y <= t.y + t.h + t.capH) return t;
-    }
-    return null;
-  }
-
-  // Glide the wall so the given instance lands at screen center
-  glideToInstance(inst, dur = 0.8, onDone) {
-    const { w, h, cam } = this.state;
-    const depth = this.tiles[inst.ti].depth;
-    const dx = (w / 2 - inst.cx), dy = (h / 2 - inst.cy);
-    gsap.to(cam, {
-      x: cam.x - dx / depth,
-      y: cam.y - dy / depth,
-      duration: dur,
-      ease: 'power3.out',
-      overwrite: 'auto',
-      onComplete: onDone,
-    });
-  }
-
-  // Nearest wrapped copy of a tile (even off-screen) — for the 'pug' egg
-  nearestInstanceOf(ti) {
-    const t = this.tiles[ti];
-    const { w, h, cam } = this.state;
-    const m = this.m;
-    const camX = cam.x * t.depth, camY = cam.y * t.depth;
-    const targetY = camY + h / 2 - (m.TH + m.capH) / 2;
-    const j = Math.round((targetY - t.baseY) / m.periodY);
-    const bx = t.baseX + j * m.shiftX;
-    const targetX = camX + w / 2 - m.TW / 2;
-    const k = Math.round((targetX - bx) / m.periodX);
-    const sx = bx + k * m.periodX - camX;
-    const sy = t.baseY + j * m.periodY - camY;
-    return {
-      ti, key: ti + '_' + j + '_' + k,
-      x: sx, y: sy, w: m.TW, h: m.TH, capH: m.capH,
-      cx: sx + m.TW / 2, cy: sy + m.TH / 2, signal: 0,
-    };
-  }
-
-  setDragEnabled(on) {
-    if (!this.draggable) return;
-    on ? this.draggable.enable() : this.draggable.disable();
-  }
+  setDragEnabled(on) { this._dragDisabled = !on; }
 }

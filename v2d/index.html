@@ -98,7 +98,57 @@
     #hud h1{font-size:11px}
     #freq{font-size:13px}
   }
-  body.fallback #hud .bl,body.fallback #hud .br,body.fallback #teach{display:none}
+  /* ---------- DIAL (bottom receiver) ---------- */
+  #dial{
+    position:fixed;left:50%;bottom:0;transform:translateX(-50%);
+    width:min(680px,94vw);padding:14px 18px 18px;z-index:11;
+    pointer-events:none;
+    -webkit-user-select:none;user-select:none;
+  }
+  #dial *{pointer-events:auto}
+  #dialHead{display:flex;align-items:center;justify-content:center;gap:18px}
+  #readoutWrap{text-align:center;min-width:200px}
+  #dial #freq{
+    font-size:26px;letter-spacing:.12em;color:var(--ph3);font-variant-numeric:tabular-nums;
+    text-shadow:0 0 14px rgba(77,255,122,.45);line-height:1.05;
+  }
+  #station{
+    margin-top:3px;font-size:10px;letter-spacing:.28em;color:var(--dim);min-height:13px;
+    white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+  }
+  #station.locked{color:var(--ph3);text-shadow:0 0 10px rgba(77,255,122,.4)}
+  .seek{
+    background:transparent;border:1px solid var(--dim);color:var(--ph3);font-family:inherit;
+    font-size:14px;letter-spacing:.05em;padding:8px 12px;cursor:pointer;line-height:1;
+    transition:background .12s,border-color .12s;border-radius:3px;
+  }
+  .seek:hover,.seek:focus-visible{background:var(--ph1);border-color:var(--ph2);outline:none}
+  .seek:active{background:var(--ph2);color:#021}
+  #ruler{position:relative;height:34px;margin:10px 0 8px;overflow:hidden;
+    -webkit-mask-image:linear-gradient(90deg,transparent,#000 12%,#000 88%,transparent);
+            mask-image:linear-gradient(90deg,transparent,#000 12%,#000 88%,transparent);}
+  #rulerTrack{position:absolute;top:0;left:0;height:100%;will-change:transform}
+  #rulerTrack .tick{position:absolute;top:18px;width:1px;height:8px;background:rgba(46,122,69,.6)}
+  #rulerTrack .tick.major{top:12px;height:14px;background:rgba(77,255,122,.55)}
+  #rulerTrack .tick .lab{position:absolute;top:-13px;left:50%;transform:translateX(-50%);
+    font-size:8px;color:var(--dim);letter-spacing:.05em}
+  #rulerTrack .pip{position:absolute;top:4px;width:2px;height:26px;background:var(--ph2);
+    box-shadow:0 0 6px rgba(77,255,122,.5);border-radius:1px;transition:background .15s}
+  #rulerTrack .pip.hot{background:var(--ph3);box-shadow:0 0 12px rgba(77,255,122,.9)}
+  #needle{position:absolute;left:50%;top:0;width:2px;height:100%;transform:translateX(-50%);
+    background:var(--amber);box-shadow:0 0 10px rgba(255,177,61,.8)}
+  #needle::after{content:'';position:absolute;left:50%;top:-3px;transform:translateX(-50%);
+    border:5px solid transparent;border-top-color:var(--amber)}
+  #dialFoot{display:flex;align-items:center;justify-content:space-between;gap:14px;
+    font-size:10px;letter-spacing:.18em;color:var(--dim)}
+  #dialFoot #sig{color:var(--ph2);font-variant-numeric:tabular-nums;white-space:nowrap}
+  #dialFoot #teach{position:static;transform:none;opacity:.55;white-space:nowrap;
+    overflow:hidden;text-overflow:ellipsis;text-shadow:none;letter-spacing:.18em;font-size:10px;color:var(--dim)}
+  @media (max-width:560px){
+    #dial #freq{font-size:21px}
+    #dialFoot #teach{font-size:9px;letter-spacing:.1em}
+  }
+  body.fallback #dial,body.fallback #hud .tr,body.fallback #onair{display:none}
 </style>
 </head>
 <body>
@@ -108,21 +158,31 @@
 <div id="hud">
   <header class="corner tl">
     <h1>JOJKO'S GAMES</h1>
-    <div class="sub">14 TRANSMISSIONS · SIGNAL WALL</div>
+    <div class="sub">14 TRANSMISSIONS · ONE DIAL</div>
     <div id="presence" class="sub"></div>
   </header>
   <div class="corner tr">
     <button id="sndBtn" aria-label="Toggle sound">SND ON</button>
     <button id="indexBtn" aria-haspopup="true" aria-controls="indexOverlay">INDEX</button>
   </div>
-  <div class="corner bl">
-    <div id="freq">087.5 FM</div>
-    <div id="sig">SIG ▯▯▯▯▯</div>
+  <a class="corner br" id="onair" href="https://buymeacoffee.com/jojkos" target="_blank" rel="noopener">● ON AIR · BUY ME A COFFEE</a>
+
+  <!-- bottom receiver dial -->
+  <div id="dial">
+    <div id="dialHead">
+      <button id="seekPrev" class="seek" aria-label="Seek previous station">◂◂</button>
+      <div id="readoutWrap">
+        <div id="freq">088.1 FM</div>
+        <div id="station">· · ·</div>
+      </div>
+      <button id="seekNext" class="seek" aria-label="Seek next station">▸▸</button>
+    </div>
+    <div id="ruler"><div id="rulerTrack"></div><div id="needle"></div></div>
+    <div id="dialFoot">
+      <span id="sig">SIG ▯▯▯▯▯</span>
+      <span id="teach">DRAG TO TUNE · ◂◂ ▸▸ SEEK · TAP TO PLAY</span>
+    </div>
   </div>
-  <div class="corner br">
-    <a id="onair" href="https://buymeacoffee.com/jojkos" target="_blank" rel="noopener">● ON AIR · BUY ME A COFFEE</a>
-  </div>
-  <div id="teach">MOVE TO TUNE · CLICK TO PLAY</div>
 </div>
 
 <section id="indexOverlay" aria-label="All games index">
@@ -184,6 +244,8 @@
   }
 </script>
 
+<script src="../shared/games.js" defer></script>
+<script src="../shared/gamelist.js" defer></script>
 <script src="../shared/switcher.js" defer></script>
 </body>
 </html>

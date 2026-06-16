@@ -138,6 +138,39 @@ export class RadioAudio {
     thump.start(t + 0.78); thump.stop(t + 1.12);
   }
 
+  // soft confirmation blip when a station locks in
+  lock() {
+    if (!this.started || !this.enabled) return;
+    const ctx = this.ctx, t = ctx.currentTime;
+    const o = ctx.createOscillator();
+    o.type = 'sine';
+    o.frequency.setValueAtTime(880, t);
+    o.frequency.exponentialRampToValueAtTime(1320, t + 0.07);
+    const g = ctx.createGain();
+    g.gain.setValueAtTime(0.0001, t);
+    g.gain.exponentialRampToValueAtTime(0.05, t + 0.02);
+    g.gain.exponentialRampToValueAtTime(0.0001, t + 0.18);
+    o.connect(g).connect(this.master);
+    o.start(t); o.stop(t + 0.2);
+  }
+
+  // scanning sweep when auto-seeking between stations
+  seek(dir) {
+    if (!this.started || !this.enabled) return;
+    const ctx = this.ctx, t = ctx.currentTime;
+    const o = ctx.createOscillator();
+    o.type = 'triangle';
+    const a = dir > 0 ? 520 : 980, b = dir > 0 ? 980 : 520;
+    o.frequency.setValueAtTime(a, t);
+    o.frequency.exponentialRampToValueAtTime(b, t + 0.5);
+    const g = ctx.createGain();
+    g.gain.setValueAtTime(0.0001, t);
+    g.gain.exponentialRampToValueAtTime(0.025, t + 0.08);
+    g.gain.exponentialRampToValueAtTime(0.0001, t + 0.55);
+    o.connect(g).connect(this.master);
+    o.start(t); o.stop(t + 0.58);
+  }
+
   // intro tuning sweep (only audible if audio already running, e.g. skip+retry)
   sweepIn() {
     if (!this.started || !this.enabled) return;
