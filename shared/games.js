@@ -24,11 +24,13 @@ var DEF = [
   { name:"Neon Drifter",         short:"DRIFT",  tag:"RACE",    url:"neonDrifter/index.html",                   img:"screenshots/neon-drifter.png" },
   { name:"Guitar Tuner",         short:"TUNER",  tag:"TOOL",    url:"guitarTuner/index.html",                   img:"screenshots/guitar-tuner.png" },
   { name:"OK Corral",            short:"CORRAL", tag:"SHOOTER", url:"https://okcorral.onrender.com/",           img:"screenshots/ok-corral.png" },
+  { name:"partyficRIM",          short:"PARTY",  tag:"PARTY",   url:"https://partyficrim.onrender.com/",        img:"screenshots/partyficrim.png" },
 ];
 
 window.TAG_COLORS = {
   ARCADE:'#ff9a3c', PUZZLE:'#9b5cff', TOOL:'#2fd6e0', ACTION:'#ff4757',
-  SHOOTER:'#ffd23f', PVP:'#ff3df0', CLICKER:'#3dff7a', RNG:'#ff7ab8', RACE:'#3d7bff'
+  SHOOTER:'#ffd23f', PVP:'#ff3df0', CLICKER:'#3dff7a', RNG:'#ff7ab8', RACE:'#3d7bff',
+  PARTY:'#ff6b4a'
 };
 window.GAMES = DEF.map(function(g){
   return { name:g.name, short:g.short, tag:g.tag, url:abs(g.url), img:abs(g.img) };
