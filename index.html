@@ -13,17 +13,16 @@
 <body>
 <p>loading…</p>
 <script>
-// Root entry / front door.
+// Root entry: send the visitor straight into a landing-page variant.
 //  · ?v=v2e overrides and saves, then enters that variant.
 //  · a saved "home" variant (set via the gallery or the in-page VER switcher)
-//    is honored — returning visitors go straight in.
-//  · a first-ever visitor with no home is sent to the version gallery, so the
-//    seven different landing pages are visible up front (shown once).
-//  · after that, with still no home set, the default variant loads.
+//    is honored.
+//  · otherwise the default variant loads immediately — no gallery gate.
+// The version gallery (/v2) and the in-page VER chip remain the ways to explore
+// and switch; this just doesn't force a choice on the way in.
 (function(){
   var VALID = ['v1','v2a','v2b','v2c','v2d','v2e','v2f','v2g'];
   var DEFAULT = 'v2e';
-  var GALLERY = 'v2/index.html';
   function get(k){ try { return localStorage.getItem(k); } catch (e){ return null; } }
   function set(k, val){ try { localStorage.setItem(k, val); } catch (e){} }
 
@@ -33,8 +32,6 @@
 
   var saved = get('jojkos_variant');
   if (saved && VALID.indexOf(saved) !== -1) return location.replace(saved + '/index.html');
-
-  if (!get('jojkos_visited')){ set('jojkos_visited', '1'); return location.replace(GALLERY); }
 
   location.replace(DEFAULT + '/index.html');
 })();
