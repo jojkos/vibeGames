@@ -10,6 +10,7 @@ var ROOT = src.slice(0, src.lastIndexOf('shared/games.js'));
 function abs(p){ return /^https?:/i.test(p) ? p : ROOT + p; }
 
 var DEF = [
+  { name:"Samurai Sword",        short:"KATANA", tag:"CARDS",   url:"https://samurai-sword-omega.vercel.app/",  img:"screenshots/samurai-sword.png" },
   { name:"Zoopaloola",           short:"ZOOPA",  tag:"ARCADE",  url:"https://zoopaloola.vercel.app/",           img:"screenshots/zoopaloola.png" },
   { name:"Factorio Lamp Editor", short:"LAMPS",  tag:"TOOL",    url:"https://factorio-lamp-editor.vercel.app/", img:"screenshots/factorio-lamp.png" },
   { name:"LoL Fusion loldle",    short:"LOLDLE", tag:"PUZZLE",  url:"https://lol-fusion.vercel.app/",           img:"screenshots/lol-fusion.png" },
@@ -30,7 +31,7 @@ var DEF = [
 window.TAG_COLORS = {
   ARCADE:'#ff9a3c', PUZZLE:'#9b5cff', TOOL:'#2fd6e0', ACTION:'#ff4757',
   SHOOTER:'#ffd23f', PVP:'#ff3df0', CLICKER:'#3dff7a', RNG:'#ff7ab8', RACE:'#3d7bff',
-  PARTY:'#ff6b4a'
+  PARTY:'#ff6b4a', CARDS:'#c3282f'
 };
 window.GAMES = DEF.map(function(g){
   return { name:g.name, short:g.short, tag:g.tag, url:abs(g.url), img:abs(g.img) };
