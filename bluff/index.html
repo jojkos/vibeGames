@@ -1,465 +1,132 @@
 <!DOCTYPE html>
 <html lang="cs">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Bluff Helper v4</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-    <style>
-        body {
-            font-family: 'Inter', sans-serif;
-        }
-        .dice-btn-star, .dice-icon-star {
-            color: #f59e0b; /* amber-500 */
-        }
-        .bid-value-btn.selected {
-            background-color: #0ea5e9; /* sky-500 */
-            color: white;
-            border-color: #0284c7; /* sky-600 */
-        }
-        .bid-value-btn.selected svg {
-             color: white;
-        }
-    </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="theme-color" content="#17130e">
+<title>BLUFF — pomocník</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="styles.css">
 </head>
-<body class="bg-slate-100 text-slate-800 flex items-center justify-center min-h-screen p-4">
+<body>
 
-    <div class="w-full max-w-2xl mx-auto">
-        
-        <!-- Setup Screen -->
-        <div id="setup-screen" class="bg-white p-8 rounded-xl shadow-lg">
-            <h1 class="text-3xl font-bold text-center text-slate-900 mb-2">Bluff Helper</h1>
-            <p class="text-center text-slate-600 mb-8">Nástroj pro statistickou podporu při hře Bluff.</p>
-            <div class="space-y-6">
-                <div>
-                    <label for="player-count" class="block text-sm font-medium text-slate-700 mb-2">Počet hráčů (2-6):</label>
-                    <input type="number" id="player-count" name="player-count" min="2" max="6" value="4" class="w-full p-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-sky-500 focus:border-sky-500 transition">
-                </div>
-                 <div>
-                    <label for="dice-per-player" class="block text-sm font-medium text-slate-700 mb-2">Počet kostek na hráče:</label>
-                    <input type="number" id="dice-per-player" name="dice-per-player" min="1" max="10" value="5" class="w-full p-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-sky-500 focus:border-sky-500 transition">
-                </div>
-                <button id="start-game-btn" class="w-full bg-sky-600 text-white font-bold py-3 px-4 rounded-lg hover:bg-sky-700 active:bg-sky-800 transition-colors shadow-md">
-                    Zahájit hru
-                </button>
-            </div>
-        </div>
+<div class="glow"></div>
 
-        <!-- Game Screen -->
-        <div id="game-screen" class="hidden">
-            <div class="bg-white p-6 md:p-8 rounded-xl shadow-lg mb-6">
-                <div class="flex justify-between items-center mb-6">
-                     <h2 class="text-2xl font-bold text-slate-900">Stav hry</h2>
-                     <button id="reset-game-btn" class="text-sm bg-slate-200 text-slate-700 font-semibold py-2 px-4 rounded-lg hover:bg-slate-300 transition-colors">Nová hra</button>
-                </div>
-               
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <div>
-                        <h3 class="font-semibold text-lg mb-3 text-slate-800">Kostky hráčů</h3>
-                        <div id="players-container" class="space-y-3"></div>
-                    </div>
-                    <div class="bg-slate-50 border border-slate-200 rounded-lg p-4">
-                        <h3 class="font-semibold text-lg mb-3 text-slate-800">Celkem ve hře</h3>
-                        <div class="flex items-center justify-center bg-sky-100 text-sky-800 rounded-lg p-4">
-                            <span id="total-dice-display" class="text-4xl font-bold">20</span>
-                            <span class="ml-3 text-lg font-medium">kostek</span>
-                        </div>
-                    </div>
-                </div>
-            </div>
+<!-- ─────────────── SETUP ─────────────── -->
+<section id="setup" class="screen">
+  <header class="brand">
+    <h1 class="logo">BLUFF</h1>
+    <p class="tagline">Počítá to, co se u stolu spočítat nedá.</p>
+  </header>
 
-            <div class="bg-white p-6 md:p-8 rounded-xl shadow-lg">
-                <h2 class="text-2xl font-bold text-slate-900 mb-6">Analýza tahu</h2>
-                
-                <!-- Step 1: My Dice -->
-                <div>
-                    <h3 class="font-semibold text-lg mb-2 text-slate-800">1. Zadej své kostky</h3>
-                    <div class="flex items-center justify-between bg-slate-50 p-3 rounded-lg border border-slate-200">
-                        <div id="my-dice-display" class="flex-grow h-12 flex items-center space-x-2 text-2xl"></div>
-                        <button id="clear-my-dice-btn" class="text-sm bg-slate-200 text-slate-700 font-semibold py-2 px-3 rounded-lg hover:bg-slate-300 transition-colors">Vyčistit</button>
-                    </div>
-                    <div class="grid grid-cols-6 gap-2 mt-3">
-                        <button data-value="1" class="dice-btn text-2xl font-bold p-3 bg-white border-2 border-slate-300 rounded-lg hover:bg-slate-100 active:bg-slate-200 transition">1</button>
-                        <button data-value="2" class="dice-btn text-2xl font-bold p-3 bg-white border-2 border-slate-300 rounded-lg hover:bg-slate-100 active:bg-slate-200 transition">2</button>
-                        <button data-value="3" class="dice-btn text-2xl font-bold p-3 bg-white border-2 border-slate-300 rounded-lg hover:bg-slate-100 active:bg-slate-200 transition">3</button>
-                        <button data-value="4" class="dice-btn text-2xl font-bold p-3 bg-white border-2 border-slate-300 rounded-lg hover:bg-slate-100 active:bg-slate-200 transition">4</button>
-                        <button data-value="5" class="dice-btn text-2xl font-bold p-3 bg-white border-2 border-slate-300 rounded-lg hover:bg-slate-100 active:bg-slate-200 transition">5</button>
-                        <button data-value="6" class="dice-btn dice-btn-star p-3 bg-white border-2 border-slate-300 rounded-lg hover:bg-slate-100 active:bg-slate-200 transition">
-                            <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 mx-auto" fill="currentColor" viewBox="0 0 24 24"><path d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z"/></svg>
-                        </button>
-                    </div>
-                </div>
-
-                <!-- Step 2: Opponent's Bid -->
-                 <div class="mt-6">
-                    <h3 class="font-semibold text-lg mb-3 text-slate-800">2. Zadej sázku soupeře (nepovinné)</h3>
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4 items-start">
-                        <div>
-                            <label for="bid-quantity-input" class="block text-sm font-medium text-slate-700 mb-1">Počet kostek</label>
-                            <input type="number" id="bid-quantity-input" min="1" placeholder="např. 4" class="w-full p-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-sky-500">
-                        </div>
-                         <div>
-                            <label class="block text-sm font-medium text-slate-700 mb-1">Hodnota</label>
-                            <div class="grid grid-cols-6 gap-1">
-                                <button data-value="1" class="bid-value-btn text-xl font-bold p-2 bg-white border-2 border-slate-300 rounded-lg hover:bg-slate-100 transition">1</button>
-                                <button data-value="2" class="bid-value-btn text-xl font-bold p-2 bg-white border-2 border-slate-300 rounded-lg hover:bg-slate-100 transition">2</button>
-                                <button data-value="3" class="bid-value-btn text-xl font-bold p-2 bg-white border-2 border-slate-300 rounded-lg hover:bg-slate-100 transition">3</button>
-                                <button data-value="4" class="bid-value-btn text-xl font-bold p-2 bg-white border-2 border-slate-300 rounded-lg hover:bg-slate-100 transition">4</button>
-                                <button data-value="5" class="bid-value-btn text-xl font-bold p-2 bg-white border-2 border-slate-300 rounded-lg hover:bg-slate-100 transition">5</button>
-                                <button data-value="6" class="bid-value-btn dice-btn-star p-2 bg-white border-2 border-slate-300 rounded-lg hover:bg-slate-100 transition">
-                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mx-auto" fill="currentColor" viewBox="0 0 24 24"><path d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z"/></svg>
-                                </button>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Step 3: Calculate -->
-                <div class="mt-8">
-                     <h3 class="font-semibold text-lg mb-2 text-slate-800">3. Zobraz statistiku</h3>
-                    <button id="calculate-btn" class="w-full bg-emerald-600 text-white font-bold py-3 px-4 rounded-lg hover:bg-emerald-700 active:bg-emerald-800 transition-colors shadow-md">
-                        Vypočítat doporučení
-                    </button>
-                </div>
-
-                <!-- Results Section -->
-                <div id="analysis-results" class="hidden mt-8 space-y-6">
-                    <div id="verify-result-display" class="text-center p-4 rounded-lg text-lg font-bold hidden"></div>
-                    <div>
-                        <h3 class="font-semibold text-lg mb-4 text-slate-800">Doporučené další tahy</h3>
-                        <div id="suggestions-container" class="space-y-2">
-                            <!-- Suggestions will be rendered here -->
-                        </div>
-                        <button id="toggle-suggestions-btn" class="hidden mt-4 w-full text-sm bg-slate-200 text-slate-700 font-semibold py-2 px-4 rounded-lg hover:bg-slate-300 transition-colors">
-                            Zobrazit více možností
-                        </button>
-                    </div>
-                </div>
-            </div>
-        </div>
+  <div class="card">
+    <div class="field">
+      <label>Kolik vás hraje</label>
+      <div class="stepper" id="setup-players"></div>
     </div>
 
-    <script>
-    document.addEventListener('DOMContentLoaded', () => {
-        // --- DOM Elements ---
-        const setupScreen = document.getElementById('setup-screen');
-        const gameScreen = document.getElementById('game-screen');
-        const playerCountInput = document.getElementById('player-count');
-        const dicePerPlayerInput = document.getElementById('dice-per-player');
-        const startGameBtn = document.getElementById('start-game-btn');
-        const resetGameBtn = document.getElementById('reset-game-btn');
-        const playersContainer = document.getElementById('players-container');
-        const totalDiceDisplay = document.getElementById('total-dice-display');
-        const myDiceDisplay = document.getElementById('my-dice-display');
-        const clearMyDiceBtn = document.getElementById('clear-my-dice-btn');
-        const diceBtns = document.querySelectorAll('.dice-btn');
-        const calculateBtn = document.getElementById('calculate-btn');
-        const analysisResults = document.getElementById('analysis-results');
-        const bidQuantityInput = document.getElementById('bid-quantity-input');
-        const bidValueBtns = document.querySelectorAll('.bid-value-btn');
-        const verifyResultDisplay = document.getElementById('verify-result-display');
-        const suggestionsContainer = document.getElementById('suggestions-container');
-        const toggleSuggestionsBtn = document.getElementById('toggle-suggestions-btn');
+    <div class="field">
+      <label>Kostek na hráče</label>
+      <div class="stepper" id="setup-dice"></div>
+    </div>
 
-        // --- Game State ---
-        let players = [];
-        let myDice = [];
-        let selectedBidValue = null;
-        let isShowingAllSuggestions = false;
-        let lastAnalysisResults = { allBids: [], startingBid: null };
-        
-        // --- Event Listeners ---
-        startGameBtn.addEventListener('click', startGame);
-        resetGameBtn.addEventListener('click', resetGame);
-        
-        playersContainer.addEventListener('click', (e) => {
-            const btn = e.target.closest('.decrease-dice-btn');
-            if (btn) {
-                const playerIndex = parseInt(btn.dataset.player, 10);
-                decreasePlayerDice(playerIndex);
-            }
-        });
+    <div class="field">
+      <label>Jména a kdo jsi ty</label>
+      <div id="setup-names" class="names"></div>
+      <p class="hint">Klepni na jméno a přepiš ho. Kolečkem vlevo označ sebe.</p>
+    </div>
 
-        diceBtns.forEach(btn => btn.addEventListener('click', () => addMyDie(parseInt(btn.dataset.value, 10))));
-        clearMyDiceBtn.addEventListener('click', clearMyDice);
-        calculateBtn.addEventListener('click', analyzeTurn);
-        toggleSuggestionsBtn.addEventListener('click', () => {
-            isShowingAllSuggestions = !isShowingAllSuggestions;
-            renderSuggestions(); // Re-render with the new flag state
-        });
+    <button id="start-btn" class="btn btn-primary btn-lg">Začít hru</button>
+  </div>
 
-        bidValueBtns.forEach(btn => {
-            btn.addEventListener('click', () => {
-                selectedBidValue = parseInt(btn.dataset.value, 10);
-                bidValueBtns.forEach(b => b.classList.remove('selected'));
-                btn.classList.add('selected');
-            });
-        });
-        
-        // --- Functions ---
-        
-        function getDiceIcon(value, classes = 'h-6 w-6') {
-            if (value === 6) {
-                return `<svg xmlns="http://www.w3.org/2000/svg" class="${classes} dice-icon-star" fill="currentColor" viewBox="0 0 24 24"><path d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z"/></svg>`;
-            }
-            return `<span class="${classes}">${value}</span>`;
-        }
+  <details class="card card-quiet">
+    <summary>Jak to počítá</summary>
+    <div class="prose">
+      <p>Deska Bluffu je pás políček, po kterém se posouvá červená kostka. Políčko určuje <em>počet</em>, kostka <em>hodnotu</em>. Zvýšit jde otočením kostky na vyšší hodnotu, nebo posunem vpřed — dohromady <strong>109 sázek v jednom pořadí</strong>:</p>
+      <p class="mono">1×1 … 1×5 │ 2×1 … 2×5 │ 3×1 … 3×5 │ ★2 │ 4×1 … 4×5 │ 5×1 … 5×5 │ ★3 │ … │ ★10 │ 20×1 … 20×5</p>
+      <p>Z toho pořadí padá i pravidlo hvězd samo od sebe: z <span class="mono">3×5</span> je nejbližší hvězda <span class="mono">★2</span> (polovina) a z <span class="mono">★2</span> vede cesta zpátky na <span class="mono">4×1</span> (dvojnásobek).</p>
+      <p>U každé sázky se nepočítá jen „projde/neprojde“, ale <strong>celé rozdělení</strong> možných počtů. Protože v Bluffu ztrácíš tolik kostek, kolik je rozdíl mezi sázkou a skutečností, rozhoduje očekávaná ztráta — ne procento. A při přesné trefě ztrácí <strong>všichni kromě sázejícího</strong>, což je nejsilnější tah ve hře.</p>
+    </div>
+  </details>
+</section>
 
-        function resetGame() {
-            gameScreen.classList.add('hidden');
-            setupScreen.classList.remove('hidden');
-            players = [];
-            myDice = [];
-            clearMyDice();
-            analysisResults.classList.add('hidden');
-            verifyResultDisplay.classList.add('hidden');
-            selectedBidValue = null;
-            bidQuantityInput.value = '';
-            bidValueBtns.forEach(b => b.classList.remove('selected'));
-        }
+<!-- ─────────────── GAME ─────────────── -->
+<section id="game" class="screen hidden">
 
-        function startGame() {
-            const playerCount = parseInt(playerCountInput.value, 10);
-            const dicePerPlayer = parseInt(dicePerPlayerInput.value, 10);
-            if (playerCount < 2 || playerCount > 6 || dicePerPlayer < 1 || dicePerPlayer > 10) {
-                alert('Zadejte prosím platné hodnoty (2-6 hráčů, 1-10 kostek).');
-                return;
-            }
-            players = Array.from({ length: playerCount }, (_, i) => ({ id: i, dice: dicePerPlayer }));
-            setupScreen.classList.add('hidden');
-            gameScreen.classList.remove('hidden');
-            renderPlayers();
-            updateTotalDice();
-        }
-        
-        function renderPlayers() {
-            playersContainer.innerHTML = '';
-            players.forEach((player, index) => {
-                const playerDiv = document.createElement('div');
-                playerDiv.className = 'flex items-center justify-between bg-slate-50 p-3 rounded-lg border border-slate-200';
-                playerDiv.innerHTML = `
-                    <span class="font-medium text-slate-700">Hráč ${index + 1}</span>
-                    <div class="flex items-center space-x-3">
-                        <span class="font-bold text-lg text-slate-900">${player.dice}</span>
-                        <button data-player="${index}" class="decrease-dice-btn bg-red-500 text-white w-7 h-7 rounded-full font-bold text-lg flex items-center justify-center hover:bg-red-600 transition-colors" ${player.dice === 0 ? 'disabled' : ''}>-</button>
-                    </div>
-                `;
-                playersContainer.appendChild(playerDiv);
-            });
-        }
+  <header class="topbar">
+    <h1 class="logo logo-sm">BLUFF</h1>
+    <div class="topbar-actions">
+      <button id="undo-btn" class="btn btn-ghost" title="Zpět">↶</button>
+      <button id="menu-btn" class="btn btn-ghost" title="Menu">⋯</button>
+    </div>
+  </header>
 
-        function decreasePlayerDice(playerIndex) {
-            if (players[playerIndex].dice > 0) {
-                players[playerIndex].dice--;
-                renderPlayers();
-                updateTotalDice();
-                analysisResults.classList.add('hidden');
-            }
-        }
-        
-        function updateTotalDice() {
-            const total = players.reduce((sum, player) => sum + player.dice, 0);
-            totalDiceDisplay.textContent = total;
-        }
+  <div id="players" class="players"></div>
 
-        function addMyDie(value) {
-            const myPlayerDiceCount = players[0]?.dice || 0;
-            if (myDice.length >= myPlayerDiceCount) return;
-            myDice.push(value);
-            renderMyDice();
-        }
+  <!-- Roll phase: enter my dice -->
+  <div id="roll-panel" class="card">
+    <div class="card-head">
+      <h2>Tvoje kostky</h2>
+      <span id="roll-count" class="pill"></span>
+    </div>
+    <div id="my-dice" class="my-dice"></div>
+    <div id="dice-pad" class="dice-pad"></div>
+    <button id="roll-done" class="btn btn-primary btn-lg">Rozdáno — jdeme sázet</button>
+  </div>
 
-        function renderMyDice() {
-            myDiceDisplay.innerHTML = '';
-            myDice.forEach(value => {
-                const dieEl = document.createElement('span');
-                dieEl.className = 'flex items-center justify-center w-10 h-10 bg-white border-2 border-slate-300 rounded-lg font-bold text-xl';
-                dieEl.innerHTML = getDiceIcon(value, 'text-2xl');
-                myDiceDisplay.appendChild(dieEl);
-            });
-        }
+  <!-- Bidding phase -->
+  <div id="bid-panel" class="hidden">
+    <div class="card card-tight">
+      <div class="card-head">
+        <h2>Tvoje kostky</h2>
+        <div class="head-right">
+          <span id="mini-dice" class="mini-dice"></span>
+          <button id="edit-dice" class="btn btn-ghost btn-sm">Upravit</button>
+        </div>
+      </div>
+    </div>
 
-        function clearMyDice() {
-            myDice = [];
-            renderMyDice();
-            analysisResults.classList.add('hidden');
-        }
+    <div id="turn-banner" class="turn-banner"></div>
 
-        // --- Binomial Probability Functions ---
-        const combinationsCache = {};
-        function combinations(n, k) {
-            if (k < 0 || k > n) return 0;
-            if (k === 0 || k === n) return 1;
-            if (k > n / 2) k = n - k;
-            const key = `${n},${k}`;
-            if (combinationsCache[key]) return combinationsCache[key];
-            let res = 1;
-            for (let i = 1; i <= k; i++) {
-                res = res * (n - i + 1) / i;
-            }
-            combinationsCache[key] = Math.round(res);
-            return combinationsCache[key];
-        }
+    <div class="card card-tight">
+      <div class="card-head">
+        <h2>Deska</h2>
+        <div class="head-right">
+          <label class="switch">
+            <input type="checkbox" id="infer-toggle" checked>
+            <span class="switch-track"></span>
+            <span class="switch-label">Číst ze sázek</span>
+          </label>
+        </div>
+      </div>
+      <div class="legend">
+        <span class="legend-label">šance, že sázka projde</span>
+        <span class="legend-ramp" id="legend-ramp"></span>
+        <span class="legend-ends"><i>0 %</i><i>100 %</i></span>
+      </div>
+      <div id="grid-wrap" class="grid-wrap">
+        <div class="grid-head">
+          <span class="gh-q">poč.</span>
+          <span>1</span><span>2</span><span>3</span><span>4</span><span>5</span>
+        </div>
+        <div id="grid" class="grid"></div>
+      </div>
+    </div>
+  </div>
 
-        function binomialProbability(n, k, p) {
-            return combinations(n, k) * Math.pow(p, k) * Math.pow(1 - p, n - k);
-        }
+  <!-- Verdict (sticky) -->
+  <div id="verdict" class="verdict hidden"></div>
+</section>
 
-        function calculateCumulativeProb(bidQuantity, bidValue) {
-             if (myDice.length === 0) return -1;
-            const totalDice = parseInt(totalDiceDisplay.textContent, 10);
-            const otherDiceCount = totalDice - myDice.length;
-            const starValue = 6;
-            
-            let countInHand;
-            let probSingleDie;
+<!-- ─────────────── MODALS ─────────────── -->
+<div id="modal" class="modal hidden">
+  <div class="modal-card">
+    <div id="modal-body"></div>
+  </div>
+</div>
 
-            if (bidValue === starValue) {
-                countInHand = myDice.filter(d => d === starValue).length;
-                probSingleDie = 1/6;
-            } else {
-                countInHand = myDice.filter(d => d === bidValue || d === starValue).length;
-                probSingleDie = 2/6;
-            }
-
-            const neededFromOthers = bidQuantity - countInHand;
-            if (neededFromOthers <= 0) return 1;
-            if (neededFromOthers > otherDiceCount) return 0;
-
-            let cumulativeProb = 0;
-            for (let k = neededFromOthers; k <= otherDiceCount; k++) {
-                cumulativeProb += binomialProbability(otherDiceCount, k, probSingleDie);
-            }
-            return cumulativeProb;
-        }
-        
-        function analyzeTurn() {
-            if (myDice.length === 0) {
-                alert('Nejprve zadejte své kostky.');
-                return;
-            }
-            
-            isShowingAllSuggestions = false; // Reset view on new calculation
-            const opponentBidQuantity = parseInt(bidQuantityInput.value, 10);
-            const opponentBidValue = selectedBidValue;
-            const hasOpponentBid = !isNaN(opponentBidQuantity) && opponentBidValue && opponentBidQuantity > 0;
-
-            verifyResultDisplay.classList.add('hidden');
-            if (hasOpponentBid) {
-                const prob = calculateCumulativeProb(opponentBidQuantity, opponentBidValue);
-                renderVerifyResult(prob, opponentBidQuantity, opponentBidValue);
-            }
-            
-            const allBids = generateAllPossibleBids();
-            let startingBid = { quantity: 0, value: 0 };
-            if (hasOpponentBid) {
-                startingBid = { quantity: opponentBidQuantity, value: opponentBidValue };
-            }
-            
-            lastAnalysisResults = { allBids, startingBid };
-            renderSuggestions();
-
-            analysisResults.classList.remove('hidden');
-        }
-
-        function generateAllPossibleBids() {
-            const totalDice = parseInt(totalDiceDisplay.textContent, 10);
-            const bids = [];
-            for (let q = 1; q <= totalDice; q++) {
-                for (let v = 1; v <= 6; v++) {
-                    const probability = calculateCumulativeProb(q, v);
-                    bids.push({ quantity: q, value: v, probability });
-                }
-            }
-            return bids.sort((a, b) => b.probability - a.probability);
-        }
-
-        function renderSuggestions() {
-            const { allBids, startingBid } = lastAnalysisResults;
-            suggestionsContainer.innerHTML = '';
-            toggleSuggestionsBtn.classList.add('hidden');
-            
-            const startingRank = startingBid.quantity * 10 + (startingBid.value === 6 ? 7 : startingBid.value);
-
-            const higherBids = allBids.filter(bid => {
-                const bidRank = bid.quantity * 10 + (bid.value === 6 ? 7 : bid.value);
-                return bidRank > startingRank;
-            });
-
-            const strategicBids = higherBids.filter(bid => bid.probability < 0.85);
-            const safeBids = higherBids.filter(bid => bid.probability >= 0.85);
-
-            let suggestionsToShow;
-
-            if (isShowingAllSuggestions) {
-                suggestionsToShow = [...strategicBids, ...safeBids].slice(0, 20);
-                toggleSuggestionsBtn.textContent = 'Zobrazit méně strategické';
-            } else {
-                if (strategicBids.length > 0) {
-                    suggestionsToShow = strategicBids.slice(0, 7);
-                } else {
-                    suggestionsToShow = safeBids.slice(0, 7);
-                }
-                toggleSuggestionsBtn.textContent = 'Zobrazit více možností';
-            }
-
-            if (higherBids.length > suggestionsToShow.length) {
-                toggleSuggestionsBtn.classList.remove('hidden');
-            }
-
-            if (suggestionsToShow.length === 0) {
-                 suggestionsContainer.innerHTML = `<div class="text-center p-4 bg-slate-100 rounded-lg">Žádné vyšší sázky nejsou statisticky pravděpodobné.</div>`;
-                 return;
-            }
-
-            suggestionsToShow.forEach(bid => {
-                const percentage = (bid.probability * 100);
-                let bgColor = 'bg-slate-100';
-                if (percentage > 75) bgColor = 'bg-green-100';
-                else if (percentage < 30) bgColor = 'bg-red-100';
-
-                const row = document.createElement('div');
-                row.className = `flex items-center justify-between p-3 rounded-lg ${bgColor}`;
-                row.innerHTML = `
-                    <div class="flex items-center space-x-3">
-                        <span class="font-bold text-lg w-16">Sázka: ${bid.quantity}x</span>
-                        <span class="flex items-center justify-center w-8 h-8 text-xl font-bold border-2 border-slate-300 rounded-lg bg-white">
-                            ${getDiceIcon(bid.value, 'text-xl')}
-                        </span>
-                    </div>
-                    <div class="text-right">
-                        <div class="font-bold text-lg">${percentage.toFixed(1)}%</div>
-                        <div class="text-sm text-slate-600">šance</div>
-                    </div>
-                `;
-                suggestionsContainer.appendChild(row);
-            });
-        }
-
-        function renderVerifyResult(probability, quantity, value) {
-            verifyResultDisplay.classList.remove('hidden', 'bg-green-100', 'text-green-800', 'bg-red-100', 'text-red-800', 'bg-amber-100', 'text-amber-800');
-            const percentage = (probability * 100).toFixed(1);
-            let recommendation;
-            let classes;
-
-            if (probability > 0.65) {
-                recommendation = 'VĚŘIT';
-                classes = 'bg-green-100 text-green-800';
-            } else if (probability < 0.35) {
-                recommendation = 'NEVĚŘIT (BLUF)';
-                classes = 'bg-red-100 text-red-800';
-            } else {
-                recommendation = 'RIZIKOVÉ';
-                classes = 'bg-amber-100 text-amber-800';
-            }
-            
-            verifyResultDisplay.classList.add(...classes.split(' '));
-            verifyResultDisplay.innerHTML = `Soupeřova sázka (${quantity}x ${getDiceIcon(value, 'inline-block h-6 w-6 align-middle')}) &rarr; ${recommendation} <span class="block text-sm font-medium">(Šance ${percentage}%)</span>`;
-        }
-    });
-    </script>
+<script src="app.js"></script>
 </body>
 </html>
