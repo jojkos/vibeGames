@@ -687,7 +687,19 @@ function openMenu() {
 
 /* ── render ────────────────────────────────────────────────────────────────── */
 
+/** Verdikt je fixní dole — tělo musí mít přesně tolik místa, kolik zabírá. */
+function syncVerdictPad() {
+  const v = $('#verdict');
+  const h = v.classList.contains('hidden') ? 24 : v.offsetHeight + 18;
+  document.documentElement.style.setProperty('--pad-b', `${h}px`);
+}
+
 function render() {
+  renderInner();
+  syncVerdictPad();
+}
+
+function renderInner() {
   if (!S) {
     $('#setup').classList.remove('hidden');
     $('#game').classList.add('hidden');
@@ -739,6 +751,8 @@ $('#menu-btn').onclick = openMenu;
 $('#infer-toggle').onchange = e => { S.useInference = e.target.checked; save(); render(); };
 
 document.addEventListener('keydown', e => { if (e.key === 'Escape') closeModal(); });
+window.addEventListener('resize', syncVerdictPad);
+window.addEventListener('orientationchange', () => setTimeout(syncVerdictPad, 250));
 
 S = load();
 render();
