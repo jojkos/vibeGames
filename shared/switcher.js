@@ -17,6 +17,7 @@ window.VARIANTS = [
   { id:'v2c', name:'Matrix: Operator',         blurb:'Everything is rain. Working command line.' },
   { id:'v2d', name:'The Signal Degrades',      blurb:'Infinite draggable dithered phosphor wall.' },
   { id:'v2e', name:'Insert Coin Arcade',       blurb:'Walk a rainy pixel arcade. Insert coin.' },
+  { id:'v2e2', name:'Insert Coin Arcade II',   blurb:'The arcade, remastered: wet neon floor, brick walls, a lounge — and you.' },
   { id:'v2f', name:'Patch Notes from the Void',blurb:'Brutalist release-log zine with physics type.' },
   { id:'v2g', name:'Cartridge Bay',            blurb:'Keycaps spell the logo; scroll into a bay of playable cartridges.' },
   { id:'v2h', name:'Voxel Descent',            blurb:'Scroll-driven 3D: a voxel cloud re-forms into every game.' },

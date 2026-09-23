@@ -1,0 +1,327 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>JOJKOS GAMES — Insert Coin Arcade II</title>
+<meta name="description" content="A rainy-night pixel arcade, remastered. Walk between humming cabinets, insert a coin and play — Zoopaloola, Pug Fiesta, Combat Arena and more by jojkos.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=VT323&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --ink:#f1e9ff; --dim:#a697c9; --mute:#6c5f8e;
+    --plate:#1a1130; --plate2:#241845; --edge:#07040e; --hi:#4a3677; --lo:#0f0a1e;
+    --neon:#ff3df0; --amber:#ffd23f; --cyan:#2fd6e0;
+    --tag:#ffd23f;
+    --px:3px;
+  }
+  *{ box-sizing:border-box; margin:0; padding:0; -webkit-tap-highlight-color:transparent; }
+  html,body{ height:100%; }
+  body{ background:#07040e; color:var(--ink); font-family:'VT323', monospace; overflow:hidden; touch-action:none; }
+  button{ font:inherit; color:inherit; }
+  canvas#view{ position:fixed; inset:0; width:100%; height:100%; display:block; cursor:crosshair; image-rendering:pixelated; }
+  #launchImg{ position:fixed; inset:0; z-index:8; width:100%; height:100%; object-fit:cover; opacity:0; display:none; pointer-events:none; image-rendering:pixelated; }
+  #dissolve{ position:fixed; inset:0; z-index:9; width:100%; height:100%; pointer-events:none; image-rendering:pixelated; display:none; }
+
+  /* ---------- pixel panel: notched corners + bevel, all box-shadow */
+  .px{
+    position:relative; background:var(--plate);
+    box-shadow:
+      0 calc(var(--px) * -1) 0 0 var(--edge), 0 var(--px) 0 0 var(--edge),
+      calc(var(--px) * -1) 0 0 0 var(--edge), var(--px) 0 0 0 var(--edge),
+      inset var(--px) var(--px) 0 0 var(--hi), inset calc(var(--px) * -1) calc(var(--px) * -1) 0 0 var(--lo),
+      0 calc(var(--px) * 2 + 2px) 0 calc(var(--px) * -1) rgba(0,0,0,.5);
+  }
+  .pxbtn{
+    font-family:'Press Start 2P', monospace; font-size:10px; letter-spacing:.04em;
+    background:var(--plate2); color:var(--ink); border:0; cursor:pointer;
+    padding:11px 12px; min-width:44px; min-height:44px; line-height:1;
+    box-shadow:
+      0 -3px 0 0 var(--edge), 0 3px 0 0 var(--edge), -3px 0 0 0 var(--edge), 3px 0 0 0 var(--edge),
+      inset 3px 3px 0 0 var(--hi), inset -3px -3px 0 0 var(--lo), 0 7px 0 -2px rgba(0,0,0,.55);
+    transition:transform .06s;
+  }
+  .pxbtn:hover{ color:var(--amber); }
+  .pxbtn:active{ transform:translateY(3px); box-shadow:0 -3px 0 0 var(--edge), 0 3px 0 0 var(--edge), -3px 0 0 0 var(--edge), 3px 0 0 0 var(--edge), inset 3px 3px 0 0 var(--lo), inset -3px -3px 0 0 var(--hi); }
+  .pxbtn:focus-visible{ outline:3px solid var(--amber); outline-offset:5px; }
+  .pxbtn.gold{ background:#ffd23f; color:#1a0e02; --hi:#fff0a0; --lo:#b87d08; }
+  .pxbtn.gold:hover{ color:#000; background:#ffe066; }
+  .ico{ width:12px; height:12px; display:inline-block; vertical-align:middle; shape-rendering:crispEdges; }
+  .kc{ display:inline-block; font-family:'Press Start 2P', monospace; font-size:8px; line-height:1; color:var(--ink);
+    background:#2b1f4d; padding:5px 6px 6px; margin:0 2px; box-shadow:0 -2px 0 #07040e, 0 2px 0 #07040e, -2px 0 0 #07040e, 2px 0 0 #07040e, inset 0 -3px 0 #160e2c; }
+
+  /* ---------- HUD */
+  .hud{ position:fixed; z-index:12; user-select:none; }
+  #hudTitle{ top:14px; left:14px; padding:12px 14px 11px; }
+  #hudTitle .brand{ font-family:'Press Start 2P'; font-size:11px; color:#ffd6fb; text-shadow:0 0 8px rgba(255,61,240,.9), 0 0 18px rgba(255,61,240,.5); letter-spacing:.06em; }
+  #hudTitle .stats{ display:flex; gap:14px; margin-top:8px; font-size:18px; line-height:1; color:var(--dim); }
+  #hudTitle .stats b{ color:var(--amber); font-weight:400; }
+  #hudTitle .stats .ec b{ color:#8fb8ff; }
+  #mini{ top:84px; left:14px; padding:6px; cursor:pointer; }
+  #mini canvas{ display:block; width:252px; image-rendering:pixelated; }
+  #mini .lbl{ position:absolute; right:8px; bottom:5px; font-size:14px; color:var(--mute); pointer-events:none; }
+  #hudTR{ top:14px; right:14px; display:flex; gap:12px; }
+  #coffeeLink{ position:fixed; z-index:12; right:14px; bottom:16px; text-decoration:none; font-size:9px; display:flex; gap:8px; align-items:center; }
+
+  /* ---------- focus card */
+  #focus{ position:fixed; z-index:12; left:50%; bottom:18px; transform:translate(-50%, 160%);
+    transition:transform .34s cubic-bezier(.34,1.56,.64,1); display:flex; align-items:center; gap:14px;
+    padding:10px 12px 10px 10px; max-width:calc(100vw - 24px); cursor:pointer; }
+  #focus.show{ transform:translate(-50%, 0); }
+  #focus::before{ content:""; position:absolute; left:6px; right:6px; top:-9px; height:3px;
+    background:repeating-linear-gradient(90deg, var(--tag) 0 6px, transparent 6px 12px); animation:chase .5s steps(2) infinite; }
+  @keyframes chase{ to{ background-position:12px 0; } }
+  #focus .thumb{ width:132px; aspect-ratio:16/10; flex:none; position:relative; background:#000;
+    box-shadow:0 0 0 3px #07040e, 0 0 0 6px var(--tag), 0 0 18px color-mix(in srgb, var(--tag) 55%, transparent); overflow:hidden; }
+  #focus .thumb img{ width:100%; height:100%; object-fit:cover; display:block; }
+  #focus .thumb::after{ content:""; position:absolute; inset:0; background:repeating-linear-gradient(0deg, rgba(0,0,0,.28) 0 1px, transparent 1px 3px); }
+  #focus .col{ display:flex; flex-direction:column; gap:6px; min-width:0; }
+  #focus .tag{ align-self:flex-start; font-family:'Press Start 2P'; font-size:8px; padding:4px 6px; color:#0b0714; background:var(--tag); }
+  #focus .name{ font-family:'Press Start 2P'; font-size:13px; line-height:1.35; color:#fff; text-shadow:0 0 10px color-mix(in srgb, var(--tag) 70%, transparent);
+    white-space:nowrap; overflow:hidden; text-overflow:ellipsis; max-width:min(42vw, 360px); }
+  #focus .meta{ font-size:18px; line-height:1; color:var(--dim); }
+  #focus .meta b{ color:var(--amber); font-weight:400; }
+  #focus .play{ flex:none; margin-left:4px; font-size:11px; padding:14px 14px; }
+  #focus .play .bl{ animation:blink 1s steps(2,end) infinite; }
+  #hint{ position:fixed; z-index:11; left:50%; bottom:16px; transform:translateX(-50%); font-size:19px; color:var(--dim);
+    text-shadow:0 2px 0 #000; white-space:nowrap; transition:opacity .4s; pointer-events:none; }
+  #hint.off{ opacity:0; }
+  @keyframes blink{ 50%{ opacity:0; } }
+
+  #toast{ position:fixed; z-index:13; left:50%; top:16%; transform:translate(-50%, -8px); padding:10px 14px;
+    font-family:'Press Start 2P'; font-size:10px; line-height:1.7; color:var(--amber); text-align:center;
+    opacity:0; pointer-events:none; transition:opacity .25s, transform .25s; max-width:calc(100vw - 30px); }
+  #toast.on{ opacity:1; transform:translate(-50%, 0); }
+
+  /* ---------- joystick */
+  #joy{ position:fixed; z-index:14; width:124px; height:124px; margin:-62px 0 0 -62px; pointer-events:none; display:none; }
+  #joy.on{ display:block; }
+  #joy .ring{ position:absolute; inset:0; image-rendering:pixelated;
+    background:radial-gradient(circle, rgba(255,210,63,.10) 0 55%, rgba(255,210,63,.35) 56% 60%, transparent 61%); }
+  #joyKnob{ position:absolute; left:50%; top:50%; width:46px; height:46px; margin:-23px 0 0 -23px; will-change:transform;
+    background:#ffd23f; box-shadow:0 -4px 0 #07040e, 0 4px 0 #07040e, -4px 0 0 #07040e, 4px 0 0 #07040e, inset 5px 5px 0 #fff0a0, inset -5px -5px 0 #b87d08; }
+
+  /* ---------- start screen */
+  #start{ position:fixed; inset:0; z-index:18; display:flex; align-items:center; justify-content:center; text-align:center; padding:20px;
+    background:radial-gradient(120% 90% at 50% 40%, rgba(10,6,22,.35), rgba(4,2,10,.9)); opacity:0; visibility:hidden; transition:opacity .5s, visibility .5s; }
+  #start.show{ opacity:1; visibility:visible; }
+  #start .wrap{ display:flex; flex-direction:column; align-items:center; gap:clamp(14px, 3vh, 28px); }
+  #start .kicker{ font-family:'Press Start 2P'; font-size:10px; letter-spacing:.3em; color:var(--cyan); text-shadow:0 0 10px rgba(47,214,224,.8); animation:blink 1.6s steps(2) infinite; }
+  #start h1{ font-family:'Press Start 2P'; font-weight:400; font-size:clamp(28px, 7.4vw, 76px); line-height:1.1; color:#ffe3fc;
+    text-shadow:0 0 6px #ff3df0, 0 0 22px #ff3df0, 0 0 60px rgba(255,61,240,.6), 4px 4px 0 #3a0c3a; letter-spacing:.04em; }
+  #start h1 span{ display:block; font-size:.46em; letter-spacing:.5em; margin-top:.5em; color:#bffcff; text-shadow:0 0 8px #2fd6e0, 0 0 26px rgba(47,214,224,.6), 3px 3px 0 #06283a; }
+  #start .sub{ font-size:22px; color:var(--dim); }
+  #btnStart{ font-size:clamp(11px, 1.5vw, 14px); padding:18px 22px; animation:pulse 1.1s ease-in-out infinite; }
+  @keyframes pulse{ 50%{ transform:scale(1.04); } }
+  #start .legend{ display:flex; flex-wrap:wrap; justify-content:center; gap:10px 22px; font-size:19px; color:var(--dim); max-width:680px; }
+  #start .legend span{ white-space:nowrap; }
+  .touch .desk, .desk-only.touchy{ display:none !important; }
+  body:not(.touch) .mob{ display:none !important; }
+
+  /* ---------- menu / directory */
+  .overlay{ position:fixed; inset:0; z-index:20; background:rgba(5,3,10,.94); display:none; overflow-y:auto; touch-action:pan-y;
+    padding:clamp(16px, 3vw, 44px); -webkit-overflow-scrolling:touch; }
+  .overlay.open{ display:block; animation:fade .22s; }
+  @keyframes fade{ from{ opacity:0; } }
+  .overlay h2{ font-family:'Press Start 2P'; font-weight:400; font-size:clamp(14px, 2.2vw, 22px); color:#ffd6fb; text-shadow:0 0 12px rgba(255,61,240,.8); }
+  .overlay .sub{ font-size:21px; color:var(--dim); margin:10px 0 22px; }
+  .ohead{ display:flex; align-items:flex-start; justify-content:space-between; gap:16px; }
+  #grid{ list-style:none; display:grid; gap:18px; grid-template-columns:repeat(auto-fill, minmax(min(260px, 100%), 1fr)); }
+  #grid li{ padding:8px; display:flex; flex-direction:column; gap:8px; }
+  #grid .shot{ aspect-ratio:16/10; position:relative; background:#000; overflow:hidden; box-shadow:0 0 0 3px #07040e, 0 0 0 5px var(--tag); display:block; }
+  #grid .shot img{ width:100%; height:100%; object-fit:cover; display:block; transition:transform .3s; }
+  #grid li:hover .shot img{ transform:scale(1.05); }
+  #grid .shot::after{ content:""; position:absolute; inset:0; background:repeating-linear-gradient(0deg, rgba(0,0,0,.22) 0 1px, transparent 1px 3px); }
+  #grid .row{ display:flex; align-items:center; gap:8px; }
+  #grid .nm{ font-family:'Press Start 2P'; font-size:10px; line-height:1.4; flex:1; min-width:0; color:#fff; }
+  #grid .tg{ font-family:'Press Start 2P'; font-size:7px; padding:3px 5px; color:#0b0714; background:var(--tag); }
+  #grid .meta{ font-size:17px; color:var(--mute); }
+  #grid .acts{ display:flex; gap:10px; }
+  #grid .acts .pxbtn{ flex:1; font-size:9px; padding:10px 8px; text-decoration:none; text-align:center; display:flex; align-items:center; justify-content:center; }
+  .mrow{ display:flex; flex-wrap:wrap; gap:14px; margin-top:26px; align-items:center; }
+  #rmNote{ display:none; color:#8fb8ff; font-size:20px; margin-bottom:18px; }
+  .reduced #rmNote{ display:block; }
+  #help .keys{ display:grid; grid-template-columns:auto 1fr; gap:14px 18px; font-size:22px; color:var(--ink); align-items:center; max-width:640px; margin-top:10px; }
+  #help .keys dt{ text-align:right; white-space:nowrap; }
+  #help .keys dd{ color:var(--dim); }
+
+  @media (max-width:760px){
+    #mini, #hint{ display:none; }
+    #hudTitle{ padding:9px 10px 8px; top:10px; left:10px; }
+    #hudTitle .brand{ font-size:9px; }
+    #hudTitle .stats{ font-size:16px; gap:10px; }
+    #hudTR{ top:10px; right:10px; gap:10px; }
+    #hudTR .pxbtn{ font-size:8px; padding:10px 9px; }
+    #coffeeLink .t{ display:none; }
+    #focus{ bottom:12px; gap:10px; }
+    #focus .thumb{ width:84px; }
+    #focus .name{ font-size:10px; max-width:40vw; }
+    #focus .meta{ font-size:15px; }
+    #focus .play{ font-size:10px; padding:14px 10px; }
+  }
+  @media (max-height:520px){ #mini{ display:none; } }
+</style>
+</head>
+<body>
+<canvas id="view" aria-label="Isometric pixel arcade hall. Walk with WASD or tap to move, press E to insert a coin. Use the MENU button for a plain list of all games."></canvas>
+<img id="launchImg" alt="" decoding="async">
+<canvas id="dissolve" aria-hidden="true"></canvas>
+
+<div class="hud px" id="hudTitle">
+  <div class="brand">JOJKOS GAMES</div>
+  <div class="stats"><span>COINS <b id="coinCount">0</b></span><span class="ec" title="echoes of your past visits">ECHOES <b id="echoCount">0</b></span></div>
+</div>
+<div class="hud px" id="mini" title="Map — click to walk there"><canvas id="miniCv"></canvas><span class="lbl">MAP · N</span></div>
+<div class="hud" id="hudTR">
+  <button class="pxbtn" id="btnMute" aria-label="Toggle sound">SND</button>
+  <button class="pxbtn desk" id="btnHelp" aria-label="Controls">?</button>
+  <button class="pxbtn" id="btnFS" aria-label="Toggle fullscreen"><svg class="ico" viewBox="0 0 12 12" aria-hidden="true"><path d="M0 0h4v2H2v2H0zM8 0h4v4h-2V2H8zM0 8h2v2h2v2H0zM10 8h2v4H8v-2h2z" fill="currentColor"/></svg></button>
+  <button class="pxbtn" id="btnMenu" aria-label="Open game list">MENU</button>
+</div>
+
+<div id="focus" class="px" role="button" tabindex="-1" aria-live="polite">
+  <div class="thumb"><img id="fImg" alt="" decoding="async"></div>
+  <div class="col">
+    <span class="tag" id="fTag">TAG</span>
+    <span class="name" id="fName">GAME</span>
+    <span class="meta" id="fMeta"></span>
+  </div>
+  <button class="pxbtn gold play" id="fPlay"><span class="bl">▶</span> PLAY</button>
+</div>
+<div id="hint" class="desk"><span class="kc">WASD</span> walk · <span class="kc">SHIFT</span> run · <span class="kc">E</span> play · <span class="kc">TAB</span> next cabinet · <span class="kc">M</span> list</div>
+<div id="toast" class="px"></div>
+<div id="joy" aria-hidden="true"><div class="ring"></div><div id="joyKnob"></div></div>
+
+<a id="coffeeLink" class="pxbtn gold" href="https://buymeacoffee.com/jojkos" target="_blank" rel="noopener" aria-label="Buy me a coffee"><svg class="ico" viewBox="0 0 12 12" aria-hidden="true"><path d="M3 0h1v2H3zM6 0h1v2H6zM1 3h8v1h2v4H9v1H8v1H2V9H1zM9 5v2h1V5z" fill="currentColor"/></svg><span class="t">BUY ME A COFFEE</span></a>
+
+<div id="start" aria-label="Press start to enter the arcade">
+  <div class="wrap">
+    <div class="kicker">▸ NOW OPEN · ALL NIGHT ◂</div>
+    <h1>JOJKOS<span>ARCADE</span></h1>
+    <p class="sub" id="startSub">CABINETS · ONE RAINY NIGHT · NO QUARTERS NEEDED</p>
+    <button class="pxbtn gold" id="btnStart">INSERT COIN ▸ PRESS START</button>
+    <div class="legend desk">
+      <span><span class="kc">W</span><span class="kc">A</span><span class="kc">S</span><span class="kc">D</span> walk</span>
+      <span><span class="kc">SHIFT</span> run</span>
+      <span><span class="kc">E</span> insert coin</span>
+      <span><span class="kc">TAB</span> next cabinet</span>
+      <span>🎮 gamepad works too</span>
+    </div>
+    <div class="legend mob">
+      <span>drag to walk</span><span>tap a cabinet to go there</span><span>tap again to play</span>
+    </div>
+  </div>
+</div>
+
+<div id="menu" class="overlay" role="dialog" aria-label="All games">
+  <div class="ohead">
+    <div>
+      <h2>ALL CABINETS</h2>
+      <p class="sub">▶ PLAY jumps straight in · ⌖ GO walks you to the cabinet in the hall</p>
+    </div>
+    <button class="pxbtn" id="btnCloseMenu" aria-label="Close">✕</button>
+  </div>
+  <p id="rmNote">Reduced motion is on, so the animated hall is paused. Every game is right here. <button class="pxbtn" id="btnEnterAnyway" style="margin-left:8px">ENTER THE HALL ANYWAY</button></p>
+  <ul id="grid"></ul>
+  <div class="mrow">
+    <a class="pxbtn gold" href="https://buymeacoffee.com/jojkos" target="_blank" rel="noopener" style="text-decoration:none;display:inline-flex;gap:8px;align-items:center"><svg class="ico" viewBox="0 0 12 12" aria-hidden="true"><path d="M3 0h1v2H3zM6 0h1v2H6zM1 3h8v1h2v4H9v1H8v1H2V9H1zM9 5v2h1V5z" fill="currentColor"/></svg>BUY ME A COFFEE — 1 COIN</a>
+    <button class="pxbtn" id="btnClearEchoes">CLEAR ECHOES</button>
+  </div>
+</div>
+
+<div id="help" class="overlay" role="dialog" aria-label="Controls">
+  <div class="ohead"><h2>CONTROLS</h2><button class="pxbtn" id="btnCloseHelp" aria-label="Close">✕</button></div>
+  <dl class="keys">
+    <dt><span class="kc">W</span><span class="kc">A</span><span class="kc">S</span><span class="kc">D</span> / arrows</dt><dd>walk (screen-relative)</dd>
+    <dt><span class="kc">SHIFT</span></dt><dd>run</dd>
+    <dt><span class="kc">E</span> <span class="kc">SPACE</span> <span class="kc">ENTER</span></dt><dd>insert coin · press again to skip the zoom</dd>
+    <dt><span class="kc">TAB</span> / <span class="kc">SHIFT</span>+<span class="kc">TAB</span></dt><dd>walk to the next / previous cabinet</dd>
+    <dt>click / tap</dt><dd>walk there · click a cabinet to go to it · double-click to play</dd>
+    <dt><span class="kc">M</span></dt><dd>list of every game</dd>
+    <dt><span class="kc">N</span></dt><dd>toggle the map</dd>
+    <dt><span class="kc">F</span></dt><dd>fullscreen</dd>
+    <dt>🎮</dt><dd>stick / d-pad walk · A play · X run · LB/RB cycle cabinets · START list</dd>
+  </dl>
+</div>
+
+<noscript>
+  <div style="position:fixed;inset:0;background:#040209;color:#e8defc;font-family:monospace;padding:30px;overflow:auto;z-index:99">
+    <h1>JOJKOS GAMES</h1>
+    <p>This arcade needs JavaScript, but the games don't:</p>
+    <ul>
+      <li><a style="color:#ffd23f" href="https://samurai-sword-omega.vercel.app/">Samurai Sword</a></li>
+      <li><a style="color:#ffd23f" href="https://zoopaloola.vercel.app/">Zoopaloola</a></li>
+      <li><a style="color:#ffd23f" href="https://factorio-lamp-editor.vercel.app/">Factorio Lamp Editor</a></li>
+      <li><a style="color:#ffd23f" href="https://lol-fusion.vercel.app/">LoL Fusion loldle</a></li>
+      <li><a style="color:#ffd23f" href="https://pug-fiesta.vercel.app/">Pug Fiesta</a></li>
+      <li><a style="color:#ffd23f" href="https://pug-fiesta3-d.vercel.app/">Pug Fiesta 3D</a></li>
+      <li><a style="color:#ffd23f" href="https://combatarena.onrender.com/">Combat Arena</a></li>
+      <li><a style="color:#ffd23f" href="../bluff/index.html">Bluff Helper</a></li>
+      <li><a style="color:#ffd23f" href="https://calendar-puzzle2.vercel.app/">Calendar Puzzle</a></li>
+      <li><a style="color:#ffd23f" href="../pokemonShooter/index.html">Pokemon Shooter</a></li>
+      <li><a style="color:#ffd23f" href="../tralalaGame/index.html">Tralala Clicker</a></li>
+      <li><a style="color:#ffd23f" href="../lolWheel/index.html">LoL Wheel</a></li>
+      <li><a style="color:#ffd23f" href="../neonDrifter/index.html">Neon Drifter</a></li>
+      <li><a style="color:#ffd23f" href="../guitarTuner/index.html">Guitar Tuner</a></li>
+      <li><a style="color:#ffd23f" href="https://okcorral.onrender.com/">OK Corral</a></li>
+      <li><a style="color:#ffd23f" href="https://partyficrim.onrender.com/">partyficRIM</a></li>
+    </ul>
+    <p><a style="color:#ffd23f" href="https://buymeacoffee.com/jojkos">☕ Buy me a coffee</a></p>
+  </div>
+</noscript>
+
+<script src="../shared/games.js"></script>
+<script>
+// ---------------------------------------------------------------- shared config
+// (games + tag colours come from ../shared/games.js — add a game there and a
+//  cabinet appears here; the hall widens itself if it runs out of spots)
+window.CFG = {
+  GW: 24, GH: 18,
+  BASE_ZOOM: 1, FOCUS_ZOOM: 1.22,
+  LAYOUT: null,
+  TAG_COLORS: window.TAG_COLORS
+};
+(function(){
+  // back wall (skipping the door/window span), left wall (skipping the
+  // HI-SCORE board span), then free-standing columns flanking the aisle
+  function slotsFor(GW, GH){
+    const back = [], left = [], center = [];
+    const scoreLo = Math.round(GH / 2) - 3, scoreHi = Math.round(GH / 2) + 2;
+    for (let x = 2; x + 1 <= 6; x += 3) back.push({ tx:x, ty:1, f:'S' });
+    for (let x = 13; x + 1 <= GW - 2; x += 3) back.push({ tx:x, ty:1, f:'S' });
+    for (let y = 4; y + 1 <= GH - 2; y += 3){
+      if (y >= scoreLo && y <= scoreHi) continue;
+      left.push({ tx:1, ty:y, f:'E' });
+    }
+    const aisleLo = 10, aisleHi = 13;
+    const rowYs = [];
+    for (let y = 5; y + 1 <= GH - 3; y += 4) rowYs.push(y);
+    const cols = [];
+    for (let x = 5; x + 1 <= GW - 6; x += 3){ if (x >= aisleLo && x <= aisleHi) continue; cols.push(x); }
+    cols.sort((a, b) => Math.abs(a - 11) - Math.abs(b - 11));
+    for (const x of cols) for (const y of rowYs){
+      if (x <= 6 && y >= 7) continue;
+      center.push({ tx:x, ty:y, f:'S' });
+    }
+    return back.concat(left, center);
+  }
+  let GW = CFG.GW, s = slotsFor(GW, CFG.GH);
+  while (s.length < GAMES.length && GW < 70){ GW += 3; s = slotsFor(GW, CFG.GH); }
+  CFG.GW = GW;
+  CFG.LAYOUT = s.slice(0, GAMES.length);
+})();
+</script>
+<script src="px.js"></script>
+<script src="vox.js"></script>
+<script src="models.js"></script>
+<script src="world.js"></script>
+<script src="cabinets.js"></script>
+<script src="player.js"></script>
+<script src="ghosts.js"></script>
+<script src="audio.js"></script>
+<script src="main.js"></script>
+<script src="../shared/gamelist.js" defer></script>
+<script src="../shared/switcher.js" defer></script>
+</body>
+</html>
