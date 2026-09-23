@@ -19,6 +19,7 @@ window.VARIANTS = [
   { id:'v2e', name:'Insert Coin Arcade',       blurb:'Walk a rainy pixel arcade. Insert coin.' },
   { id:'v2f', name:'Patch Notes from the Void',blurb:'Brutalist release-log zine with physics type.' },
   { id:'v2g', name:'Cartridge Bay',            blurb:'Keycaps spell the logo; scroll into a bay of playable cartridges.' },
+  { id:'v2h', name:'Voxel Descent',            blurb:'Scroll-driven 3D: a voxel cloud re-forms into every game.' },
 ];
 
 function currentId(){
