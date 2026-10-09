@@ -1,6 +1,6 @@
 /* shared/gamelist.js — a guaranteed, consistent "ALL GAMES" launcher present on
    every landing-page variant. Sibling to shared/switcher.js: a small floating
-   chip (bottom-right) that opens an overlay grid of all 14 games, fed by the
+   chip (bottom-right) that opens an overlay grid of all games, fed by the
    single source of truth in shared/games.js (window.GAMES + window.TAG_COLORS).
 
    Include AFTER games.js, from any depth:

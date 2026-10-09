@@ -26,6 +26,8 @@ var DEF = [
   { name:"Guitar Tuner",         short:"TUNER",  tag:"TOOL",    url:"guitarTuner/index.html",                   img:"screenshots/guitar-tuner.png" },
   { name:"OK Corral",            short:"CORRAL", tag:"SHOOTER", url:"https://okcorral.onrender.com/",           img:"screenshots/ok-corral.png" },
   { name:"partyficRIM",          short:"PARTY",  tag:"PARTY",   url:"https://partyficrim.onrender.com/",        img:"screenshots/partyficrim.png" },
+  { name:"Jojkos Blaster",       short:"BLAST",  tag:"ACTION",  url:"https://jojkos-blaster.vercel.app/",       img:"screenshots/jojkos-blaster.png" },
+  { name:"Obědy u Plynárenské",  short:"OBEDY",  tag:"TOOL",    url:"https://obedy-sigma.vercel.app/",          img:"screenshots/obedy.png" },
 ];
 
 window.TAG_COLORS = {
