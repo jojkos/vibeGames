@@ -11,6 +11,7 @@ var ROOT = src.slice(0, src.lastIndexOf('shared/switcher.js'));
 var KEY = 'jojkos_variant';
 
 window.VARIANTS = [
+  { id:'v3',  name:'Select Screen',            blurb:'Fighting-game select screen: every game at a glance. Pick one, press start.' },
   { id:'v1',  name:'Matrix Tunnel',            blurb:'CSS-3D card tunnel in digital rain — the original.' },
   { id:'v2a', name:'Pug Playground 3D',        blurb:'Drive a pug around a neon arcade park.' },
   { id:'v2b', name:'The Studio Cut',           blurb:'Editorial type + WebGL hover reveals.' },

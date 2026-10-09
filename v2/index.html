@@ -41,7 +41,7 @@
   <h1>VERSION <span>GALLERY</span></h1>
   <p class="sub">Every landing page jojkos.games has worn — kept browsable as a little design-history museum.
     <b>OPEN</b> visits a version · <b>SET DEFAULT</b> makes the root URL load it for you next time.</p>
-  <a class="enter" id="enterBtn" href="../v2e/index.html">ENTER →</a>
+  <a class="enter" id="enterBtn" href="../v3/index.html">ENTER →</a>
   <div class="grid" id="grid"></div>
   <p class="foot">
     default is remembered in your browser · <span id="curDefault"></span><br>
@@ -54,6 +54,7 @@
       <li><a href="../v2b/index.html">v2b — The Studio Cut</a></li>
       <li><a href="../v2c/index.html">v2c — Matrix: Operator</a></li>
       <li><a href="../v2d/index.html">v2d — The Signal Degrades</a></li>
+      <li><a href="../v3/index.html">v3 — Select Screen</a></li>
       <li><a href="../v2e/index.html">v2e — Insert Coin Arcade</a></li>
       <li><a href="../v2f/index.html">v2f — Patch Notes from the Void</a></li>
     </ul>
@@ -64,7 +65,7 @@
   var KEY = 'jojkos_variant';
   var grid = document.getElementById('grid');
   function currentDefault(){
-    try { return localStorage.getItem(KEY) || 'v2e'; } catch (e){ return 'v2e'; }
+    try { return localStorage.getItem(KEY) || 'v3'; } catch (e){ return 'v3'; }
   }
   function render(){
     grid.innerHTML = '';

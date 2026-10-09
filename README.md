@@ -16,13 +16,17 @@ the same games list, so adding a game in one place lights it up everywhere.
 
 | id  | name |
 |-----|------|
+| **v3** | **Select Screen** (default) — fighting-game select screen: every game in one grid, the picked one gets a big animated splash |
 | v1  | Matrix Tunnel |
 | v2a | Pug Playground 3D |
 | v2b | The Studio Cut |
 | v2c | Matrix: Operator |
 | v2d | The Signal Degrades |
-| **v2e** | **Insert Coin Arcade** (default) — walk a character around an isometric arcade hall and "insert a coin" at each cabinet |
+| v2e | Insert Coin Arcade — walk a character around an isometric arcade hall and "insert a coin" at each cabinet |
+| v2e2 | Insert Coin Arcade II |
 | v2f | Patch Notes from the Void |
+| v2g | Cartridge Bay |
+| v2h | Voxel Descent |
 
 ## Running locally
 
@@ -33,7 +37,7 @@ relative paths.
 ```sh
 python3 -m http.server 8000
 # then open:
-#   http://localhost:8000/         → redirects to the default variant (v2e)
+#   http://localhost:8000/         → redirects to the default variant (v3)
 #   http://localhost:8000/v2e/     → a specific variant (keep the trailing slash!)
 ```
 
