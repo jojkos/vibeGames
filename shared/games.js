@@ -28,6 +28,7 @@ var DEF = [
   { name:"partyficRIM",          short:"PARTY",  tag:"PARTY",   url:"https://partyficrim.onrender.com/",        img:"screenshots/partyficrim.png" },
   { name:"Jojkos Blaster",       short:"BLAST",  tag:"ACTION",  url:"https://jojkos-blaster.vercel.app/",       img:"screenshots/jojkos-blaster.png" },
   { name:"Obědy u Plynárenské",  short:"OBEDY",  tag:"TOOL",    url:"https://obedy-sigma.vercel.app/",          img:"screenshots/obedy.png" },
+  { name:"Marco Oh No!",         short:"MARCO",  tag:"PARTY",   url:"https://marcoohno.onrender.com/",          img:"screenshots/marco-oh-no.png" },
 ];
 
 window.TAG_COLORS = {
