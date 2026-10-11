@@ -14,22 +14,7 @@ V2C.ui = (function () {
   const RED = [255, 64, 56];
   const BLUE = [70, 150, 255];
 
-  const GAMES = [
-    { name: 'Zoopaloola',           url: 'https://zoopaloola.vercel.app/',           tag: 'ARCADE',  img: '../screenshots/zoopaloola.png' },
-    { name: 'Factorio Lamp Editor', url: 'https://factorio-lamp-editor.vercel.app/', tag: 'TOOL',    img: '../screenshots/factorio-lamp.png' },
-    { name: 'LoL Fusion loldle',    url: 'https://lol-fusion.vercel.app/',           tag: 'PUZZLE',  img: '../screenshots/lol-fusion.png' },
-    { name: 'Pug Fiesta',           url: 'https://pug-fiesta.vercel.app/',           tag: 'ACTION',  img: '../screenshots/pug-fiesta.png' },
-    { name: 'Pug Fiesta 3D',        url: 'https://pug-fiesta3-d.vercel.app/',        tag: 'ACTION',  img: '../screenshots/pug-fiesta-3d.png' },
-    { name: 'Combat Arena',         url: 'https://combatarena.onrender.com/',        tag: 'PVP',     img: '../screenshots/combat-arena.png' },
-    { name: 'Bluff Helper',         url: '../bluff/index.html',                      tag: 'TOOL',    img: '../screenshots/bluff.png' },
-    { name: 'Calendar Puzzle',      url: 'https://calendar-puzzle2.vercel.app/',     tag: 'PUZZLE',  img: '../screenshots/calendar-puzzle.png' },
-    { name: 'Pokemon Shooter',      url: '../pokemonShooter/index.html',             tag: 'SHOOTER', img: '../screenshots/pokemon-shooter.png' },
-    { name: 'Tralala Clicker',      url: '../tralalaGame/index.html',                tag: 'CLICKER', img: '../screenshots/tralala.png' },
-    { name: 'LoL Wheel',            url: '../lolWheel/index.html',                   tag: 'RNG',     img: '../screenshots/lol-wheel.png' },
-    { name: 'Neon Drifter',         url: '../neonDrifter/index.html',                tag: 'RACE',    img: '../screenshots/neon-drifter.png' },
-    { name: 'Guitar Tuner',         url: '../guitarTuner/index.html',                tag: 'TOOL',    img: '../screenshots/guitar-tuner.png' },
-    { name: 'OK Corral',            url: 'https://okcorral.onrender.com/',           tag: 'SHOOTER', img: '../screenshots/ok-corral.png' },
-  ];
+  const GAMES = window.GAMES;
 
   // ---- state ---------------------------------------------------------------
   let mode = 'boot';        // boot | wake | rainin | pills | console | launching | dead
@@ -103,13 +88,15 @@ V2C.ui = (function () {
       L.logX = 3;
       L.logW = Math.max(20, L.boxX - 5);
       L.logBottom = L.promptY - 1;
-      L.maxLogs = Math.min(14, Math.max(4, L.logBottom - (L.listY + 16)));
+      L.listVisible = Math.min(GAMES.length, Math.max(1, r - L.listY - 9));
+      L.maxLogs = Math.max(1, L.logBottom - (L.listY + L.listVisible + 1));
     } else {
       L.listX = 1; L.listY = 3;
       L.listW = c - 2;
       L.tagW = c >= 27 ? 7 : 0;
       L.boxX = 1;
-      L.boxY = L.listY + 16;
+      L.listVisible = Math.min(GAMES.length, Math.max(1, Math.floor((r - 13) / 2)));
+      L.boxY = L.listY + L.listVisible + 2;
       L.boxW = c - 2;
       L.boxH = Math.max(7, r - L.boxY - 6);
       L.statusY = L.boxY + L.boxH;
@@ -120,9 +107,10 @@ V2C.ui = (function () {
       L.coffeeX = c - 19;
       L.logX = 1;
       L.logW = c - 2;
-      L.logBottom = L.listY + 14;   // logs overlay the list area on mobile
-      L.maxLogs = 14;
+      L.logBottom = L.listY + L.listVisible;   // logs overlay the list area on mobile
+      L.maxLogs = L.listVisible;
     }
+    L.listStart = Math.min(Math.max(0, sel - L.listVisible + 1), GAMES.length - L.listVisible);
     L.nameW = Math.max(4, L.listW - 6 - L.tagW);
     // image region: fit ~16:9 inside the box interior, centered
     const iw = L.boxW - 2, ih = L.boxH - 2;
@@ -150,7 +138,7 @@ V2C.ui = (function () {
     const c = G.cols;
     const t = th();
     removeHitsAtRow(L.headerY);
-    let title = 'OPERATOR CONSOLE v2 · NODE JOJKOS · 14 PROGRAMS LOADED';
+    let title = 'OPERATOR CONSOLE v2 · NODE JOJKOS · ' + GAMES.length + ' PROGRAMS LOADED';
     if (L.mobile) title = 'OPERATOR · NODE JOJKOS';
     title = title.slice(0, L.soundX - 3);
     G.clearRegion(0, L.headerY, c, 1);
@@ -161,7 +149,7 @@ V2C.ui = (function () {
     addHit(L.pillX, L.headerY, 3, 1, 'pillbtn');
   }
 
-  function itemRowY(i) { return L.listY + 1 + i; }
+  function itemRowY(i) { return L.listY + 1 + i - L.listStart; }
 
   function paintRow(i) {
     const t = th();
@@ -181,8 +169,17 @@ V2C.ui = (function () {
   }
 
   function paintList() {
-    G.text(L.listX, L.listY, '> PROGRAMS'.padEnd(L.listW, ' '), { color: th().accent, bright: 0.9 });
-    for (let i = 0; i < GAMES.length; i++) paintRow(i);
+    G.clearRegion(L.listX, L.listY, L.listW, L.listVisible + 1);
+    removeHitsAtRow(L.listY);
+    const paged = L.listVisible < GAMES.length;
+    const label = paged ? '> ' + (L.listStart + 1) + '–' + (L.listStart + L.listVisible) + '/' + GAMES.length : '> PROGRAMS';
+    G.text(L.listX, L.listY, label.padEnd(L.listW, ' '), { color: th().accent, bright: 0.9 });
+    if (paged) {
+      G.text(L.listX + L.listW - 5, L.listY, '<   >', { color: th().accent, bright: 1 });
+      addHit(L.listX + L.listW - 5, L.listY, 2, 1, 'listprev');
+      addHit(L.listX + L.listW - 2, L.listY, 2, 1, 'listnext');
+    }
+    for (let i = L.listStart; i < L.listStart + L.listVisible; i++) paintRow(i);
   }
 
   function paintBox() {
@@ -260,8 +257,8 @@ V2C.ui = (function () {
     }
     // list rows
     if (mode === 'console' && cx >= L.listX && cx < L.listX + L.listW) {
-      const i = cy - L.listY - 1;
-      if (i >= 0 && i < GAMES.length) return { type: 'row', arg: i };
+      const row = cy - L.listY - 1;
+      if (row >= 0 && row < L.listVisible) return { type: 'row', arg: L.listStart + row };
     }
     return null;
   }
@@ -327,6 +324,8 @@ V2C.ui = (function () {
     const changedSel = i !== sel;
     sel = i;
     if (changedSel) {
+      if (sel < L.listStart) L.listStart = sel;
+      if (sel >= L.listStart + L.listVisible) L.listStart = sel - L.listVisible + 1;
       paintList();
       sigHex = randHex();
       if (blip !== false) A.blip();
@@ -760,6 +759,12 @@ V2C.ui = (function () {
   function activate(h) {
     if (!h) return;
     switch (h.type) {
+      case 'listprev':
+        select(L.listStart > 0 ? Math.max(0, L.listStart - L.listVisible) : GAMES.length - 1);
+        break;
+      case 'listnext':
+        select(L.listStart + L.listVisible < GAMES.length ? L.listStart + L.listVisible : 0);
+        break;
       case 'row':
         if (h.arg === sel && IC.previewProgress() > 0.3) launch(GAMES[sel]);
         else select(h.arg);

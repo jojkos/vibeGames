@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>JOJKOS GAMES</title>
-<meta name="description" content="JOJKOS GAMES — a pile of playable experiments. 14 games, all free, no installs. Pick a cartridge.">
+<meta name="description" content="JOJKOS GAMES — a pile of playable experiments. games, all free, no installs. Pick a cartridge.">
 <meta name="theme-color" content="#0a0a0f">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -43,7 +43,7 @@
     <div class="hero-art">
       <div id="keys" aria-label="JOJKOS GAMES"></div>
     </div>
-    <p id="heroSub">INSERT A CARTRIDGE TO PLAY <span class="mono">[ 14 GAMES LOADED ]</span></p>
+    <p id="heroSub">INSERT A CARTRIDGE TO PLAY <span class="mono">[ <span data-game-count>19</span> GAMES LOADED ]</span></p>
     <div class="hero-actions">
       <button id="playBtn" type="button">BROWSE ▾</button>
       <button id="randomBtn" type="button">RANDOM ▸</button>
@@ -54,7 +54,7 @@
   <section id="insert" class="act" data-section="ABOUT">
     <div id="manifesto">
       <p>A personal portal to a pile of playable experiments. Everything here was made for the joy of making it, then left out where you can press the buttons. Pick a cartridge.</p>
-      <p class="mono">14 cartridges · all free · no installs</p>
+      <p class="mono"><span data-game-count>19</span> cartridges · all free · no installs</p>
     </div>
   </section>
 
@@ -62,7 +62,7 @@
   <section id="bay" class="act" data-section="LIBRARY">
     <div class="bay-intro">
       <h2 class="bay-head">THE&nbsp;LIBRARY</h2>
-      <p class="bay-sub mono">14 PLAYABLE TOYS · BROWSE THE INDEX ▾</p>
+      <p class="bay-sub mono"><span data-game-count>19</span> PLAYABLE TOYS · BROWSE THE INDEX ▾</p>
     </div>
     <div class="index-wrap">
       <ol id="indexList"></ol>
@@ -85,7 +85,7 @@
 
   <!-- ACT 4 — FOOTER -->
   <footer id="footer">
-    <p class="mono">&gt; SYSTEM HALTED · 14/14 CARTRIDGES MOUNTED</p>
+    <p class="mono">&gt; SYSTEM HALTED · <span data-game-count>19</span>/<span data-game-count>19</span> CARTRIDGES MOUNTED</p>
     <a id="coffee" href="https://buymeacoffee.com/jojkos" target="_blank" rel="noopener">☕ Buy me a coffee</a>
   </footer>
 
@@ -102,25 +102,33 @@
 
 <!-- NO-JS / SEO fallback: real links to every game -->
 <noscript>
-  <ul id="fallback">
-    <li><a href="https://zoopaloola.vercel.app/">Zoopaloola</a></li>
-    <li><a href="https://factorio-lamp-editor.vercel.app/">Factorio Lamp Editor</a></li>
-    <li><a href="https://lol-fusion.vercel.app/">LoL Fusion loldle</a></li>
-    <li><a href="https://pug-fiesta.vercel.app/">Pug Fiesta</a></li>
-    <li><a href="https://pug-fiesta3-d.vercel.app/">Pug Fiesta 3D</a></li>
-    <li><a href="https://combatarena.onrender.com/">Combat Arena</a></li>
-    <li><a href="../bluff/index.html">Bluff Helper</a></li>
-    <li><a href="https://calendar-puzzle2.vercel.app/">Calendar Puzzle</a></li>
-    <li><a href="../pokemonShooter/index.html">Pokemon Shooter</a></li>
-    <li><a href="../tralalaGame/index.html">Tralala Clicker</a></li>
-    <li><a href="../lolWheel/index.html">LoL Wheel</a></li>
-    <li><a href="../neonDrifter/index.html">Neon Drifter</a></li>
-    <li><a href="../guitarTuner/index.html">Guitar Tuner</a></li>
-    <li><a href="https://okcorral.onrender.com/">OK Corral</a></li>
-  </ul>
+  <ul id="fallback" data-game-catalog="list">
+<!-- catalog:start -->
+<li><a href="../tralalaGame/index.html">Tralala Clicker</a></li>
+<li><a href="https://pug-fiesta.vercel.app/">Pug Fiesta</a></li>
+<li><a href="../pokemonShooter/index.html">Pokemon Shooter</a></li>
+<li><a href="../lolWheel/index.html">LoL Wheel</a></li>
+<li><a href="../guitarTuner/index.html">Guitar Tuner</a></li>
+<li><a href="../neonDrifter/index.html">Neon Drifter</a></li>
+<li><a href="https://calendar-puzzle2.vercel.app/">Calendar Puzzle</a></li>
+<li><a href="../bluff/index.html">Bluff Helper</a></li>
+<li><a href="https://zoopaloola.vercel.app/">Zoopaloola</a></li>
+<li><a href="https://combatarena.onrender.com/">Combat Arena</a></li>
+<li><a href="https://factorio-lamp-editor.vercel.app/">Factorio Lamp Editor</a></li>
+<li><a href="https://marcoohno.onrender.com/">Marco Oh No!</a></li>
+<li><a href="https://lol-fusion.vercel.app/">LoL Fusion loldle</a></li>
+<li><a href="https://okcorral.onrender.com/">OK Corral</a></li>
+<li><a href="https://pug-fiesta3-d.vercel.app/">Pug Fiesta 3D</a></li>
+<li><a href="https://partyficrim.onrender.com/">partyficRIM</a></li>
+<li><a href="https://samurai-sword-omega.vercel.app/">Samurai Sword</a></li>
+<li><a href="https://obedy-sigma.vercel.app/">Obědy u Plynárenské</a></li>
+<li><a href="https://jojkos-blaster.vercel.app/">Jojkos Blaster</a></li>
+<!-- catalog:end -->
+</ul>
 </noscript>
 
 <script src="../shared/games.js" defer></script>
+<script src="../shared/catalog.js" defer></script>
 <script src="../shared/gamelist.js" defer></script>
 <script src="boot.js" defer></script>
 <script src="../shared/switcher.js" defer></script>

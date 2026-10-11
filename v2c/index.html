@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
   <title>JOJKOS GAMES — Matrix Operator Console</title>
-  <meta name="description" content="JOJKOS GAMES — 14 games and toys, served by an operator console where the matrix rain IS the screen. Red pill or blue pill?" />
+  <meta name="description" content="JOJKOS GAMES — games and toys, served by an operator console where the matrix rain IS the screen. Red pill or blue pill?" />
   <meta name="theme-color" content="#020503" />
   <style>
     html, body {
@@ -71,20 +71,29 @@
   <canvas id="construct" aria-label="JOJKOS GAMES operator console. The game list is available as links below." role="img"></canvas>
 
   <nav class="sr-nav" aria-label="All games">
-    <a href="https://zoopaloola.vercel.app/">Zoopaloola</a>
-    <a href="https://factorio-lamp-editor.vercel.app/">Factorio Lamp Editor</a>
-    <a href="https://lol-fusion.vercel.app/">LoL Fusion loldle</a>
-    <a href="https://pug-fiesta.vercel.app/">Pug Fiesta</a>
-    <a href="https://pug-fiesta3-d.vercel.app/">Pug Fiesta 3D</a>
-    <a href="https://combatarena.onrender.com/">Combat Arena</a>
-    <a href="../bluff/index.html">Bluff Helper</a>
-    <a href="https://calendar-puzzle2.vercel.app/">Calendar Puzzle</a>
-    <a href="../pokemonShooter/index.html">Pokemon Shooter</a>
-    <a href="../tralalaGame/index.html">Tralala Clicker</a>
-    <a href="../lolWheel/index.html">LoL Wheel</a>
-    <a href="../neonDrifter/index.html">Neon Drifter</a>
-    <a href="../guitarTuner/index.html">Guitar Tuner</a>
-    <a href="https://okcorral.onrender.com/">OK Corral</a>
+    <div data-game-catalog="links">
+<!-- catalog:start -->
+<a href="../tralalaGame/index.html">Tralala Clicker</a>
+<a href="https://pug-fiesta.vercel.app/">Pug Fiesta</a>
+<a href="../pokemonShooter/index.html">Pokemon Shooter</a>
+<a href="../lolWheel/index.html">LoL Wheel</a>
+<a href="../guitarTuner/index.html">Guitar Tuner</a>
+<a href="../neonDrifter/index.html">Neon Drifter</a>
+<a href="https://calendar-puzzle2.vercel.app/">Calendar Puzzle</a>
+<a href="../bluff/index.html">Bluff Helper</a>
+<a href="https://zoopaloola.vercel.app/">Zoopaloola</a>
+<a href="https://combatarena.onrender.com/">Combat Arena</a>
+<a href="https://factorio-lamp-editor.vercel.app/">Factorio Lamp Editor</a>
+<a href="https://marcoohno.onrender.com/">Marco Oh No!</a>
+<a href="https://lol-fusion.vercel.app/">LoL Fusion loldle</a>
+<a href="https://okcorral.onrender.com/">OK Corral</a>
+<a href="https://pug-fiesta3-d.vercel.app/">Pug Fiesta 3D</a>
+<a href="https://partyficrim.onrender.com/">partyficRIM</a>
+<a href="https://samurai-sword-omega.vercel.app/">Samurai Sword</a>
+<a href="https://obedy-sigma.vercel.app/">Obědy u Plynárenské</a>
+<a href="https://jojkos-blaster.vercel.app/">Jojkos Blaster</a>
+<!-- catalog:end -->
+</div>
     <a href="https://buymeacoffee.com/jojkos">Buy me a coffee</a>
     <a href="?pill=blue">Plain HTML version (blue pill)</a>
   </nav>
@@ -93,23 +102,30 @@
     <main>
       <h1>JOJKOS GAMES</h1>
       <p class="tagline">You took the blue pill. You chose comfort. Nothing wrong with that.</p>
-      <p>Fourteen games &amp; toys, plain and simple:</p>
-      <ol>
-        <li><a href="https://zoopaloola.vercel.app/">Zoopaloola</a> <span class="tag">— arcade</span></li>
-        <li><a href="https://factorio-lamp-editor.vercel.app/">Factorio Lamp Editor</a> <span class="tag">— tool</span></li>
-        <li><a href="https://lol-fusion.vercel.app/">LoL Fusion loldle</a> <span class="tag">— puzzle</span></li>
-        <li><a href="https://pug-fiesta.vercel.app/">Pug Fiesta</a> <span class="tag">— action</span></li>
-        <li><a href="https://pug-fiesta3-d.vercel.app/">Pug Fiesta 3D</a> <span class="tag">— action</span></li>
-        <li><a href="https://combatarena.onrender.com/">Combat Arena</a> <span class="tag">— pvp</span></li>
-        <li><a href="../bluff/index.html">Bluff Helper</a> <span class="tag">— tool</span></li>
-        <li><a href="https://calendar-puzzle2.vercel.app/">Calendar Puzzle</a> <span class="tag">— puzzle</span></li>
-        <li><a href="../pokemonShooter/index.html">Pokemon Shooter</a> <span class="tag">— shooter</span></li>
-        <li><a href="../tralalaGame/index.html">Tralala Clicker</a> <span class="tag">— clicker</span></li>
-        <li><a href="../lolWheel/index.html">LoL Wheel</a> <span class="tag">— rng</span></li>
-        <li><a href="../neonDrifter/index.html">Neon Drifter</a> <span class="tag">— race</span></li>
-        <li><a href="../guitarTuner/index.html">Guitar Tuner</a> <span class="tag">— tool</span></li>
-        <li><a href="https://okcorral.onrender.com/">OK Corral</a> <span class="tag">— shooter</span></li>
-      </ol>
+      <p><span data-game-count>19</span> games &amp; toys, plain and simple:</p>
+      <ol data-game-catalog="tagged">
+<!-- catalog:start -->
+<li><a href="../tralalaGame/index.html">Tralala Clicker</a> <span class="tag">— clicker</span></li>
+<li><a href="https://pug-fiesta.vercel.app/">Pug Fiesta</a> <span class="tag">— action</span></li>
+<li><a href="../pokemonShooter/index.html">Pokemon Shooter</a> <span class="tag">— shooter</span></li>
+<li><a href="../lolWheel/index.html">LoL Wheel</a> <span class="tag">— rng</span></li>
+<li><a href="../guitarTuner/index.html">Guitar Tuner</a> <span class="tag">— tool</span></li>
+<li><a href="../neonDrifter/index.html">Neon Drifter</a> <span class="tag">— race</span></li>
+<li><a href="https://calendar-puzzle2.vercel.app/">Calendar Puzzle</a> <span class="tag">— puzzle</span></li>
+<li><a href="../bluff/index.html">Bluff Helper</a> <span class="tag">— tool</span></li>
+<li><a href="https://zoopaloola.vercel.app/">Zoopaloola</a> <span class="tag">— arcade</span></li>
+<li><a href="https://combatarena.onrender.com/">Combat Arena</a> <span class="tag">— pvp</span></li>
+<li><a href="https://factorio-lamp-editor.vercel.app/">Factorio Lamp Editor</a> <span class="tag">— tool</span></li>
+<li><a href="https://marcoohno.onrender.com/">Marco Oh No!</a> <span class="tag">— party</span></li>
+<li><a href="https://lol-fusion.vercel.app/">LoL Fusion loldle</a> <span class="tag">— puzzle</span></li>
+<li><a href="https://okcorral.onrender.com/">OK Corral</a> <span class="tag">— shooter</span></li>
+<li><a href="https://pug-fiesta3-d.vercel.app/">Pug Fiesta 3D</a> <span class="tag">— action</span></li>
+<li><a href="https://partyficrim.onrender.com/">partyficRIM</a> <span class="tag">— party</span></li>
+<li><a href="https://samurai-sword-omega.vercel.app/">Samurai Sword</a> <span class="tag">— cards</span></li>
+<li><a href="https://obedy-sigma.vercel.app/">Obědy u Plynárenské</a> <span class="tag">— tool</span></li>
+<li><a href="https://jojkos-blaster.vercel.app/">Jojkos Blaster</a> <span class="tag">— action</span></li>
+<!-- catalog:end -->
+</ol>
       <p><a href="https://buymeacoffee.com/jojkos">Buy me a coffee ☕</a></p>
       <hr />
       <p><a href="index.html?pill=red">Take the red pill instead →</a></p>
@@ -120,6 +136,8 @@
   <script src="grid.js"></script>
   <script src="imagecast.js"></script>
   <script src="audio.js"></script>
+<script src="../shared/games.js"></script>
+<script src="../shared/catalog.js"></script>
   <script src="ui.js"></script>
   <script>
     (function () {
@@ -163,7 +181,6 @@
       V2C.ui.boot({ firstVisit: firstVisit, reduced: reduced });
     })();
   </script>
-<script src="../shared/games.js" defer></script>
 <script src="../shared/gamelist.js" defer></script>
 <script src="../shared/switcher.js" defer></script>
 </body>

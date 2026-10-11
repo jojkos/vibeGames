@@ -490,7 +490,7 @@
   var COMMANDS = [
     { key: '/play', desc: '<name|index> · launch a game', expand: '/play ' },
     { key: '/random', desc: 'let the void decide', run: function () { slotRoll(); } },
-    { key: '/list', desc: 'jump-list of all 14', expand: '/list ' },
+    { key: '/list', desc: 'jump-list of all ' + GAMES.length, expand: '/list ' },
     {
       key: '/chaos', desc: 'break everything for 10s', run: function () {
         closePalette();

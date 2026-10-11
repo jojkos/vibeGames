@@ -449,7 +449,7 @@ function boot() {
 
   renderer.setAnimationLoop(tick);
 
-  // lazy-load the 14 screenshots after the first frames are up
+  // lazy-load the catalog screenshots after the first frames are up
   setTimeout(() => park.loadScreens(), 150);
 
   startIntro();

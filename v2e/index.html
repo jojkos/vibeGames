@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <title>JOJKOS GAMES — Insert Coin Arcade</title>
-<meta name="description" content="A rainy-night isometric pixel arcade. Walk between 14 humming cabinets, insert a coin and play — Zoopaloola, Pug Fiesta, Combat Arena and more by jojkos.">
+<meta name="description" content="A rainy-night isometric pixel arcade. Walk between humming cabinets, insert a coin and play — Zoopaloola, Pug Fiesta, Combat Arena and more by jojkos.">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
@@ -291,7 +291,7 @@
     <div class="sgClamp">
       <div class="sgMarquee">▸ NOW PLAYING ◂</div>
       <h1 class="sgTitle">JOJKOS GAMES</h1>
-      <p class="sgSub">14 CABINETS · ONE RAINY ARCADE</p>
+      <p class="sgSub"><span data-game-count>19</span> CABINETS · ONE RAINY ARCADE</p>
       <button class="pxbtn sgBtn" id="btnStart">INSERT COIN ▸ PRESS START</button>
       <p class="sgHint">walk with WASD / tap · E to play a cabinet</p>
     </div>
@@ -300,7 +300,7 @@
   <div id="menu" role="dialog" aria-label="All games">
     <h1>JOJKOS GAMES</h1>
     <p id="rmNote">REDUCED MOTION DETECTED — the animated arcade hall is paused. All games are right here. <button class="pxbtn" id="btnEnterAnyway" style="margin-top:8px">ENTER THE HALL ANYWAY</button></p>
-    <p class="sub">ALL 14 CABINETS · PICK ONE AND PRESS START<br>or close this menu and walk the hall: WASD / tap to move · E to insert coin</p>
+    <p class="sub">ALL <span data-game-count>19</span> CABINETS · PICK ONE AND PRESS START<br>or close this menu and walk the hall: WASD / tap to move · E to insert coin</p>
     <ul id="gameList"></ul>
     <div class="mrow">
       <a href="https://buymeacoffee.com/jojkos" target="_blank" rel="noopener">☕ BUY ME A COFFEE — 1 COIN</a>
@@ -314,27 +314,35 @@
   <div style="position:fixed;inset:0;background:#040209;color:#e8defc;font-family:monospace;padding:30px;overflow:auto;z-index:99">
     <h1>JOJKOS GAMES</h1>
     <p>This arcade needs JavaScript, but the games don't:</p>
-    <ul>
-      <li><a style="color:#ffd23f" href="https://zoopaloola.vercel.app/">Zoopaloola</a></li>
-      <li><a style="color:#ffd23f" href="https://factorio-lamp-editor.vercel.app/">Factorio Lamp Editor</a></li>
-      <li><a style="color:#ffd23f" href="https://lol-fusion.vercel.app/">LoL Fusion loldle</a></li>
-      <li><a style="color:#ffd23f" href="https://pug-fiesta.vercel.app/">Pug Fiesta</a></li>
-      <li><a style="color:#ffd23f" href="https://pug-fiesta3-d.vercel.app/">Pug Fiesta 3D</a></li>
-      <li><a style="color:#ffd23f" href="https://combatarena.onrender.com/">Combat Arena</a></li>
-      <li><a style="color:#ffd23f" href="../bluff/index.html">Bluff Helper</a></li>
-      <li><a style="color:#ffd23f" href="https://calendar-puzzle2.vercel.app/">Calendar Puzzle</a></li>
-      <li><a style="color:#ffd23f" href="../pokemonShooter/index.html">Pokemon Shooter</a></li>
-      <li><a style="color:#ffd23f" href="../tralalaGame/index.html">Tralala Clicker</a></li>
-      <li><a style="color:#ffd23f" href="../lolWheel/index.html">LoL Wheel</a></li>
-      <li><a style="color:#ffd23f" href="../neonDrifter/index.html">Neon Drifter</a></li>
-      <li><a style="color:#ffd23f" href="../guitarTuner/index.html">Guitar Tuner</a></li>
-      <li><a style="color:#ffd23f" href="https://okcorral.onrender.com/">OK Corral</a></li>
-    </ul>
+    <ul data-game-catalog="list">
+<!-- catalog:start -->
+<li><a href="../tralalaGame/index.html">Tralala Clicker</a></li>
+<li><a href="https://pug-fiesta.vercel.app/">Pug Fiesta</a></li>
+<li><a href="../pokemonShooter/index.html">Pokemon Shooter</a></li>
+<li><a href="../lolWheel/index.html">LoL Wheel</a></li>
+<li><a href="../guitarTuner/index.html">Guitar Tuner</a></li>
+<li><a href="../neonDrifter/index.html">Neon Drifter</a></li>
+<li><a href="https://calendar-puzzle2.vercel.app/">Calendar Puzzle</a></li>
+<li><a href="../bluff/index.html">Bluff Helper</a></li>
+<li><a href="https://zoopaloola.vercel.app/">Zoopaloola</a></li>
+<li><a href="https://combatarena.onrender.com/">Combat Arena</a></li>
+<li><a href="https://factorio-lamp-editor.vercel.app/">Factorio Lamp Editor</a></li>
+<li><a href="https://marcoohno.onrender.com/">Marco Oh No!</a></li>
+<li><a href="https://lol-fusion.vercel.app/">LoL Fusion loldle</a></li>
+<li><a href="https://okcorral.onrender.com/">OK Corral</a></li>
+<li><a href="https://pug-fiesta3-d.vercel.app/">Pug Fiesta 3D</a></li>
+<li><a href="https://partyficrim.onrender.com/">partyficRIM</a></li>
+<li><a href="https://samurai-sword-omega.vercel.app/">Samurai Sword</a></li>
+<li><a href="https://obedy-sigma.vercel.app/">Obědy u Plynárenské</a></li>
+<li><a href="https://jojkos-blaster.vercel.app/">Jojkos Blaster</a></li>
+<!-- catalog:end -->
+</ul>
     <p><a style="color:#ffd23f" href="https://buymeacoffee.com/jojkos">☕ Buy me a coffee</a></p>
   </div>
 </noscript>
 
 <script src="../shared/games.js"></script>
+<script src="../shared/catalog.js"></script>
 <script src="../shared/gamelist.js" defer></script>
 <script>
 // ---------------------------------------------------------------- shared config

@@ -51,6 +51,8 @@ python3 -m http.server 8000
 index.html              root redirector + no-JS fallback list
 shared/
   games.js              ← THE games list (single source of truth)
+  catalog.js            shared HTML catalogs and numbering
+  creation-history.md   provenance of the creation dates
   switcher.js           the in-page variant switcher
 v1/ v2a/ … v2f/         the landing-page variants
 screenshots/
@@ -71,7 +73,7 @@ This file is the single source of truth — **every variant** reads it. Add one
 entry to the `DEF` array:
 
 ```js
-{ name:"My Cool Game", short:"COOL", tag:"ARCADE",
+{ name:"My Cool Game", createdAt:"2026-10-11T12:00:00Z", short:"COOL", tag:"ARCADE",
   url:"https://my-cool-game.vercel.app/",   // or a repo path: "myCoolGame/index.html"
   img:"screenshots/my-cool-game.png" },
 ```
@@ -79,6 +81,7 @@ entry to the `DEF` array:
 | field | what it is |
 |-------|-----------|
 | `name`  | full display name |
+| `createdAt` | required ISO timestamp for the project's creation / earliest recorded history, including predecessor versions. The default order everywhere is oldest first. New projects naturally appear at the end; equal timestamps keep their order in `DEF`. |
 | `short` | ~6-char code shown on marquees / labels (e.g. `DRIFT`, `CORRAL`) |
 | `tag`   | category — **must be a key in `TAG_COLORS`** (same file). Adding a new tag? add a color for it too. |
 | `url`   | external `https://…`, **or** a repo-relative path for an in-repo game (`myGame/index.html`). Paths resolve against the repo root, so they work from `/`, `/v2e/`, GitHub Pages and localhost alike. |
@@ -87,8 +90,17 @@ entry to the `DEF` array:
 If the game lives in this repo, drop its folder at the top level (e.g.
 `myCoolGame/`) and point `url` at its `index.html`.
 
-That's all that's required — the new cabinet/card appears in every variant.
-(The arcade grows its hall automatically to fit the new game.)
+The new cabinet/card appears in every variant in creation order. The arcade
+grows its hall automatically to fit the new game.
+
+Refresh the committed HTML lists and counts too, so visitors without JavaScript
+see the same catalog:
+
+```sh
+node tools/sync-catalog.js
+node tools/sync-catalog.js --check  # verifies that snapshots are current
+node --test tools/catalog.test.js  # catalog/order regression checks
+```
 
 ### 2. Add screenshots
 

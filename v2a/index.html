@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <title>JOJKOS GAMES — Pug Playground 3D</title>
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
-<meta name="description" content="JOJKOS GAMES — a neon arcade park you explore as a tiny pug. Run, bark, collect bones and walk into glowing arcade cabinets to launch 14 free web games.">
+<meta name="description" content="JOJKOS GAMES — a neon arcade park you explore as a tiny pug. Run, bark, collect bones and walk into glowing arcade cabinets to launch free web games.">
 <meta name="theme-color" content="#0a0e1f">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -152,20 +152,29 @@
 
 <!-- Real links for accessibility / SEO (always in DOM) -->
 <nav class="sr-only" aria-label="All games">
-  <a href="https://zoopaloola.vercel.app/">Zoopaloola</a>
-  <a href="https://factorio-lamp-editor.vercel.app/">Factorio Lamp Editor</a>
-  <a href="https://lol-fusion.vercel.app/">LoL Fusion loldle</a>
-  <a href="https://pug-fiesta.vercel.app/">Pug Fiesta</a>
-  <a href="https://pug-fiesta3-d.vercel.app/">Pug Fiesta 3D</a>
-  <a href="https://combatarena.onrender.com/">Combat Arena</a>
-  <a href="../bluff/index.html">Bluff Helper</a>
-  <a href="https://calendar-puzzle2.vercel.app/">Calendar Puzzle</a>
-  <a href="../pokemonShooter/index.html">Pokemon Shooter</a>
-  <a href="../tralalaGame/index.html">Tralala Clicker</a>
-  <a href="../lolWheel/index.html">LoL Wheel</a>
-  <a href="../neonDrifter/index.html">Neon Drifter</a>
-  <a href="../guitarTuner/index.html">Guitar Tuner</a>
-  <a href="https://okcorral.onrender.com/">OK Corral</a>
+  <div data-game-catalog="links">
+<!-- catalog:start -->
+<a href="../tralalaGame/index.html">Tralala Clicker</a>
+<a href="https://pug-fiesta.vercel.app/">Pug Fiesta</a>
+<a href="../pokemonShooter/index.html">Pokemon Shooter</a>
+<a href="../lolWheel/index.html">LoL Wheel</a>
+<a href="../guitarTuner/index.html">Guitar Tuner</a>
+<a href="../neonDrifter/index.html">Neon Drifter</a>
+<a href="https://calendar-puzzle2.vercel.app/">Calendar Puzzle</a>
+<a href="../bluff/index.html">Bluff Helper</a>
+<a href="https://zoopaloola.vercel.app/">Zoopaloola</a>
+<a href="https://combatarena.onrender.com/">Combat Arena</a>
+<a href="https://factorio-lamp-editor.vercel.app/">Factorio Lamp Editor</a>
+<a href="https://marcoohno.onrender.com/">Marco Oh No!</a>
+<a href="https://lol-fusion.vercel.app/">LoL Fusion loldle</a>
+<a href="https://okcorral.onrender.com/">OK Corral</a>
+<a href="https://pug-fiesta3-d.vercel.app/">Pug Fiesta 3D</a>
+<a href="https://partyficrim.onrender.com/">partyficRIM</a>
+<a href="https://samurai-sword-omega.vercel.app/">Samurai Sword</a>
+<a href="https://obedy-sigma.vercel.app/">Obědy u Plynárenské</a>
+<a href="https://jojkos-blaster.vercel.app/">Jojkos Blaster</a>
+<!-- catalog:end -->
+</div>
   <a href="https://buymeacoffee.com/jojkos">Buy me a coffee</a>
 </nav>
 
@@ -182,29 +191,9 @@
   </div>
 </div>
 
+<script src="../shared/games.js"></script>
+<script src="../shared/catalog.js"></script>
 <script>
-  // Canonical game data (paths prefixed ../ because this prototype lives in /v2a/)
-  window.GAMES = [
-    { name: "Zoopaloola",           url: "https://zoopaloola.vercel.app/",           tag: "ARCADE",  img: "../screenshots/zoopaloola.png" },
-    { name: "Factorio Lamp Editor", url: "https://factorio-lamp-editor.vercel.app/", tag: "TOOL",    img: "../screenshots/factorio-lamp.png" },
-    { name: "LoL Fusion loldle",    url: "https://lol-fusion.vercel.app/",           tag: "PUZZLE",  img: "../screenshots/lol-fusion.png" },
-    { name: "Pug Fiesta",           url: "https://pug-fiesta.vercel.app/",           tag: "ACTION",  img: "../screenshots/pug-fiesta.png" },
-    { name: "Pug Fiesta 3D",        url: "https://pug-fiesta3-d.vercel.app/",        tag: "ACTION",  img: "../screenshots/pug-fiesta-3d.png" },
-    { name: "Combat Arena",         url: "https://combatarena.onrender.com/",        tag: "PVP",     img: "../screenshots/combat-arena.png" },
-    { name: "Bluff Helper",         url: "../bluff/index.html",                      tag: "TOOL",    img: "../screenshots/bluff.png" },
-    { name: "Calendar Puzzle",      url: "https://calendar-puzzle2.vercel.app/",     tag: "PUZZLE",  img: "../screenshots/calendar-puzzle.png" },
-    { name: "Pokemon Shooter",      url: "../pokemonShooter/index.html",             tag: "SHOOTER", img: "../screenshots/pokemon-shooter.png" },
-    { name: "Tralala Clicker",      url: "../tralalaGame/index.html",                tag: "CLICKER", img: "../screenshots/tralala.png" },
-    { name: "LoL Wheel",            url: "../lolWheel/index.html",                   tag: "RNG",     img: "../screenshots/lol-wheel.png" },
-    { name: "Neon Drifter",         url: "../neonDrifter/index.html",                tag: "RACE",    img: "../screenshots/neon-drifter.png" },
-    { name: "Guitar Tuner",         url: "../guitarTuner/index.html",                tag: "TOOL",    img: "../screenshots/guitar-tuner.png" },
-    { name: "OK Corral",            url: "https://okcorral.onrender.com/",           tag: "SHOOTER", img: "../screenshots/ok-corral.png" }
-  ];
-  window.TAG_COLORS = {
-    ARCADE: "#ff9f1c", PUZZLE: "#a06bff", TOOL: "#22e6e6", ACTION: "#ff4d6d",
-    SHOOTER: "#ffd60a", PVP: "#ff2bd6", CLICKER: "#46f07a", RNG: "#ff7bc5", RACE: "#3a86ff"
-  };
-
   // Build the menu grid (doubles as the reduced-motion / no-WebGL fallback page)
   (function () {
     var grid = document.getElementById("grid");
@@ -225,8 +214,8 @@
     var ov = document.getElementById("overlay");
     ov.hidden = false;
     document.getElementById("overlaysub").textContent =
-      reason === "webgl" ? "3D park unavailable on this device — all 14 games below." :
-      "All 14 games, calm and simple.";
+      reason === "webgl" ? "3D park unavailable on this device — all " + window.GAMES.length + " games below." :
+      "All " + window.GAMES.length + " games, calm and simple.";
     var cv = document.getElementById("scene");
     if (cv) cv.style.display = "none";
     window.FLAT_MODE = true;
@@ -236,7 +225,6 @@
   }
 </script>
 <script type="module" src="main.js"></script>
-<script src="../shared/games.js" defer></script>
 <script src="../shared/gamelist.js" defer></script>
 <script src="../shared/switcher.js" defer></script>
 </body>

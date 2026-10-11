@@ -1,6 +1,6 @@
 // ============================================================================
-// wall.js — the RECEIVER: a 1D radio band. The 14 games are stations on an
-// 88.1–105.0 FM dial; a fixed centre needle, the band scrolls under it as you
+// wall.js — the RECEIVER: a 1D radio band. The catalog games are stations on a
+// growing FM dial; a fixed centre needle, the band scrolls under it as you
 // tune. Drag = manual ("assisted analog": momentum + magnetic detents onto
 // stations). Each station renders as green glyphs at rest and resolves to the
 // real screenshot as it centres (uSignal). One hidden "pirate" station hides in
@@ -9,28 +9,13 @@
 
 import { Plane, Triangle, Program, Mesh, Texture } from 'ogl';
 
-export const GAMES = [
-  { name: 'Zoopaloola',           url: 'https://zoopaloola.vercel.app/',           tag: 'ARCADE',  img: '../screenshots/zoopaloola.png' },
-  { name: 'Factorio Lamp Editor', url: 'https://factorio-lamp-editor.vercel.app/', tag: 'TOOL',    img: '../screenshots/factorio-lamp.png' },
-  { name: 'LoL Fusion loldle',    url: 'https://lol-fusion.vercel.app/',           tag: 'PUZZLE',  img: '../screenshots/lol-fusion.png' },
-  { name: 'Pug Fiesta',           url: 'https://pug-fiesta.vercel.app/',           tag: 'ACTION',  img: '../screenshots/pug-fiesta.png' },
-  { name: 'Pug Fiesta 3D',        url: 'https://pug-fiesta3-d.vercel.app/',        tag: 'ACTION',  img: '../screenshots/pug-fiesta-3d.png' },
-  { name: 'Combat Arena',         url: 'https://combatarena.onrender.com/',        tag: 'PVP',     img: '../screenshots/combat-arena.png' },
-  { name: 'Bluff Helper',         url: '../bluff/index.html',                      tag: 'TOOL',    img: '../screenshots/bluff.png' },
-  { name: 'Calendar Puzzle',      url: 'https://calendar-puzzle2.vercel.app/',     tag: 'PUZZLE',  img: '../screenshots/calendar-puzzle.png' },
-  { name: 'Pokemon Shooter',      url: '../pokemonShooter/index.html',             tag: 'SHOOTER', img: '../screenshots/pokemon-shooter.png' },
-  { name: 'Tralala Clicker',      url: '../tralalaGame/index.html',                tag: 'CLICKER', img: '../screenshots/tralala.png' },
-  { name: 'LoL Wheel',            url: '../lolWheel/index.html',                   tag: 'RNG',     img: '../screenshots/lol-wheel.png' },
-  { name: 'Neon Drifter',         url: '../neonDrifter/index.html',                tag: 'RACE',    img: '../screenshots/neon-drifter.png' },
-  { name: 'Guitar Tuner',         url: '../guitarTuner/index.html',                tag: 'TOOL',    img: '../screenshots/guitar-tuner.png' },
-  { name: 'OK Corral',            url: 'https://okcorral.onrender.com/',           tag: 'SHOOTER', img: '../screenshots/ok-corral.png' },
-];
+export const GAMES = window.GAMES;
 
 // numeric frequency for the maths, padded string for display
 export const stationFreq = (i) => 88.1 + i * 1.3;
 export const freqOf = (i) => stationFreq(i).toFixed(1);
 export const FREQ_MIN = stationFreq(0);                 // 88.1
-export const FREQ_MAX = stationFreq(GAMES.length - 1);  // 105.0
+export const FREQ_MAX = stationFreq(GAMES.length - 1);  // grows with the catalog
 const PIRATE_FREQ = 100.45;                              // hidden, sits in the 99.8→101.1 gap
 
 const clamp = (v, a, b) => Math.max(a, Math.min(b, v));

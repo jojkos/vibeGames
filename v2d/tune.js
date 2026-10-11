@@ -5,7 +5,7 @@
 // ============================================================================
 
 import { Renderer } from 'ogl';
-import { Wall, GAMES, stationFreq, FREQ_MIN } from './wall.js';
+import { Wall, GAMES, stationFreq, FREQ_MIN, FREQ_MAX } from './wall.js';
 import { Post } from './post.js';
 import { RadioAudio } from './audio.js';
 
@@ -55,7 +55,7 @@ export function start() {
 
   function buildDial() {
     track.innerHTML = '';
-    for (let f = 88; f <= 105.0001; f += 0.5) {
+    for (let f = 88; f <= Math.ceil(FREQ_MAX) + 0.0001; f += 0.5) {
       const major = Math.abs(f - Math.round(f)) < 0.01;
       const tk = document.createElement('div');
       tk.className = 'tick' + (major ? ' major' : '');
